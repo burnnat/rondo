@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project>
+	<target name="jsb" depends="init" description="Creates a JSB2 descriptor for the project's source files">
+		<local name="temp.file"/>
+		<tempfile property="temp.file" suffix=".json"/>
+		
+		<local name="jsb.file"/>
+		<property name="jsb.file" value="project.jsb2"/>
+		
+		<x-sencha-command>
+			compile
+				meta
+					-filenames
+					-json
+					-out=${temp.file}
+		</x-sencha-command>
+		
+		<echo>${temp.file}</echo>
+		
+		<script language="javascript">
+		<![CDATA[
+			var input = new org.json.JSONArray(
+				org.apache.commons.io.FileUtils.readFileToString(
+					new java.io.File(
+						project.getProperty("temp.file")
+					)
+				)
+			);
+			
+			var appName = project.getProperty("app.name");
+			
+			var output = new org.json.JSONStringer()
+				.object()
+					.key("projectName")
+					.value(appName)
+					
+					.key("pkgs")
+					.array()
+						.object()
+							.key("name")
+							.value(appName)
+							
+							.key("fileIncludes")
+							.array();
+			
+			var file;
+			
+			for (var i = 0; i < input.length(); i++) {
+				file = new java.io.File(input.getString(i));
+				
+				parent = file.getParent();
+				
+				output
+					.object()
+						.key("path")
+						.value(
+							(parent
+								? parent.replace(java.io.File.separator, "/")
+								: '.')
+							+ "/"
+						)
+						
+						.key("text")
+						.value(file.getName())
+					.endObject();
+			}
+			
+			output.endArray().endObject().endArray().endObject();
+			
+			file = new java.io.File(project.getProperty("jsb.file"));
+			
+			var echo = project.createTask("echo");
+			echo.setFile(file);
+			echo.setMessage(output.toString());
+			echo.perform();
+			
+			self.log("Wrote file: " + file.getPath());
+		]]>
+		</script>
+		
+		<delete file="${temp.file}"/>
+	</target>
+</project>

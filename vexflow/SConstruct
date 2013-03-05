@@ -1,0 +1,23 @@
+"""
+VexFlow Build Script for Rondo
+
+Based on:
+VexFlow / TabDiv Build Script
+Copyright Mohit Muthanna Cheppudira 2010
+"""
+
+from vexflow_scons import *
+
+env = default_env.Clone()
+
+# Create build directories and attach cleanup handlers to them
+
+mkdir_with_cleanup("build", env)
+
+opt = dbg = default_env.Clone(tools = ['default', 'textfile']);
+
+# Export construction environments to SConscripts
+Export("dbg opt")
+
+# Build VexFlow
+SConscript("../../VexFlow/src/SConstruct", variant_dir="build", duplicate=0)
