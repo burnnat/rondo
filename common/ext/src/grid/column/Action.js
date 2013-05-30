@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * A Grid header type which renders an icon, or a series of icons in a grid cell, and offers a scoped click
  * handler for each icon.
@@ -73,7 +93,7 @@ Ext.define('Ext.grid.column.Action', {
      * @cfg {Object} handler.item The clicked item (or this Column if multiple {@link #cfg-items} were not configured).
      * @cfg {Event} handler.e The click event.
      * @cfg {Ext.data.Model} handler.record The Record underlying the clicked row.
-     * @cfg {HtmlElement} row The table row clicked upon.
+     * @cfg {HTMLElement} handler.row The table row clicked upon.
      */
     /**
      * @cfg {Object} scope
@@ -213,10 +233,13 @@ Ext.define('Ext.grid.column.Action', {
 
     sortable: false,
 
+    innerCls: Ext.baseCSSPrefix + 'grid-cell-inner-action-col',
+
     constructor: function(config) {
         var me = this,
             cfg = Ext.apply({}, config),
-            items = cfg.items || [me],
+            // Items may be defined on the prototype
+            items = cfg.items || me.items || [me],
             hasGetClass,
             i,
             len;
@@ -225,13 +248,10 @@ Ext.define('Ext.grid.column.Action', {
         me.origRenderer = cfg.renderer || me.renderer;
         me.origScope = cfg.scope || me.scope;
         
-        delete me.renderer;
-        delete me.scope;
-        delete cfg.renderer;
-        delete cfg.scope;
+        me.renderer = me.scope = cfg.renderer = cfg.scope = null;
         
         // This is a Container. Delete the items config to be reinstated after construction.
-        delete cfg.items;
+        cfg.items = null;
         me.callParent([cfg]);
 
         // Items is an array property of ActionColumns
@@ -259,12 +279,12 @@ Ext.define('Ext.grid.column.Action', {
             items = me.items,
             len = items.length,
             i = 0,
-            item,
-            disabled,
-            tooltip;
+            item, ret, disabled, tooltip;
  
         // Allow a configured renderer to create initial value (And set the other values in the "metadata" argument!)
-        v = Ext.isFunction(me.origRenderer) ? me.origRenderer.apply(scope, arguments) || '' : '';
+        // Assign a new variable here, since if we modify "v" it will also modify the arguments collection, meaning
+        // we will pass an incorrect value to getClass/getTip
+        ret = Ext.isFunction(me.origRenderer) ? me.origRenderer.apply(scope, arguments) || '' : '';
 
         meta.tdCls += ' ' + Ext.baseCSSPrefix + 'action-col-cell';
         for (; i < len; i++) {
@@ -283,12 +303,12 @@ Ext.define('Ext.grid.column.Action', {
                 item.hasActionConfiguration = true;
             }
 
-            v += '<img alt="' + (item.altText || me.altText) + '" src="' + (item.icon || Ext.BLANK_IMAGE_URL) +
+            ret += '<img role="button" alt="' + (item.altText || me.altText) + '" src="' + (item.icon || Ext.BLANK_IMAGE_URL) +
                 '" class="' + prefix + 'action-col-icon ' + prefix + 'action-col-' + String(i) + ' ' + (disabled ? prefix + 'item-disabled' : ' ') +
                 ' ' + (Ext.isFunction(item.getClass) ? item.getClass.apply(item.scope || scope, arguments) : (item.iconCls || me.iconCls || '')) + '"' +
                 (tooltip ? ' data-qtip="' + tooltip + '"' : '') + ' />';
         }
-        return v;    
+        return ret;    
     },
 
     /**

@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * A layout that arranges items vertically down a Container. This layout optionally divides available vertical space
  * between child items containing a numeric `flex` configuration.
@@ -55,6 +75,11 @@ Ext.define('Ext.layout.container.VBox', {
      * - **stretchmax** : child items are stretched horizontally to the size of the largest item.
      */
     align : 'left', // left, center, stretch, strechmax
+
+    /**
+     * @cfg {"round"/"floor"/"ceil"} [alignRoundingMethod='round'] The Math method to use
+     * for rounding fractional pixels when `{@link #align}:center` is used.
+     */
     
     /**
      * @cfg {Boolean} constrainAlign
@@ -73,6 +98,9 @@ Ext.define('Ext.layout.container.VBox', {
     names: {
         // parallel
         beforeX: 'top',
+        beforeScrollX: 'top',
+        beforeScrollerSuffix: '-before-scroller',
+        afterScrollerSuffix: '-after-scroller',
         leftCap: 'Top',
         afterX: 'bottom',
         width: 'height',
@@ -101,7 +129,6 @@ Ext.define('Ext.layout.container.VBox', {
         heightModel: 'widthModel',
         heightIndex: 0,
         y: 'x',
-        scrollTop: 'scrollLeft',
         overflowY: 'overflowX',
         hasOverflowY: 'hasOverflowX',
         invalidateScrollY: 'invalidateScrollX',
@@ -117,13 +144,16 @@ Ext.define('Ext.layout.container.VBox', {
         setContentWidth: 'setContentHeight',
         setContentHeight: 'setContentWidth',
         setWidthInDom: 'setHeightInDom',
-        setHeightInDom: 'setWidthInDom'
+        setHeightInDom: 'setWidthInDom',
+        getScrollLeft: 'getScrollTop',
+        setScrollLeft: 'setScrollTop',
+        scrollTo: 'scrollTo'
     },
 
     sizePolicy: {
         flex: {
             '': {
-                readsWidth : 0,
+                readsWidth : 1,
                 readsHeight: 0,
                 setsWidth  : 0,
                 setsHeight : 1
@@ -142,20 +172,20 @@ Ext.define('Ext.layout.container.VBox', {
             }
         },
         '': {
-            readsWidth : 0,
-            readsHeight: 0,
+            readsWidth : 1,
+            readsHeight: 1,
             setsWidth  : 0,
             setsHeight : 0
         },
         stretch: {
             readsWidth : 0,
-            readsHeight: 0,
+            readsHeight: 1,
             setsWidth  : 1,
             setsHeight : 0
         },
         stretchmax: {
             readsWidth : 1,
-            readsHeight: 0,
+            readsHeight: 1,
             setsWidth  : 1,
             setsHeight : 0
         }

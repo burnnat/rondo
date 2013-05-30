@@ -32,8 +32,8 @@ Ext.define('Ext.io.Group', {
         *  Called on bootup by Io with the current group data.
         * 
         */
-        setCurrent: function(groupConfig){
-            this._currentGroup = Ext.create("Ext.io.Group", {id:groupConfig._key, data:groupConfig.data});
+        setCurrent: function(config){
+            this._currentGroup = this.createObject(config);
         },
 
         /**

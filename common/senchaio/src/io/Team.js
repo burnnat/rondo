@@ -241,6 +241,7 @@ Ext.define('Ext.io.Team', {
      *
      */
     getConnectedDevelopers: function(callback,scope) {
+        var self= this;
         Ext.io.Io.getMessagingProxy(function(messaging){
             messaging.getService(
                 {name: "PresenceService"},
@@ -250,7 +251,7 @@ Ext.define('Ext.io.Team', {
                             if (result.status == "success") {
                                 var objects = [];
                                 for(var i = 0; i < result.value.length; i++) {
-                                    objects.push(Ext.create(Ext.io.Developer, {id:result.value[i]._key, data:result.value[i].data}));
+                                    objects.push(self.createObject(result.value[i],Ext.io.Developer));
                                 }
                                 callback.call(scope, objects);
                             } else {

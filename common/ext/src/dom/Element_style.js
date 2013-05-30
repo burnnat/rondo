@@ -1,4 +1,24 @@
-//@tag dom,core
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
+// @tag dom,core
 /**
  */
 Ext.define('Ext.dom.Element_style', {
@@ -21,7 +41,7 @@ var Element = this,
     DOCORBODYRE = /#document|body/i,
     // This reduces the lookup of 'me.styleHooks' by one hop in the prototype chain. It is
     // the same object.
-    styleHooks,
+    styleHooks, verticalStyleHooks90, verticalStyleHooks270,
     edges, k, edge, borderWidth;
 
 if (!view || !view.getComputedStyle) {
@@ -117,7 +137,7 @@ Element.override({
 
         height = me.dom.offsetHeight;
 
-        // IE9 Direct2D dimension rounding bug
+        // IE9/10 Direct2D dimension rounding bug
         if (Ext.supports.Direct2DBug) {
             floating = me.adjustDirect2DDimension(HEIGHT);
             if (preciseHeight) {
@@ -151,7 +171,7 @@ Element.override({
         // subpixel measurements so we can force them to always be rounded up. See
         // https://bugzilla.mozilla.org/show_bug.cgi?id=458617
         // Rounding up ensures that the width includes the full width of the text contents.
-        if (Ext.supports.BoundingClientRect) {
+        if (preciseWidth && Ext.supports.BoundingClientRect) {
             rect = dom.getBoundingClientRect();
             // IE9 is the only browser that supports getBoundingClientRect() and
             // uses a filter to rotate the element vertically.  When a filter
@@ -159,13 +179,14 @@ Element.override({
             // are not inverted (see setVertical).
             width = (me.vertical && !Ext.isIE9 && !Ext.supports.RotatedBoundingClientRect) ?
                     (rect.bottom - rect.top) : (rect.right - rect.left);
-            width = preciseWidth ? width : Math.ceil(width);
         } else {
             width = dom.offsetWidth;
         }
 
-        // IE9 Direct2D dimension rounding bug
-        if (Ext.supports.Direct2DBug) {
+        // IE9/10 Direct2D dimension rounding bug: https://sencha.jira.com/browse/EXTJSIV-603
+        // there is no need make adjustments for this bug when the element is vertically
+        // rotated because the width of a vertical element is its rotated height
+        if (Ext.supports.Direct2DBug && !me.vertical) {
             // get the fractional portion of the sub-pixel precision width of the element's text contents
             floating = me.adjustDirect2DDimension(WIDTH);
             if (preciseWidth) {
@@ -740,17 +761,19 @@ Element.override({
 
     /**
      * Changes this Element's state to "vertical" (rotated 90 or 270 degrees).
-     * This involves inverting the getters and setters for height and width
+     * This involves inverting the getters and setters for height and width,
+     * and applying hooks for rotating getters and setters for border/margin/padding.
      * (getWidth becomes getHeight and vice versa), setStyle and getStyle will
      * also return the inverse when height or width are being operated on.
      * 
+     * @param {Number} angle the angle of rotation - either 90 or 270
      * @param {String} cls an optional css class that contains the required
      * styles for switching the element to vertical orientation. Omit this if
      * the element already contains vertical styling.  If cls is provided,
      * it will be removed from the element when {@link #setHorizontal} is called.
      * @private
      */
-    setVertical: function(cls) {
+    setVertical: function(angle, cls) {
         var me = this,
             proto = Element.prototype,
             hooks;
@@ -771,16 +794,9 @@ Element.override({
             me.getHeight = proto.getWidth;
         }
 
-        // We need to poke height and width style hooks onto the styleHooks
-        // object so that getStyle/setStyle will operate on the correct
-        // properties, however the styleHooks object is on the Element prototype
-        // and we do not want the inverted width and height to be inherited by
-        // all Elements. The solution is to give this Element instance it's own
-        // styleHooks object which inherits from Element.prototype.styleHooks
-        // via the prototype chain.
-        hooks = me.styleHooks = Ext.Object.chain(Element.prototype.styleHooks);
-        hooks.width = { name: 'height' };
-        hooks.height = { name: 'width' };
+        // Switch to using the appropriate vertical style hooks
+        me.styleHooks = (angle === 270) ?
+            Element.prototype.verticalStyleHooks270 : Element.prototype.verticalStyleHooks90;
     },
 
     /**
@@ -812,6 +828,41 @@ Element.override({
 });
 
 Element.prototype.styleHooks = styleHooks = Ext.dom.AbstractElement.prototype.styleHooks;
+
+// When elements are rotated 80 or 270 degrees, their border, margin and padding hooks
+// need to be rotated as well.
+Element.prototype.verticalStyleHooks90 = verticalStyleHooks90 = Ext.Object.chain(Element.prototype.styleHooks);
+Element.prototype.verticalStyleHooks270 = verticalStyleHooks270 = Ext.Object.chain(Element.prototype.styleHooks);
+
+verticalStyleHooks90.width = { name: 'height' };
+verticalStyleHooks90.height = { name: 'width' };
+verticalStyleHooks90['margin-top'] = { name: 'marginLeft' };
+verticalStyleHooks90['margin-right'] = { name: 'marginTop' };
+verticalStyleHooks90['margin-bottom'] = { name: 'marginRight' };
+verticalStyleHooks90['margin-left'] = { name: 'marginBottom' };
+verticalStyleHooks90['padding-top'] = { name: 'paddingLeft' };
+verticalStyleHooks90['padding-right'] = { name: 'paddingTop' };
+verticalStyleHooks90['padding-bottom'] = { name: 'paddingRight' };
+verticalStyleHooks90['padding-left'] = { name: 'paddingBottom' };
+verticalStyleHooks90['border-top'] = { name: 'borderLeft' };
+verticalStyleHooks90['border-right'] = { name: 'borderTop' };
+verticalStyleHooks90['border-bottom'] = { name: 'borderRight' };
+verticalStyleHooks90['border-left'] = { name: 'borderBottom' };
+
+verticalStyleHooks270.width = { name: 'height' };
+verticalStyleHooks270.height = { name: 'width' };
+verticalStyleHooks270['margin-top'] = { name: 'marginRight' };
+verticalStyleHooks270['margin-right'] = { name: 'marginBottom' };
+verticalStyleHooks270['margin-bottom'] = { name: 'marginLeft' };
+verticalStyleHooks270['margin-left'] = { name: 'marginTop' };
+verticalStyleHooks270['padding-top'] = { name: 'paddingRight' };
+verticalStyleHooks270['padding-right'] = { name: 'paddingBottom' };
+verticalStyleHooks270['padding-bottom'] = { name: 'paddingLeft' };
+verticalStyleHooks270['padding-left'] = { name: 'paddingTop' };
+verticalStyleHooks270['border-top'] = { name: 'borderRight' };
+verticalStyleHooks270['border-right'] = { name: 'borderBottom' };
+verticalStyleHooks270['border-bottom'] = { name: 'borderLeft' };
+verticalStyleHooks270['border-left'] = { name: 'borderTop' };
 
 if (Ext.isIE7m) {
     styleHooks.fontSize = styleHooks['font-size'] = {

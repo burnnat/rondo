@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * Used as a view by {@link Ext.tree.Panel TreePanel}.
  */
@@ -68,6 +88,8 @@ Ext.define('Ext.tree.View', {
         '{%',
             'this.processRowValues(values);',
             'this.nextTpl.applyOut(values, out, parent);',
+            'delete values.rowAttr["data-qtip"];',
+            'delete values.rowAttr["data-qtitle"];',
         '%}', {
             priority: 10,
             processRowValues: function(rowValues) {
@@ -295,7 +317,7 @@ Ext.define('Ext.tree.View', {
                 '<td colspan="' + me.panel.headerCt.getColumnCount() + '">',
                     '<div class="' + me.nodeAnimWrapCls + '">',
                         // Table has to have correct classes to get sized by the dynamic CSS rules
-                        '<table class="' + Ext.baseCSSPrefix + me.id + '-table ' + Ext.baseCSSPrefix + 'grid-table">',
+                        '<table class="' + Ext.baseCSSPrefix + me.id + '-table ' + Ext.baseCSSPrefix + 'grid-table" style="border:0" cellspacing="0" cellpadding="0">',
                         columnSizer.join(''),
                         '<tbody></tbody></table>',
                     '</div>',
@@ -406,36 +428,9 @@ Ext.define('Ext.tree.View', {
         }
     },
 
-    // These methods are triggered by:
-    //  the TreeStore's beforebulkremove & bulkremovecomplete events.
-    // In the case of a fully loaded tree (no async IO needed), the whole expansion will be bracketed by
-    // layout suspension, and will end with one refreshSize call.
-    beginBulkUpdate: function() {
-        if (this.rendered) {
-            Ext.suspendLayouts();
-        }
-    },
-    endBulkUpdate: function(){
-        if (this.rendered) {
-            this.refreshSize();
-            Ext.resumeLayouts(true);
-        }
-    },
-
-    onAdd: function(store, records, index) {        
-        this.callParent(arguments);
-
-        // If appending, and there is a previous node, then to keep the elbows
-        // correct, update the previous node.
-        if (records[records.length - 1].data.isLast && records[0].previousSibling) {
-            this.onUpdate(store, records[0].previousSibling);
-        }
-    },
-
     onRemove : function(ds, records, indexes) {
         var me = this,
-            empty, i,
-            record;
+            empty, i;
 
         if (me.viewReady) {
             empty = me.store.getCount() === 0;
@@ -448,12 +443,6 @@ Ext.define('Ext.tree.View', {
                 // Remove in reverse order so that indices remain correct
                 for (i = indexes.length - 1; i >= 0; --i) {
                     me.doRemove(records[i], indexes[i]);
-                }
-
-                // If the previous sibling is now last, update it to keep the elbows up to date
-                record = records[0];
-                if (record.previousSibling && record.previousSibling.data.isLast) {
-                    this.onUpdate(ds, record.previousSibling);
                 }
             }
 
@@ -489,23 +478,21 @@ Ext.define('Ext.tree.View', {
         var me = this,
             animWrap;
 
-        if (!me.rendered || !me.animate) {
-            return;
-        }
-
-        if (me.getNode(parent)) {
-            animWrap = me.getAnimWrap(parent, false);
-            if (!animWrap) {
-                animWrap = me.animWraps[parent.internalId] = me.createAnimWrap(parent);
-                animWrap.animateEl.setHeight(0);
+        if (me.rendered && me.all.getCount() && me.animate) {
+            if (me.getNode(parent)) {
+                animWrap = me.getAnimWrap(parent, false);
+                if (!animWrap) {
+                    animWrap = me.animWraps[parent.internalId] = me.createAnimWrap(parent);
+                    animWrap.animateEl.setHeight(0);
+                }
+                else if (animWrap.collapsing) {
+                    // If we expand this node while it is still expanding then we
+                    // have to remove the nodes from the animWrap.
+                    animWrap.targetEl.select(me.itemSelector).remove();
+                }
+                animWrap.expanding = true;
+                animWrap.collapsing = false;
             }
-            else if (animWrap.collapsing) {
-                // If we expand this node while it is still expanding then we
-                // have to remove the nodes from the animWrap.
-                animWrap.targetEl.select(me.itemSelector).remove();
-            }
-            animWrap.expanding = true;
-            animWrap.collapsing = false;
         }
     },
 
@@ -517,7 +504,8 @@ Ext.define('Ext.tree.View', {
             index = node ? me.indexOf(node) : -1,
             animWrap,
             animateEl,
-            targetEl;
+            targetEl,
+            fromHeight = Ext.isIEQuirks ? 1 : 0 // Quirks mode on IE seems to have issues with 0;
 
         if (me.singleExpand) {
             me.ensureSingleExpand(parent);
@@ -541,11 +529,13 @@ Ext.define('Ext.tree.View', {
         targetEl = animWrap.targetEl;
 
         animateEl.stopAnimation();
-        // @TODO: we are setting it to 1 because quirks mode on IE seems to have issues with 0
         queue[id] = true;
+
+        // Must set element height because animation does not set initial condition until first tick has elapsed
+        animateEl.dom.style.height = fromHeight + 'px';
         animateEl.animate({
             from: {
-                height: 0
+                height: fromHeight
             },
             to: {
                 height: targetEl.getHeight()
@@ -576,30 +566,34 @@ Ext.define('Ext.tree.View', {
     },
 
     // Triggered by the NodeStore's onNodeCollapse event.
-    onBeforeCollapse: function(parent, records, index) {
+    onBeforeCollapse: function(parent, records, index, callback, scope) {
         var me = this,
             animWrap;
 
-        if (me.rendered) {
-            if (!me.animate) {
-                return;
-            }
-
-            // Only process if the collapsing node is in the UI.
-            // A node may be collapsed as part of a recursive ancestor collapse, and if it
-            // has already been removed from the UI by virtue of an ancestor being collapsed, we should not do anything.
-            if (Ext.Array.contains(parent.stores, me.store)) {
-                animWrap = me.getAnimWrap(parent);
-                if (!animWrap) {
-                    animWrap = me.animWraps[parent.internalId] = me.createAnimWrap(parent, index);
+        if (me.rendered && me.all.getCount()) {
+            if (me.animate) {
+                // Only process if the collapsing node is in the UI.
+                // A node may be collapsed as part of a recursive ancestor collapse, and if it
+                // has already been removed from the UI by virtue of an ancestor being collapsed, we should not do anything.
+                if (Ext.Array.contains(parent.stores, me.store)) {
+                    animWrap = me.getAnimWrap(parent);
+                    if (!animWrap) {
+                        animWrap = me.animWraps[parent.internalId] = me.createAnimWrap(parent, index);
+                    }
+                    else if (animWrap.expanding) {
+                        // If we collapse this node while it is still expanding then we
+                        // have to remove the nodes from the animWrap.
+                        animWrap.targetEl.select(this.itemSelector).remove();
+                    }
+                    animWrap.expanding = false;
+                    animWrap.collapsing = true;
+                    animWrap.callback = callback;
+                    animWrap.scope = scope;
                 }
-                else if (animWrap.expanding) {
-                    // If we collapse this node while it is still expanding then we
-                    // have to remove the nodes from the animWrap.
-                    animWrap.targetEl.select(this.itemSelector).remove();
-                }
-                animWrap.expanding = false;
-                animWrap.collapsing = true;
+            } else {
+                // Cache any passed callback for use in the onCollapse post collapse handler non-animated codepath
+                me.onCollapseCallback = callback;
+                me.onCollapseScope = scope;
             }
         }
     },
@@ -616,7 +610,7 @@ Ext.define('Ext.tree.View', {
         // If the collapsed node is already removed from the UI
         // by virtue of being a descendant of a collapsed node, then
         // we have nothing to do here.
-        if (!Ext.Array.contains(parent.stores, me.store)) {
+        if (!me.all.getCount() || !Ext.Array.contains(parent.stores, me.store)) {
             return;
         }
 
@@ -625,6 +619,10 @@ Ext.define('Ext.tree.View', {
             parent.isExpandingOrCollapsing = false;
             me.fireEvent('afteritemcollapse', parent, index, node);
             me.refreshSize();
+
+            // Call any collapse callback cached in the onBeforeCollapse handler
+            Ext.callback(me.onCollapseCallback, me.onCollapseScope);
+            me.onCollapseCallback = me.onCollapseScope = null;
             return;
         }
 
@@ -635,12 +633,12 @@ Ext.define('Ext.tree.View', {
         animateEl.stopAnimation();
         animateEl.animate({
             to: {
-                height:0
+                height: Ext.isIEQuirks ? 1 : 0 // Quirks mode on IE seems to have issues with 0
             },
             duration: me.collapseDuration,
             listeners: {
                 afteranimate: function() {
-                    // Must do this in afteranimate because lastframe does not fire if the animation is stopped.
+                    // In case lastframe did not fire because the animation was stopped.
                     animWrap.el.remove();
                     me.refreshSize();
                     delete me.animWraps[animWrap.record.internalId];
@@ -650,6 +648,10 @@ Ext.define('Ext.tree.View', {
             callback: function() {
                 parent.isExpandingOrCollapsing = false;
                 me.fireEvent('afteritemcollapse', parent, index, node);
+
+                // Call any collapse callback cached in the onBeforeCollapse handler
+                Ext.callback(animWrap.callback, animWrap.scope);
+                animWrap.callback = animWrap.scope = null;
             }
         });
         animWrap.isAnimating = true;
@@ -676,14 +678,22 @@ Ext.define('Ext.tree.View', {
      */
     expand: function(record, deep, callback, scope) {
         var me = this,
-            doAnimate = !!me.animate;
+            doAnimate = !!me.animate,
+            result;
 
         // Block toggling if we are already animating an expand or collapse operation.
         if (!doAnimate || !record.isExpandingOrCollapsing) {
             if (!record.isLeaf()) {
                 record.isExpandingOrCollapsing = doAnimate;
             }
-            return record.expand(deep, callback, scope);
+
+            // Need to suspend layouts because the expand process makes multiple changes to the UI
+            // in addition to inserting new nodes. Folder and elbow images have to change, so we
+            // need to coalesce all resulting layouts.
+            Ext.suspendLayouts();
+            result = record.expand(deep, callback, scope);
+            Ext.resumeLayouts(true);
+            return result;
         }
     },
 
@@ -782,9 +792,7 @@ Ext.define('Ext.tree.View', {
         me.mon(treeStore, {
             scope: me,
             beforefill: me.onBeforeFill,
-            fillcomplete: me.onFillComplete,
-            beforebulkremove: me.beginBulkUpdate,
-            bulkremovecomplete: me.endBulkUpdate
+            fillcomplete: me.onFillComplete
         });
 
         if (!treeStore.remoteSort) {
@@ -807,9 +815,7 @@ Ext.define('Ext.tree.View', {
         me.mun(treeStore, {
             scope: me,
             beforefill: me.onBeforeFill,
-            fillcomplete: me.onFillComplete,
-            beforebulkremove: me.beginBulkUpdate,
-            bulkremovecomplete: me.endBulkUpdate
+            fillcomplete: me.onFillComplete
         });
 
         if (!treeStore.remoteSort) {
@@ -839,7 +845,7 @@ Ext.define('Ext.tree.View', {
         }
     },
 
-    shouldUpdateCell: function(column, changedFieldNames){
+    shouldUpdateCell: function(record, column, changedFieldNames){
         if (changedFieldNames) {
             var i = 0,
                 len = changedFieldNames.length;

@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * @author Ed Spencer, Tommy Maintz, Brian Moeskau
  *
@@ -308,8 +328,9 @@ Ext.define('Ext.tab.Panel', {
     requires: ['Ext.layout.container.Card', 'Ext.tab.Bar'],
 
     /**
-     * @cfg {"top"/"bottom"} tabPosition
-     * The position where the tab strip should be rendered. Can be `top` or `bottom`.
+     * @cfg {"top"/"bottom"/"left"/"right"} tabPosition
+     * The position where the tab strip should be rendered. Can be `top`, `bottom`,
+     * `left` or `right`
      */
     tabPosition : 'top',
 
@@ -385,23 +406,25 @@ Ext.define('Ext.tab.Panel', {
     initComponent: function() {
         var me = this,
             dockedItems = [].concat(me.dockedItems || []),
-            activeTab = me.activeTab || (me.activeTab = 0);
+            activeTab = me.activeTab || (me.activeTab = 0),
+            tabPosition = me.tabPosition;
 
         // Configure the layout with our deferredRender, and with our activeTeb
         me.layout = new Ext.layout.container.Card(Ext.apply({
             owner: me,
             deferredRender: me.deferredRender,
             itemCls: me.itemCls,
-            activeItem: me.activeTab
+            activeItem: activeTab
         }, me.layout));
 
         /**
          * @property {Ext.tab.Bar} tabBar Internal reference to the docked TabBar
          */
         me.tabBar = new Ext.tab.Bar(Ext.apply({
+            ui: me.ui,
             dock: me.tabPosition,
+            orientation: (tabPosition == 'top' || tabPosition == 'bottom') ? 'horizontal' : 'vertical',
             plain: me.plain,
-            border: me.border,
             cardLayout: me.layout,
             tabPanel: me
         }, me.tabBar));
@@ -433,14 +456,11 @@ Ext.define('Ext.tab.Panel', {
         me.callParent(arguments);
 
         // We have to convert the numeric index/string ID config into its component reference
-        me.activeTab = me.getComponent(activeTab);
+        activeTab = me.activeTab = me.getComponent(activeTab);
 
         // Ensure that the active child's tab is rendered in the active UI state
-        if (me.activeTab) {
-            me.activeTab.tab.activate(true);
-
-            // So that it knows what to deactivate in subsequent tab changes 
-            me.tabBar.activeTab = me.activeTab.tab;
+        if (activeTab) {
+        	me.tabBar.setActiveTab(activeTab.tab, true);
         }
     },
 
@@ -539,12 +559,14 @@ Ext.define('Ext.tab.Panel', {
             cfg = item.tabConfig || {},
             defaultConfig = {
                 xtype: 'tab',
+                ui: me.tabBar.ui,
                 card: item,
                 disabled: item.disabled,
                 closable: item.closable,
                 hidden: item.hidden && !item.hiddenByLayout, // only hide if it wasn't hidden by the layout itself
                 tooltip: item.tooltip,
                 tabBar: me.tabBar,
+                position: me.tabPosition,
                 closeText: item.closeText
             };
 

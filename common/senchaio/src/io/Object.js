@@ -1,7 +1,29 @@
 /**
  * @private
  *
- * An Object... but a special one.
+ * This is a base class for all the naming service objects.
+ *
+ * Each object is an instance of a class, which here in the Javascript SDK,
+ * is created with Ext.define. So, for example a User object would be an
+ * instance of the Ext.io.User class.
+ *
+ * Each object is identified by an id, which is provided by the server when
+ * the object is first created.
+ *
+ * Each object contains a set of attribute values, which we call its data.
+ * Note that one of its attributes is its id.
+ *
+ * Each class of naming service object has relationships with other classes,
+ * so all objects have references to other objects in the system. The objects
+ * exist in a fully connected graph. Within the object are a set of related
+ * ids which can be navigated through to get to its related objects.
+ *
+ * When an object is fetched from the server it is always done so in a context.
+ * The context includes the identify of the requestor, which is always a 
+ * specific Device, but could also be a User, or a Developer. The system
+ * maintains access control lists which define who can perform which actions
+ * against which objects. So when an object is returned from the server it
+ * will include a set of actions that the requestor can perform.
  * 
  */
 
@@ -50,7 +72,7 @@ Ext.define('Ext.io.Object', {
                             var self= this;
                             namingRpc.get(function(result) {
                                 if(result.status == "success") {
-                                    callback.call(scope, self.objectFactory(result.value),undefined, result.value);
+                                    callback.call(scope, self.createObject(result.value), undefined, result.value);
                                 } else {
                                     callback.call(scope, undefined, result.error);
                                 }
@@ -75,7 +97,7 @@ Ext.define('Ext.io.Object', {
             var cacheKey = [this.$className, key];
             var objConf = configStore.getObjectConfig(cacheKey);
             if(objConf){
-                callback.call(scope,this.objectFactory(objConf));
+                callback.call(scope,this.createObject(objConf));
             } else {
                 var cb = function(obj, err, conf) {
                     if(obj){
@@ -93,14 +115,12 @@ Ext.define('Ext.io.Object', {
             configStore.setObjectConfig(cacheKey,conf);
         },
         
-        
-        
         /**
          *@private
-         * returns an instance of an object of type this.$className for given conf.
+         * returns an instance of an object of type klass or this.$className for given config.
          */
-        objectFactory: function(conf){
-           return Ext.create(this.$className, {id:conf._key, data:conf.data});
+        createObject: function(config,klass){
+            return Ext.create(klass||this.$className, {id:config._key, data:config.data, allowedActions:config.allowedActions});
         }, 
         
         /**
@@ -108,9 +128,9 @@ Ext.define('Ext.io.Object', {
         * Removes the cached object form the store.
         */
         removeCachedObject: function(key){
-                var configStore = Ext.io.Io.getConfigStore();
-                var cacheKey = [this.$className, key];
-                var objConf = configStore.remove(cacheKey);
+            var configStore = Ext.io.Io.getConfigStore();
+            var cacheKey = [this.$className, key];
+            var objConf = configStore.remove(cacheKey);
         },
 
         /**
@@ -130,6 +150,7 @@ Ext.define('Ext.io.Object', {
          *
          */
         findObjects: function(query, start, rows, callback, scope) {
+            var self= this;
             Ext.io.Io.getMessagingProxy(function(messaging){
                 messaging.getService(
                     {name: "NamingRpcService"},
@@ -140,7 +161,7 @@ Ext.define('Ext.io.Object', {
                                 if(result.status == "success") {
                                     var objects = [];
                                     for(var i = 0; i < result.value.length; i++) {
-                                        objects.push(Ext.create(self.$className, {id:result.value[i]._key, data:result.value[i].data}));
+                                        objects.push(self.createObject(result.value[i]));
                                     }
                                     callback.call(scope, objects);
                                 } else {
@@ -160,7 +181,8 @@ Ext.define('Ext.io.Object', {
 
     config: {
         id: null,
-        data: null
+        data: null,
+        allowedActions: null
     },
 
     /**
@@ -175,6 +197,14 @@ Ext.define('Ext.io.Object', {
             this.setId(config._key);
         }
     },
+
+    /**
+     *@private
+     * returns an instance of an object of type klass or this.$className for given config.
+     */
+    createObject: function(config,klass){
+        return Ext.create(klass||this.$className, {id:config._key, data:config.data, allowedActions:config.allowedActions});
+    }, 
 
     /**
      *
@@ -265,9 +295,9 @@ Ext.define('Ext.io.Object', {
     * Removes the config for this object from persistant cache.
     */
     removeCached: function(){
-            var configStore = Ext.io.Io.getConfigStore();
-            var cacheKey = [this.$className, this.getId()];
-            var objConf = configStore.remove(cacheKey);
+        var configStore = Ext.io.Io.getConfigStore();
+        var cacheKey = [this.$className, this.getId()];
+        var objConf = configStore.remove(cacheKey);
     },
 
 
@@ -321,6 +351,7 @@ Ext.define('Ext.io.Object', {
      * 
      */
     createRelatedObject: function(method, klass, data, callback, scope) {
+        var self= this;
         Ext.io.Io.getMessagingProxy(function(messaging){
             messaging.getService(
                 {name: "NamingRpcService"},
@@ -328,7 +359,7 @@ Ext.define('Ext.io.Object', {
                     if(namingRpc){
                         namingRpc.createRelatedObject(function(result) {
                             if(result.status == "success") {
-                                var object = Ext.create(klass, {id:result.value._key, data:result.value.data});
+                                var object = self.createObject(result.value,klass);
                                 callback.call(scope, object);
                             } else {
                                 callback.call(scope, undefined, result.error);
@@ -360,6 +391,7 @@ Ext.define('Ext.io.Object', {
      * 
      */
     getRelatedObject: function(klass, key, tag, callback, scope) {
+        var self= this;
         Ext.io.Io.getMessagingProxy(function(messaging){
             messaging.getService(
                 {name: "NamingRpcService"},
@@ -369,7 +401,7 @@ Ext.define('Ext.io.Object', {
                             if(result.status == "success") {
                                 var object = null;
                                 if(result.value && result.value !== null) { // it's possible there is no linked object
-                                    object = Ext.create(klass, {id:result.value._key, data:result.value.data});
+                                    object = self.createObject(result.value, klass);
                                 }
                                 callback.call(scope, object);
                             } else {
@@ -401,6 +433,7 @@ Ext.define('Ext.io.Object', {
      * 
      */
     getRelatedObjects: function(klass, tag, callback, scope) {
+        var self= this;
         Ext.io.Io.getMessagingProxy(function(messaging){
             messaging.getService(
                 {name: "NamingRpcService"},
@@ -410,7 +443,7 @@ Ext.define('Ext.io.Object', {
                             if(result.status == "success") {
                                 var objects = [];
                                 for(var i = 0; i < result.value.length; i++) {
-                                    objects.push(Ext.create(klass, {id:result.value[i]._key, data:result.value[i].data}));
+                                    objects.push(self.createObject(result.value[i],klass));
                                 }
                                 callback.call(scope, objects);
                             } else {
@@ -444,6 +477,7 @@ Ext.define('Ext.io.Object', {
      * 
      */
     findRelatedObjects: function(klass, key, tag, query, callback, scope) {
+        var self= this;
         Ext.io.Io.getMessagingProxy(function(messaging){
             messaging.getService(
                 {name: "NamingRpcService"},
@@ -453,7 +487,7 @@ Ext.define('Ext.io.Object', {
                             if(result.status == "success") {
                                 var objects = [];
                                 for(var i = 0; i < result.value.length; i++) {
-                                    objects.push(Ext.create(klass, {id:result.value[i]._key, data:result.value[i].data}));
+                                    objects.push(self.createObject(result.value[i],klass));
                                 }
                                 callback.call(scope, objects);
                             } else {

@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * Node Store
  * @private
@@ -96,6 +116,7 @@ Ext.define('Ext.data.NodeStore', {
                 collapse: me.onNodeCollapse,
                 append: me.onNodeAppend,
                 insert: me.onNodeInsert,
+                bulkremove: me.onBulkRemove,
                 remove: me.onNodeRemove,
                 sort: me.onNodeSort,
                 scope: me
@@ -117,6 +138,7 @@ Ext.define('Ext.data.NodeStore', {
                 collapse: me.onNodeCollapse,
                 append: me.onNodeAppend,
                 insert: me.onNodeInsert,
+                bulkremove: me.onBulkRemove,
                 remove: me.onNodeRemove,
                 sort: me.onNodeSort,
                 scope: me
@@ -207,23 +229,28 @@ Ext.define('Ext.data.NodeStore', {
             }
         }
     },
+    
+    // Triggered by NodeInterface's bubbled bulkremove event
+    onBulkRemove: function(parent, childNodes, isMove) {
+        this.onNodeCollapse(parent, childNodes, true);
+    },
 
     // Triggered by a NodeInterface's bubbled "collapse" event.
-    onNodeCollapse: function(parent, records, suppressEvent) {
+    onNodeCollapse: function(parent, records, suppressEvent, callback, scope) {
         var me = this,
             collapseIndex = me.indexOf(parent) + 1,
-            lastNodeIndexPlus;
+            node, lastNodeIndexPlus, sibling, found;
 
         if (!me.recursive && parent !== me.node) {
             return;
         }
 
-        // Used by the TreeView to bracket recursive expand & collapse ops
-        // and refresh the size. This is most effective when folder nodes are loaded,
-        // and this method is able to recurse.
-        // Also sets up the animWrap object if we are animating.
+        // Used by the TreeView to bracket recursive expand & collapse ops.
+        // The TreeViewsets up the animWrap object if we are animating.
+        // It also caches the collapse callback to call when it receives the
+        // end collapse event. See below.
         if (!suppressEvent) {
-            me.fireEvent('beforecollapse', parent, records, collapseIndex);
+            me.fireEvent('beforecollapse', parent, records, collapseIndex, callback, scope);
         }
 
         // Only attempt to remove the records if they are there.
@@ -231,8 +258,24 @@ Ext.define('Ext.data.NodeStore', {
         // But if the collapse was recursive, all descendant root nodes will still fire their
         // events. But we must ignore those events here - we have nothing to do.
         if (records.length && me.data.contains(records[0])) {
+            
             // Calculate the index *one beyond* the last node we are going to remove
-            lastNodeIndexPlus = parent.nextSibling ? me.indexOf(parent.nextSibling) : me.getCount();
+            // Need to loop up the tree to find the nearest view sibling, since it could
+            // exist at some level above the current node.
+            node = parent;
+            while (node.parentNode) {
+                sibling = node.nextSibling;
+                if (sibling) {
+                    found = true;
+                    lastNodeIndexPlus = me.indexOf(sibling); 
+                    break;
+                } else {
+                    node = node.parentNode;
+                }
+            }
+            if (!found) {
+                lastNodeIndexPlus = me.getCount();
+            }
 
             // Remove the whole collapsed node set.
             me.removeAt(collapseIndex, lastNodeIndexPlus - collapseIndex);
@@ -265,8 +308,11 @@ Ext.define('Ext.data.NodeStore', {
                 if (node.isLoaded()) {
                     // Take a shortcut
                     me.onNodeExpand(node, node.childNodes, true);
-                }
-                else {
+                } else if (!me.treeStore.fillCount ) {
+                    // If the node has been marked as expanded, it means the children
+                    // should be provided as part of the raw data. If we're filling the nodes,
+                    // the children may not have been loaded yet, so only do this if we're
+                    // not in the middle of populating the nodes.
                     node.set('expanded', false);
                     node.expand();
                 }
@@ -296,8 +342,19 @@ Ext.define('Ext.data.NodeStore', {
     onNodeRemove: function(parent, node, isMove) {
         var me = this;
         if (me.indexOf(node) != -1) {
+
+            // If the removed node is a non-leaf and is expanded, use the onCollapse method to get rid
+            // of all descendants at any level.
             if (!node.isLeaf() && node.isExpanded()) {
+
+                // onCollapse expects to be able to use the "collapsing" node's parentNode
+                // and nextSibling pointers so temporarily reinstate them.
+                // Reinstating them is safe because we pass the suppressEvents flag, and no user code
+                // is executed.
+                node.parentNode = node.removeContext.parentNode;
+                node.nextSibling = node.removeContext.nextSibling;
                 me.onNodeCollapse(node, node.childNodes, true);
+                node.parentNode = node.nextSibling = null;
             }
             me.remove(node);
         }

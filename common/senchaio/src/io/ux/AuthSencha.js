@@ -109,7 +109,7 @@ Ext.define("Ext.io.ux.AuthSencha", {
                     },
                     {
                         xtype: 'passwordfield',
-                        placeHolder: Ext.io.ux.Strings.LABEL_PASSWORD,
+                        placeHolder: "Password",
                         name: 'password'
                     },
                     {

@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * The TreePanel provides tree-structured UI representation of tree-structured data.
  * A TreePanel must be bound to a {@link Ext.data.TreeStore}. TreePanel's support
@@ -13,7 +33,7 @@
  *                 { text: "detention", leaf: true },
  *                 { text: "homework", expanded: true, children: [
  *                     { text: "book report", leaf: true },
- *                     { text: "alegrbra", leaf: true}
+ *                     { text: "algebra", leaf: true}
  *                 ] },
  *                 { text: "buy lottery tickets", leaf: true }
  *             ]
@@ -141,7 +161,7 @@ Ext.define('Ext.tree.Panel', {
     constructor: function(config) {
         config = config || {};
         if (config.animate === undefined) {
-            config.animate = Ext.isDefined(this.animate) ? this.animate : Ext.enableFx;
+            config.animate = Ext.isBoolean(this.animate) ? this.animate : Ext.enableFx;
         }
         this.enableAnimations = config.animate;
         delete config.animate;
@@ -224,31 +244,36 @@ Ext.define('Ext.tree.Panel', {
 
         view = me.getView();
 
+        // Relay events from the TreeView.
+        // An injected LockingView relays events from its locked side's View
         me.relayEvents(view, [
             /**
-             * @event checkchange
-             * Fires when a node with a checkbox's checked property changes
-             * @param {Ext.data.NodeInterface} node The node who's checked property was changed
-             * @param {Boolean} checked The node's new checked state
-             */
+            * @event checkchange
+            * Fires when a node with a checkbox's checked property changes
+            * @param {Ext.data.NodeInterface} node The node who's checked property was changed
+            * @param {Boolean} checked The node's new checked state
+            */
             'checkchange',
             /**
-             * @event afteritemexpand
-             * @inheritdoc Ext.tree.View#afteritemexpand
-             */
+            * @event afteritemexpand
+            * @inheritdoc Ext.tree.View#afteritemexpand
+            */
             'afteritemexpand',
             /**
-             * @event afteritemcollapse
-             * @inheritdoc Ext.tree.View#afteritemcollapse
-             */
+            * @event afteritemcollapse
+            * @inheritdoc Ext.tree.View#afteritemcollapse
+            */
             'afteritemcollapse'
         ]);
 
-        // If the root is not visible and there is no rootnode defined, then just lets load the store
-        if (!view.rootVisible && !me.getRootNode()) {
-            me.setRootNode({
-                expanded: true
-            });
+        // If there has been a LockingView injected, this processing will be performed by the locked TreePanel
+        if (!view.isLockingView) {
+            // If the root is not visible and there is no rootnode defined, then just lets load the store
+            if (!view.rootVisible && !me.getRootNode()) {
+                me.setRootNode({
+                    expanded: true
+                });
+            }
         }
     },
 
@@ -256,19 +281,22 @@ Ext.define('Ext.tree.Panel', {
     // Hook into the TreeStore.
     // Do not callParent in TreePanel's bindStore
     // The TreeStore is only relevant to the tree - the View has its own NodeStore
-    bindStore: function(store) {
+    bindStore: function(store, initial) {
         var me = this;
 
         me.store = store;
-        me.mon(store, {
+
+        // Connect to store. Return a Destroyable object
+        me.storeListeners = me.mon(store, {
+            destroyable: true,
             load: me.onStoreLoad,
             rootchange: me.onRootChange,
             clear: me.onClear,
             scope: me
         });
 
-        // TODO: implement unbind properly when destroyable listeners available
-        me.relayEvents(store, [
+        // Relay store events. relayEvents always returns a Destroyable object.
+        me.storeRelayers = me.relayEvents(store, [
             /**
              * @event beforeload
              * @inheritdoc Ext.data.TreeStore#beforeload
@@ -282,8 +310,10 @@ Ext.define('Ext.tree.Panel', {
             'load'
         ]);
 
-        // TODO: implement unbind properly when destroyable listeners available
-        me.mon(store, {
+        // Relay store events with prefix. Return a Destroyable object
+        me.storeRelayers1 = me.mon(store, {
+            destroyable: true,
+
             /**
              * @event itemappend
              * @inheritdoc Ext.data.TreeStore#append
@@ -359,6 +389,10 @@ Ext.define('Ext.tree.Panel', {
 
         // TreeStore must have an upward link to the TreePanel so that nodes can find their owning tree in NodeInterface.getOwnerTree
         store.ownerTree = me;
+        
+        if (!initial) {
+            me.view.setRootNode(me.getRootNode());
+        }
     },
 
     // @private
@@ -368,12 +402,7 @@ Ext.define('Ext.tree.Panel', {
             store = me.store;
 
         if (store) {
-            me.mun(store, {
-                load: me.onStoreLoad,
-                rootchange: me.onRootChange,
-                clear: me.onClear,
-                scope: me
-            });
+            Ext.destroy(me.storeListeners, me.storeRelayers, me.storeRelayers1);
             delete store.ownerTree;
         }
     },
@@ -445,15 +474,14 @@ Ext.define('Ext.tree.Panel', {
     expandAll : function(callback, scope) {
         var me = this,
             root = me.getRootNode(),
-            animate = me.enableAnimations,
-            view = me.getView();
+            animate = me.enableAnimations;
         if (root) {
             if (!animate) {
-                view.beginBulkUpdate();
+                Ext.suspendLayouts();
             }
             root.expand(true, callback, scope || me);
             if (!animate) {
-                view.endBulkUpdate();
+                Ext.resumeLayouts(true);
             }
         }
     },
@@ -471,7 +499,7 @@ Ext.define('Ext.tree.Panel', {
 
         if (root) {
             if (!animate) {
-                view.beginBulkUpdate();
+                Ext.suspendLayouts();
             }
             scope = scope || me;
             if (view.rootVisible) {
@@ -480,7 +508,7 @@ Ext.define('Ext.tree.Panel', {
                 root.collapseChildren(true, callback, scope);
             }
             if (!animate) {
-                view.endBulkUpdate();
+                Ext.resumeLayouts(true);
             }
         }
     },

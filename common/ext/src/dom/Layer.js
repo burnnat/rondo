@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * An extended {@link Ext.Element} object that supports a shadow and shim, constrain to viewport and
  * automatic maintaining of shadow/shim positions.
@@ -91,7 +111,8 @@ Ext.define('Ext.dom.Layer', {
             dh = Ext.DomHelper,
             cp = config.parentEl,
             pel = cp ? Ext.getDom(cp) : document.body,
-        hm = config.hideMode;
+            hm = config.hideMode,
+            cls = Ext.baseCSSPrefix + (config.fixed && !(Ext.isIE6 || Ext.isIEQuirks) ? 'fixed-layer' : 'layer');
 
         // set an "el" property that references "this".  This allows
         // Ext.util.Positionable methods to operate on this.el.dom since it
@@ -104,13 +125,17 @@ Ext.define('Ext.dom.Layer', {
         if (!me.dom) {
             me.dom = dh.append(pel, config.dh || {
                 tag: 'div',
-                cls: Ext.baseCSSPrefix + 'layer' // primarily to give el 'position:absolute'
+                cls: cls // primarily to give el 'position:absolute' or, if fixed, 'position:fixed'
             });
         } else {
-            me.addCls(Ext.baseCSSPrefix + 'layer');
+            me.addCls(cls);
             if (!me.dom.parentNode) {
                 pel.appendChild(me.dom);
             }
+        }
+        
+        if (config.preventSync) {
+            me.preventSync = true;
         }
 
         if (config.id) {
@@ -144,7 +169,8 @@ Ext.define('Ext.dom.Layer', {
             me.shadowOffset = config.shadowOffset || 4;
             me.shadow = new Ext.Shadow({
                 offset: me.shadowOffset,
-                mode: config.shadow
+                mode: config.shadow,
+                fixed: config.fixed
             });
             me.disableShadow();
         } else {
@@ -234,6 +260,10 @@ Ext.define('Ext.dom.Layer', {
             shadow = me.shadow,
             shadowPos, shimStyle, shadowSize,
             shim, xy, x, y, w, h, shimIndex;
+            
+        if (me.preventSync) {
+            return;
+        }
 
         if (!me.updating && me.isVisible() && (shadow || me.useShim)) {
             shim = me.getShim();

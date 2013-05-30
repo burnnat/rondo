@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * A menu item that contains a togglable checkbox by default, but that can also be a part of a radio group.
  *
@@ -94,19 +114,27 @@ Ext.define('Ext.menu.CheckItem', {
         '<tpl else>',
             '{%var showCheckbox = values.showCheckbox,',
             '      rightCheckbox = showCheckbox && values.hasIcon && (values.iconAlign !== "left"), textCls = rightCheckbox ? "' + Ext.baseCSSPrefix + 'right-check-item-text" : "";%}',
-            '<a id="{id}-itemEl" class="' + Ext.baseCSSPrefix + 'menu-item-link<tpl if="childElCls"> {childElCls}</tpl>" href="{href}" <tpl if="hrefTarget">target="{hrefTarget}"</tpl> hidefocus="true" unselectable="on">',
+            '<a id="{id}-itemEl" class="' + Ext.baseCSSPrefix + 'menu-item-link{childElCls}" href="{href}" <tpl if="hrefTarget">target="{hrefTarget}"</tpl> hidefocus="true" unselectable="on"',
+                '<tpl if="tabIndex">',
+                    ' tabIndex="{tabIndex}"',
+                '</tpl>',
+            '>',
                 '{%if (values.hasIcon && (values.iconAlign !== "left")) {%}',
-                    '<img id="{id}-iconEl" src="{icon}" class="' + Ext.baseCSSPrefix + 'menu-item-icon {iconCls}<tpl if="childElCls"> {childElCls}</tpl>" />',
+                    '<div role="img" id="{id}-iconEl" class="' + Ext.baseCSSPrefix + 'menu-item-icon {iconCls}',
+                        '{childElCls} {glyphCls}" style="<tpl if="icon">background-image:url({icon});</tpl>',
+                        '<tpl if="glyph && glyphFontFamily">font-family:{glyphFontFamily};</tpl>">',
+                        '<tpl if="glyph">&#{glyph};</tpl>',
+                    '</div>',
                 '{%} else if (showCheckbox){%}',
-                    '<img id="{id}-checkEl" src="{blank}" class="' + Ext.baseCSSPrefix + 'menu-item-icon<tpl if="childElCls"> {childElCls}</tpl>" />',
+                    '<img id="{id}-checkEl" src="{blank}" class="' + Ext.baseCSSPrefix + 'menu-item-icon{childElCls}" />',
                 '{%}%}',
-                '<span id="{id}-textEl" class="' + Ext.baseCSSPrefix + 'menu-item-text {[textCls]}" <tpl if="arrowCls">style="margin-right: 17px;"</tpl> >{text}</span>',
+                '<span id="{id}-textEl" class="' + Ext.baseCSSPrefix + 'menu-item-text {[textCls]}{childElCls}" <tpl if="arrowCls">style="margin-right: 17px;"</tpl> >{text}</span>',
 
                 // CheckItem with an icon puts the icon on the right unless iconAlign=='left'
                 '{%if (rightCheckbox) {%}',
-                    '<img id="{id}-checkEl" src="{blank}" class="' + Ext.baseCSSPrefix + 'menu-item-icon-right<tpl if="childElCls"> {childElCls}</tpl>" />',
+                    '<img id="{id}-checkEl" src="{blank}" class="' + Ext.baseCSSPrefix + 'menu-item-icon-right{childElCls}" />',
                 '{%} else if (values.arrowCls) {%}',
-                    '<img id="{id}-arrowEl" src="{blank}" class="{arrowCls}<tpl if="childElCls"> {childElCls}</tpl>" />',
+                    '<img id="{id}-arrowEl" src="{blank}" class="{arrowCls}{childElCls}"/>',
                 '{%}%}',
             '</a>',
         '</tpl>'
@@ -140,8 +168,8 @@ Ext.define('Ext.menu.CheckItem', {
         Ext.menu.Manager.registerCheckable(me);
 
         if (me.group) {
-            me.showCheckbox = false;
-            if (!me.iconCls) {
+            me.showCheckbox = false
+            if (!(me.iconCls || me.icon || me.glyph)) {
                 me.iconCls = me.groupCls;
             }
             if (me.initialConfig.hideOnClick !== false) {

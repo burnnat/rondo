@@ -35,11 +35,9 @@ Ext.define('Ext.io.App', {
         *  Called on bootup by Io with the current group data.
         * 
         */
-        setCurrent: function(appConfig){
-             this._currentApp = Ext.create("Ext.io.App", {id:appConfig._key, data:appConfig.data});
+        setCurrent: function(config){
+            this._currentApp = this.createObject(config);
         },
-        
-        
 
         /**
          * @static
@@ -288,7 +286,7 @@ Ext.define('Ext.io.App', {
                             if(result.status == "success") {
                                 var object = null;
                                 if(result.value && result.value !== null) {
-                                    object = Ext.create(Ext.io.Version, {id:result.value._key, data:result.value.data});
+                                    object = self.createObject(result.value, Ext.io.Version);
                                 }
                                 callback.call(scope, object);
                             } else {

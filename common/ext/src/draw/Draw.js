@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * @class Ext.draw.Draw
  * Base Drawing class.  Provides base drawing functions.
@@ -491,7 +511,7 @@ Ext.define('Ext.draw.Draw', {
             msqrt = math.sqrt,
             mabs = math.abs,
             masin = math.asin,
-            xy, cos, sin, x, y, h, rx2, ry2, k, cx, cy, f1, f2, df, c1, s1, c2, s2,
+            xy, x, y, h, rx2, ry2, k, cx, cy, f1, f2, df, c1, s1, c2, s2,
             t, hx, hy, m1, m2, m3, m4, newres, i, ln, f2old, x2old, y2old;
         if (!recursive) {
             xy = me.rotate(x1, y1, -rad);
@@ -500,8 +520,6 @@ Ext.define('Ext.draw.Draw', {
             xy = me.rotate(x2, y2, -rad);
             x2 = xy.x;
             y2 = xy.y;
-            cos = mcos(radian * angle);
-            sin = msin(radian * angle);
             x = (x1 - x2) / 2;
             y = (y1 - y2) / 2;
             h = (x * x) / (rx * rx) + (y * y) / (ry * ry);
@@ -703,7 +721,7 @@ Ext.define('Ext.draw.Draw', {
             ln = clipPolygon.length,
             cp1 = clipPolygon[ln - 1],
             outputList = subjectPolygon,
-            cp2, s, e, point, ln2, inputList, j;
+            cp2, s, e, ln2, inputList, j;
         for (; i < ln; ++i) {
             cp2 = clipPolygon[i];
             inputList = outputList;
@@ -911,8 +929,6 @@ Ext.define('Ext.draw.Draw', {
             beg = 1,
             mx = x,
             my = y,
-            cx = 0,
-            cy = 0,
             pathi,
             pathil,
             pathim,
@@ -935,8 +951,6 @@ Ext.define('Ext.draw.Draw', {
                 while (path[j][0] != "C") {
                     j++;
                 }
-                cx = path[j][5];
-                cy = path[j][6];
                 newp.push(["M", mx, my]);
                 beg = newp.length;
                 x = mx;
@@ -1139,7 +1153,7 @@ Ext.define('Ext.draw.Draw', {
     snapEndsByDateAndStep: function(from, to, step, lockEnds) {
         var fromStat = [from.getFullYear(), from.getMonth(), from.getDate(),
                 from.getHours(), from.getMinutes(), from.getSeconds(), from.getMilliseconds()],
-            steps, testFrom, testTo, date, month, day, fractionalMonth,
+            steps, testFrom, testTo, date, year, month, day, fractionalMonth,
             stepUnit = step[0], stepValue = step[1];
         if (lockEnds) {
             testFrom = from;

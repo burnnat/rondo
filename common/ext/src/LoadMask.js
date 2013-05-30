@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * A modal, floating Component which may be shown above a specified {@link Ext.Component Component} while loading data.
  * When shown, the configured owning Component will be covered with a modality mask, and the LoadMask's {@link #msg} will be
@@ -85,9 +105,9 @@ Ext.define('Ext.LoadMask', {
 
     renderTpl: [
         '<div id="{id}-msgEl" class="{[values.$comp.msgCls]} ',
-            Ext.baseCSSPrefix, 'mask-msg-inner<tpl if="childElCls"> {childElCls}</tpl>">',
+            Ext.baseCSSPrefix, 'mask-msg-inner{childElCls}">',
             '<div id="{id}-msgTextEl" class="', Ext.baseCSSPrefix ,'mask-msg-text',
-                '<tpl if="childElCls"> {childElCls}</tpl>"></div>',
+                '{childElCls}"></div>',
         '</div>'
     ],
 
@@ -305,7 +325,6 @@ Ext.define('Ext.LoadMask', {
         if (!store.proxy.isSynchronous) {
             result.beforeLoad = beforeLoad;
             result.load = load;
-            result.prefech = load;
         }
         return result;
     },

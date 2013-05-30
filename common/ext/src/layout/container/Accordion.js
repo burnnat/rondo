@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * This is a layout that manages multiple Panels in an expandable accordion style such that by default only
  * one Panel can be expanded at any given time (set {@link #multi} config to have more open). Each Panel has
@@ -39,6 +59,7 @@ Ext.define('Ext.layout.container.Accordion', {
     alias: ['layout.accordion'],
     alternateClassName: 'Ext.layout.AccordionLayout',
 
+    targetCls: Ext.baseCSSPrefix + 'accordion-layout-ct',
     itemCls: [Ext.baseCSSPrefix + 'box-item', Ext.baseCSSPrefix + 'accordion-item'],
 
     align: 'stretch',
@@ -60,7 +81,8 @@ Ext.define('Ext.layout.container.Accordion', {
      * @cfg {Boolean} titleCollapse
      * True to allow expand/collapse of each contained panel by clicking anywhere on the title bar, false to allow
      * expand/collapse only when the toggle tool button is clicked.  When set to false,
-     * {@link #hideCollapseTool} should be false also.
+     * {@link #hideCollapseTool} should be false also. An explicit {@link Ext.panel.Panel#titleCollapse} declared
+     * on the panel will override this setting.
      */
     titleCollapse : true,
 
@@ -144,7 +166,9 @@ Ext.define('Ext.layout.container.Accordion', {
                     if (me.hideCollapseTool) {
                         comp.hideCollapseTool = me.hideCollapseTool;
                         comp.titleCollapse = true;
-                    } else if (me.titleCollapse) {
+                    } else if (me.titleCollapse && comp.titleCollapse === undefined) {
+                        // Only force titleCollapse if we don't explicitly
+                        // set one on the child panel
                         comp.titleCollapse = me.titleCollapse;
                     }
                 }
@@ -170,18 +194,14 @@ Ext.define('Ext.layout.container.Accordion', {
                     owner.mon(comp, {
                         show: me.onComponentShow,
                         beforeexpand: me.onComponentExpand,
-                        scope: me
-                    });
-                }
-
-                // If we must fill available space, a collapse must be listened for and a sibling must
-                // be expanded.
-                if (me.fill) {
-                    owner.mon(comp, {
                         beforecollapse: me.onComponentCollapse,
                         scope: me
                     });
                 }
+                // Need to still check this outside multi because we don't want
+                // a single item to be able to collapse
+                owner.mon(comp, 'beforecollapse', me.onComponentCollapse, me);
+                comp.headerOverCls = Ext.baseCSSPrefix + 'accordion-hd-over';
             }
         }
 
@@ -223,10 +243,6 @@ Ext.define('Ext.layout.container.Accordion', {
         if (this.fill) {
             item.flex = 1;
         }
-    },
-
-    onChildPanelRender: function(panel) {
-        panel.header.addCls(Ext.baseCSSPrefix + 'accordion-hd');
     },
 
     beginLayout: function (ownerContext) {

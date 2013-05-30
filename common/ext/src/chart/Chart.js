@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * Charts provide a flexible way to achieve a wide range of data visualization capablitities.
  * Each Chart gets its data directly from a {@link Ext.data.Store Store}, and automatically
@@ -132,16 +152,12 @@
  * 
  * {@img Ext.chart.Chart/Ext.chart.Chart3.png Green Theme}
  * 
- * For more information on Charts please refer to the [Drawing and Charting Guide](#/guide/drawing_and_charting).
- * 
+ * For more information on Charts please refer to the [Charting Guide](#/guide/charting).
  */
 Ext.define('Ext.chart.Chart', {
-
-    /* Begin Definitions */
+    extend: 'Ext.draw.Component',
 
     alias: 'widget.chart',
-
-    extend: 'Ext.draw.Component',
     
     mixins: {
         themeManager: 'Ext.chart.theme.Theme',
@@ -873,36 +889,41 @@ Ext.define('Ext.chart.Chart', {
 
 
     /**
-     * @private Adjust the dimensions and positions of each axis and the chart body area after accounting
-     * for the space taken up on each side by the axes and legend.
+     * @private Get initial insets; override to provide different defaults.
      */
-    alignAxes: function() {
+    getInsets: function() {
         var me = this,
-            axes = me.axes,
-            axesItems = axes.items,
-            axis,
+            insetPadding = me.insetPadding;
+
+        return {
+            top: insetPadding,
+            right: insetPadding,
+            bottom: insetPadding,
+            left: insetPadding
+        };
+    },
+
+    /**
+     * @private Calculate insets for the Chart.
+     */
+    calculateInsets: function() {
+        var me = this,
             legend = me.legend,
+            axes = me.axes,
             edges = ['top', 'right', 'bottom', 'left'],
-            edge,
-            i, ln,
-            chartBBox,
-            insetPadding = me.insetPadding,
-            insets = {
-                top: insetPadding,
-                right: insetPadding,
-                bottom: insetPadding,
-                left: insetPadding
-            },
-            isVertical, bbox, pos;
+            insets, i, l, edge, isVertical, axis, bbox;
 
         function getAxis(edge) {
             var i = axes.findIndex('position', edge);
             return (i < 0) ? null : axes.getAt(i);
         }
+        
+        insets = me.getInsets();
 
         // Find the space needed by axes and legend as a positive inset from each edge
-        for (i = 0, ln = edges.length; i < ln; i++) {
+        for (i = 0, l = edges.length; i < l; i++) {
             edge = edges[i];
+            
             isVertical = (edge === 'left' || edge === 'right');
             axis = getAxis(edge);
 
@@ -910,7 +931,7 @@ Ext.define('Ext.chart.Chart', {
             if (legend !== false) {
                 if (legend.position === edge) {
                     bbox = legend.getBBox();
-                    insets[edge] += (isVertical ? bbox.width : bbox.height) + insets[edge];
+                    insets[edge] += (isVertical ? bbox.width : bbox.height) + me.insetPadding;
                 }
             }
 
@@ -920,7 +941,23 @@ Ext.define('Ext.chart.Chart', {
                 bbox = axis.bbox;
                 insets[edge] += (isVertical ? bbox.width : bbox.height);
             }
-        }
+        };
+        
+        return insets;
+    },
+
+    /**
+     * @private Adjust the dimensions and positions of each axis and the chart body area after accounting
+     * for the space taken up on each side by the axes and legend.
+     * This code is taken from Ext.chart.Chart and refactored to provide better flexibility.
+     */
+    alignAxes: function() {
+        var me = this,
+            axesItems = me.axes.items,
+            insets, chartBBox, i, l, axis, pos, isVertical;
+        
+        insets = me.calculateInsets();
+
         // Build the chart bbox based on the collected inset values
         chartBBox = {
             x: insets.left,
@@ -932,16 +969,16 @@ Ext.define('Ext.chart.Chart', {
 
         // Go back through each axis and set its length and position based on the
         // corresponding edge of the chartBBox
-        for (i = 0, ln = axesItems.length; i < ln; i++) {
+        for (i = 0, l = axesItems.length; i < l; i++) {
             axis = axesItems[i];
             pos = axis.position;
-            isVertical = (pos === 'left' || pos === 'right');
+            isVertical = pos === 'left' || pos === 'right';
 
             axis.x = (pos === 'right' ? chartBBox.x + chartBBox.width : chartBBox.x);
             axis.y = (pos === 'top' ? chartBBox.y : chartBBox.y + chartBBox.height);
             axis.width = (isVertical ? chartBBox.width : chartBBox.height);
             axis.length = (isVertical ? chartBBox.height : chartBBox.width);
-        }
+        };
     },
 
     // @private initialize the series.
@@ -950,10 +987,10 @@ Ext.define('Ext.chart.Chart', {
             themeAttrs = me.themeAttrs,
             seriesObj, markerObj, seriesThemes, st,
             markerThemes, colorArrayStyle = [],
-            initialized = (series instanceof Ext.chart.series.Series),
+            isInstance = (series instanceof Ext.chart.series.Series).
             i = 0, l, config;
 
-        if (!initialized) {
+        if (!series.initialized) {
             config = {
                 chart: me,
                 seriesId: series.seriesId
@@ -983,8 +1020,14 @@ Ext.define('Ext.chart.Chart', {
                 config.seriesIdx = idx;
                 config.themeIdx = themeIndex;
             }
-            Ext.applyIf(config, series);
-            series = me.series.replace(Ext.createByAlias('series.' + series.type.toLowerCase(), config));
+            
+            if (isInstance) {
+                Ext.applyIf(series, config);
+            }
+            else {
+                Ext.applyIf(config, series);
+                series = me.series.replace(Ext.createByAlias('series.' + series.type.toLowerCase(), config));
+            }
         }
 
         if (series.initialize) {
@@ -1057,6 +1100,11 @@ Ext.define('Ext.chart.Chart', {
      *     chart.save({
      *          type: 'image/png'
      *     });
+     *
+     * **Important**: By default, chart data is sent to a server operated
+     * by Sencha to do data processing. You may change this default by
+     * setting the {@link Ext.draw.engine.ImageExporter#defaultUrl defaultUrl} of the {@link Ext.draw.engine.ImageExporter} class.
+     * In addition, please note that this service only creates PNG images.
      *
      * @param {Object} [config] The configuration to be passed to the exporter.
      * See the export method for the appropriate exporter for the relevant

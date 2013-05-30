@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * A class which handles submission of data from {@link Ext.form.Basic Form}s and processes the returned response.
  *
@@ -97,7 +117,8 @@ Ext.define('Ext.form.action.Submit', {
                 headers: me.headers
             }),
             form = me.form,
-            paramsProp = form.jsonSubmit ? 'jsonData' : 'params',
+            jsonSubmit = me.jsonSubmit || form.jsonSubmit,
+            paramsProp = jsonSubmit ? 'jsonData' : 'params',
             formEl, formInfo;
 
         // For uploads we need to create an actual form that contains the file upload fields,
@@ -107,7 +128,7 @@ Ext.define('Ext.form.action.Submit', {
             ajaxOptions.form = formInfo.formEl;
             ajaxOptions.isUpload = true;
         } else {
-            ajaxOptions[paramsProp] = me.getParams();
+            ajaxOptions[paramsProp] = me.getParams(jsonSubmit);
         }
 
         Ext.Ajax.request(ajaxOptions);
@@ -139,10 +160,10 @@ Ext.define('Ext.form.action.Submit', {
      * @private
      * Builds the full set of parameters from the field values plus any additional configured params.
      */
-    getParams: function() {
+    getParams: function(useModelValues) {
         var falseVal = false,
             configParams = this.callParent(),
-            fieldParams = this.form.getValues(falseVal, falseVal, this.submitEmptyText !== falseVal);
+            fieldParams = this.form.getValues(falseVal, falseVal, this.submitEmptyText !== falseVal, useModelValues);
         return Ext.apply({}, fieldParams, configParams);
     },
 
@@ -262,7 +283,8 @@ Ext.define('Ext.form.action.Submit', {
     handleResponse: function(response) {
         var form = this.form,
             errorReader = form.errorReader,
-            rs, errors, i, len, records;
+            rs, errors, i, len, records, result;
+            
         if (errorReader) {
             rs = errorReader.read(response);
             records = rs.records;
@@ -275,11 +297,21 @@ Ext.define('Ext.form.action.Submit', {
             if (errors.length < 1) {
                 errors = null;
             }
-            return {
+            result = {
                 success : rs.success,
                 errors : errors
             };
+        } else {
+            try {
+                result = Ext.decode(response.responseText);    
+            } catch (e) {
+                result = {
+                    success: false,
+                    errors: []
+                };
+            }
+            
         }
-        return Ext.decode(response.responseText);
+        return result;
     }
 });

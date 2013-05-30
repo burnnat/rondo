@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * @docauthor Jason Johnston <jason@sencha.com>
  *
@@ -100,9 +120,15 @@ Ext.define('Ext.form.field.Number', {
      * @cfg {RegExp} maskRe
      * @private
      */
+     
+    /**
+     * @cfg {Boolean} [allowExponential=true]
+     * Set to `false` to disallow Exponential number notation
+     */
+    allowExponential: true,
 
     /**
-     * @cfg {Boolean} allowDecimals
+     * @cfg {Boolean} [allowDecimals=true]
      * False to disallow decimal values
      */
     allowDecimals : true,
@@ -321,12 +347,19 @@ Ext.define('Ext.form.field.Number', {
         // Build regexes for masking and stripping based on the configured options
         if (me.disableKeyFilter !== true) {
             allowed = me.baseChars + '';
-            if (me.allowDecimals) {
-                allowed += me.decimalSeparator;
+            
+            if (me.allowExponential) {
+                allowed += me.decimalSeparator + 'e+-';
             }
-            if (me.minValue < 0) {
-                allowed += '-';
+            else {
+                if (me.allowDecimals) {
+                    allowed += me.decimalSeparator;
+                }
+                if (me.minValue < 0) {
+                    allowed += '-';
+                }
             }
+            
             allowed = Ext.String.escapeRegex(allowed);
             me.maskRe = new RegExp('[' + allowed + ']');
             if (me.autoStripChars) {

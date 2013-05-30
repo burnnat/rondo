@@ -23,6 +23,8 @@
      */
     constructor: function(){
         this.setLocalStore(Ext.create('Ext.cf.naming.LocalStore'));
+        this.memCache  = {};
+        this.keyPrefix = 'sencha-io-config-';
     },
     
     
@@ -30,7 +32,7 @@
         if(key.join){
             key = key.join("-");
         }
-        return 'sencha-io-config-'+key;
+        return this.keyPrefix+key;
     },
     
     /**
@@ -45,7 +47,7 @@
         if(!config){
             config = this.getLocalStore().getItem(key);
             if(config) {
-                config = JSON.parse(config);    
+                config = JSON.parse(config);
             }
             this.memCache[key] = config;
         }
@@ -69,6 +71,14 @@
         key = this.getStoreKey(key);
         delete this.memCache[key];
         this.getLocalStore().removeItem(key);
+    },
+
+    /**
+    * Removes all cached values from persistent and memory storage.
+    */
+    nukeCache: function() {
+        this.memCache = {};
+        this.getLocalStore().removeAllKeyPrefixes(this.keyPrefix);
     }
     
 });

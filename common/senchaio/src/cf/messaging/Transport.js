@@ -121,6 +121,7 @@ Ext.define('Ext.cf.messaging.Transport', {
 
     start: function(){
         if(this.transport){
+            this.fireEvent("connecting");
             this.transport.start();
         } else {
             Ext.cf.util.Logger.error("Transport: attempted to start without a valid transport class."); 
@@ -154,7 +155,7 @@ Ext.define('Ext.cf.messaging.Transport', {
             //wait a few seconds because network requests can fail
             //if you start right away.
             setTimeout(function(){
-                self.transport.start();
+                self.start();
             }, self.getWaitAfterBrowserOnline());
         }, false);
 

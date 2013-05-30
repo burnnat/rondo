@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * Manages context information during a layout.
  *
@@ -428,7 +448,7 @@ Ext.define('Ext.layout.Context', {
             collection = this.triggers[inDom ? 'dom' : 'data'],
             triggers = collection && collection[id],
             length = (triggers && triggers.length) || 0,
-            collection, i, item, trigger;
+            i, item, trigger;
 
         for (i = 0; i < length; ++i) {
             trigger = triggers[i];
@@ -577,9 +597,6 @@ Ext.define('Ext.layout.Context', {
             layout, key;
 
         Ext.failedLayouts = (Ext.failedLayouts || 0) + 1;
-        //<debug>
-        Ext.log('Layout run failed');
-        //</debug>
 
         for (key in layouts) {
             layout = layouts[key];
@@ -589,6 +606,14 @@ Ext.define('Ext.layout.Context', {
                 layout.ownerContext = null;
             }
         }
+
+        //<debug>
+        if (Ext.repoDevMode && !this.pageAnalyzerMode) {
+            Ext.Error.raise('Layout run failed');
+        } else {
+            Ext.log.error('Layout run failed');
+        }
+        //</debug>
     },
 
     /**
@@ -599,14 +624,13 @@ Ext.define('Ext.layout.Context', {
      * that new components will be introduced to the layout.
      * 
      * @param {Ext.Component/Array} components An array of Components or a single Component.
-     * @param {Ext.layout.ContextItem} ownerCtContext The ownerCt's ContextItem.
      * @param {Boolean} full True if all properties should be invalidated, otherwise only
      *  those calculated by the component should be invalidated.
      */
     invalidate: function (components, full) {
         var me = this,
             isArray = !components.isComponent,
-            containerChildrenSizeDone, containerLayoutDone,
+            containerLayoutDone,
             firstTime, i, comp, item, items, length, componentLayout, layout,
             invalidateOptions, token;
 
@@ -615,6 +639,13 @@ Ext.define('Ext.layout.Context', {
 
             if (comp.rendered && !comp.hidden) {
                 item = me.getCmp(comp);
+                
+                // Layout optimizations had to be disabled because they break
+                // Dock layout behavior.
+//                 if (item.optOut) {
+//                     continue;
+//                 }
+
                 componentLayout = comp.componentLayout;
                 firstTime = !componentLayout.ownerContext;
                 layout = (comp.isContainer && !comp.collapsed) ? comp.layout : null;
@@ -641,14 +672,22 @@ Ext.define('Ext.layout.Context', {
                 if (componentLayout.beforeLayoutCycle) {
                     componentLayout.beforeLayoutCycle(item);
                 }
+                
+                if (layout && layout.beforeLayoutCycle) {
+                    // allow the container layout take a peek as well. Table layout can
+                    // influence its children's styling due to the interaction of nesting
+                    // table-layout:fixed and auto inside each other without intervening
+                    // elements of known size.
+                    layout.beforeLayoutCycle(item);
+                }
 
                 // Finish up the item-level processing that is based on the size model of
                 // the component.
                 token = item.initContinue(token);
 
-                // Start these state variables at true, since that is the value we want if
+                // Start this state variable at true, since that is the value we want if
                 // they do not apply (i.e., no work of this kind on which to wait).
-                containerChildrenSizeDone = containerLayoutDone = true;
+                containerLayoutDone = true;
 
                 // A ComponentLayout MUST implement getLayoutItems to allow its children
                 // to be collected. Ext.container.Container does this, but non-Container
@@ -670,13 +709,12 @@ Ext.define('Ext.layout.Context', {
                     items = layout.getVisibleItems();
                     if (items.length) {
                         me.invalidate(items, true);
-                        containerChildrenSizeDone = false;
                     }
                 }
 
                 // Finish the processing that requires the size models of child items to
                 // be determined (and some misc other stuff).
-                item.initDone(containerChildrenSizeDone, containerLayoutDone);
+                item.initDone(containerLayoutDone);
 
                 // Inform the layouts that we are about to begin (or begin again) now that
                 // the size models of the component and its children are setup.
@@ -1133,7 +1171,7 @@ Ext.define('Ext.layout.Context', {
 
     /**
      * Set the size of a component, element or composite or an array of components or elements.
-     * @param {Ext.Component/Ext.Component[]/Ext.dom.Element/Ext.dom.Element[]/Ext.dom.CompositeElement}
+     * @param {Ext.Component/Ext.Component[]/Ext.dom.Element/Ext.dom.Element[]/Ext.dom.CompositeElement} items
      * The item(s) to size.
      * @param {Number} width The new width to set (ignored if undefined or NaN).
      * @param {Number} height The new height to set (ignored if undefined or NaN).

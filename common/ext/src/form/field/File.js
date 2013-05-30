@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * @docauthor Jason Johnston <jason@sencha.com>
  *
@@ -114,11 +134,9 @@ Ext.define('Ext.form.field.File', {
      * rendered.
      */
 
-    /**
-     * @cfg {String} [fieldBodyCls='x-form-file-wrap']
-     * An extra CSS class to be applied to the body content element in addition to {@link #baseBodyCls}.
-     */
-    fieldBodyCls: Ext.baseCSSPrefix + 'form-file-wrap',
+
+    // private
+    extraFieldBodyCls: Ext.baseCSSPrefix + 'form-file-wrap',
 
     /**
      * @cfg {Boolean} readOnly
@@ -149,17 +167,18 @@ Ext.define('Ext.form.field.File', {
         inputEl = me.inputEl;
         inputEl.dom.name = ''; //name goes on the fileInput, not the text input
 
-                
         // render the button here. This isn't ideal, however it will be 
         // rendered before layouts are resumed, also we modify the DOM
         // below anyway
         me.button = new Ext.form.field.FileButton(Ext.apply({
             renderTo: id + '-browseButtonWrap',
+            ownerCt: me,
+            ownerLayout: me.componentLayout,
             id: id + '-button',
             ui: me.ui,
             disabled: me.disabled,
             text: me.buttonText,
-            style: me.buttonOnly ? '' : 'margin-left:' + me.buttonMargin + 'px',
+            style: me.buttonOnly ? '' : me.getButtonMarginProp() + me.buttonMargin + 'px',
             inputName: me.getName(),
             listeners: {
                 scope: me,
@@ -167,7 +186,7 @@ Ext.define('Ext.form.field.File', {
             }
         }, me.buttonConfig));
         me.fileInputEl = me.button.fileInputEl;
-        
+
         if (me.buttonOnly) {
             me.inputCell.setDisplayed(false);
         }
@@ -189,7 +208,7 @@ Ext.define('Ext.form.field.File', {
     /**
      * @private Event handler fired when the user selects a file.
      */
-    onFileChange: function(buttom, e, value) {
+    onFileChange: function(button, e, value) {
         this.lastValue = null; // force change event to get fired even if the user selects a file with the same name
         Ext.form.field.File.superclass.setValue.call(this, value);
     },
@@ -250,5 +269,9 @@ Ext.define('Ext.form.field.File', {
         Ext.destroyMembers(this, 'button');
         delete this.fileInputEl;
         this.callParent();
+    },
+
+    getButtonMarginProp: function() {
+        return 'margin-left:';
     }
 });

@@ -20,8 +20,12 @@ Ext.define('Ext.io.Controller', {
     'Ext.io.User',
     "Ext.io.auth.Facebook",
     "Ext.io.auth.Twitter",
+    "Ext.io.auth.Google",
+    "Ext.io.auth.Github",
     "Ext.io.ux.AuthSencha",
     "Ext.io.ux.AuthFacebook",
+    "Ext.io.ux.AuthGoogle",
+    "Ext.io.ux.AuthGithub",
     "Ext.io.ux.AuthTwitter",
     "Ext.io.ux.ChooseAuth",
     "Ext.io.ux.ChangePassword"
@@ -29,10 +33,35 @@ Ext.define('Ext.io.Controller', {
 
         /**
         * @event ioInitComplete
-        * Fired when .io has made a connection to the sencha.io servers.
+        * Fired after the Controller has completed setup.
         */
         
-         /**
+
+        /**
+        * @event connecting
+        * Fired when sencha.io is attempting to connect to the server.
+        */
+
+        /**
+        * @event connected
+        * Fired when sencha.io has successfully connected to the server.
+        */
+
+
+        /**
+        * @event offline
+        * Fired when .io has lost connection to the server and the application should function
+        * without connectivity to sencha.io.
+        */
+
+        /**
+        * @event invalidsession
+        * Fired when the server has rejected the session associated with this device or user.
+        * 
+        */
+
+
+        /**
         * @event checkingAuth
         * Fired when {Ext.io.Controller} is attempting to authorize the user.
         * either using an existing session or via explicit login
@@ -129,13 +158,18 @@ Ext.define('Ext.io.Controller', {
            
             var conf = this.getApplication().config.io;
 
+            var sioContainerId = conf.sioContainerId || "sio";
+
+            this.container = Ext.create('Ext.Container',{id:sioContainerId});
+
+
             //TODO cleanup with a proper mixin/library function
-            conf.authOnStartup = conf.authOnStartup == undefined ? true: conf.authOnStartup;
-            conf.manualLogin = conf.manualLogin == undefined ? false: conf.manualLogin;
+            conf.authOnStartup = conf.authOnStartup === undefined ? true: conf.authOnStartup;
+            conf.manualLogin = conf.manualLogin === undefined ? false: conf.manualLogin;
             this.ioConf = conf;
 
             /*
-            * add a getter for IO to the application for easy access. 
+            * add a getter for IO to the application for easy access.
             */
             this.getApplication().sio = this;
             this.setupIo(conf);
@@ -151,6 +185,12 @@ Ext.define('Ext.io.Controller', {
             //console.log("setupIo");
             this.setupButtonEvents();
             var io = this;
+
+            this.relayEvents(Ext.io.Io, ["connecting","connected", "invalidsession", "offline"]);
+
+            this.container.relayEvents(this,["connecting","connected", "invalidsession", "offline","ioInitComplete","channelsReady","checkingAuth","nouser","nouser","usermessage","authorized","registered","logout"]);
+            
+
             Ext.Io.init(function() {
               io.afterIoInit();
             });
@@ -166,6 +206,8 @@ Ext.define('Ext.io.Controller', {
             io.addAuthMethod("sio", "Ext.io.auth.Base");
             io.addAuthMethod("fb", "Ext.io.auth.Facebook");
             io.addAuthMethod("twitter", "Ext.io.auth.Twitter");
+            io.addAuthMethod("google", "Ext.io.auth.Google");
+            io.addAuthMethod("github", "Ext.io.auth.Github");
             
             io.setIoInitComplete(true);
         
@@ -175,6 +217,7 @@ Ext.define('Ext.io.Controller', {
             
             io.channels = {};
             io.setupChannels();
+
 
             
             io.fireEvent("ioInitComplete");
@@ -629,6 +672,7 @@ Ext.define('Ext.io.Controller', {
                     user.logout();
                     this.logoutExternal();
                 }
+                Ext.io.Io.nukeSyncStores();
                 this.fireEvent("logout");
             });
         },

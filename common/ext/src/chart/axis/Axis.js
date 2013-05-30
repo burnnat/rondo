@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * @class Ext.chart.axis.Axis
  *
@@ -108,6 +128,12 @@ Ext.define('Ext.chart.axis.Axis', {
      * The title for the Axis
      */
 
+     /**
+      * @cfg {Boolean} hidden
+      * `true` to hide the axis.
+      */
+     hidden: false,
+
     // @private force min/max values from store
     forceMinMax: false,
 
@@ -145,6 +171,8 @@ Ext.define('Ext.chart.axis.Axis', {
     adjustEnd: true,
 
     majorTickSteps: false,
+    
+    nullGutters: { lower: 0, upper: 0, verticalAxis: undefined },
 
     // @private
     applyData: Ext.emptyFn,
@@ -266,6 +294,8 @@ Ext.define('Ext.chart.axis.Axis', {
                 }
                 if (value === undefined) {
                     value = 0;
+                } else {
+                    value = Number(value);
                 }
                 if (countedFields[field]) {
                     if (min > value) {
@@ -309,6 +339,14 @@ Ext.define('Ext.chart.axis.Axis', {
             min = me.prevMin || 0;
         }
 
+        if (typeof min === 'number') {
+            min = Ext.Number.correctFloat(min);
+        }
+         
+        if (typeof max === 'number') {
+            max = Ext.Number.correctFloat(max);
+        }
+        
         //normalize min max for snapEnds.
         if (min != max && (max != Math.floor(max) || min != Math.floor(min))) {
             min = Math.floor(min);
@@ -405,16 +443,14 @@ Ext.define('Ext.chart.axis.Axis', {
             dashDirection = (position == 'left' || position == 'top' ? -1 : 1),
             dashLength = dashSize * dashDirection,
             series = me.chart.series.items,
-            gutters = series[0].nullGutters,
+            firstSeries = series[0],
+            gutters = firstSeries ? firstSeries.nullGutters : me.nullGutters,
             padding,
             subDashes,
             subDashValue,
             delta = 0,
             stepCount = 0,
-            tick,
-            axes,
-            ln,
-            val;
+            tick, axes, ln, val, begin, end;
 
         me.from = from;
         me.to = to;
@@ -483,35 +519,36 @@ Ext.define('Ext.chart.axis.Axis', {
             me.labels = [];
         }
 
-        if (verticalAxis) {
-            currentX = Math.floor(x);
-            path = ["M", currentX + 0.5, y, "l", 0, -length];
-            trueLength = length - (gutters.lower + gutters.upper);
+        if (gutters) {
+            if (verticalAxis) {
+                currentX = Math.floor(x);
+                path = ["M", currentX + 0.5, y, "l", 0, -length];
+                trueLength = length - (gutters.lower + gutters.upper);
 
-            for (tick = 0; tick < stepCount; tick++) {
-                currentY = y - gutters.lower - (steps[tick] - steps[0]) * trueLength / axisRange;
-                path.push("M", currentX, Math.floor(currentY) + 0.5, "l", dashLength * 2, 0);
+                for (tick = 0; tick < stepCount; tick++) {
+                    currentY = y - gutters.lower - (steps[tick] - steps[0]) * trueLength / axisRange;
+                    path.push("M", currentX, Math.floor(currentY) + 0.5, "l", dashLength * 2, 0);
 
-                inflections.push([ currentX, Math.floor(currentY) ]);
+                    inflections.push([ currentX, Math.floor(currentY) ]);
 
-                if (calcLabels) {
-                    me.labels.push(steps[tick]);
+                    if (calcLabels) {
+                        me.labels.push(steps[tick]);
+                    }
                 }
-            }
-        }
-        else {
-            currentY = Math.floor(y);
-            path = ["M", x, currentY + 0.5, "l", length, 0];
-            trueLength = length - (gutters.lower + gutters.upper);
+            } else {
+                currentY = Math.floor(y);
+                path = ["M", x, currentY + 0.5, "l", length, 0];
+                trueLength = length - (gutters.lower + gutters.upper);
 
-            for (tick = 0; tick < stepCount; tick++) {
-                currentX = x + gutters.lower + (steps[tick] - steps[0]) * trueLength / axisRange;
-                path.push("M", Math.floor(currentX) + 0.5, currentY, "l", 0, dashLength * 2 + 1);
+                for (tick = 0; tick < stepCount; tick++) {
+                    currentX = x + gutters.lower + (steps[tick] - steps[0]) * trueLength / axisRange;
+                    path.push("M", Math.floor(currentX) + 0.5, currentY, "l", 0, dashLength * 2 + 1);
 
-                inflections.push([ Math.floor(currentX), currentY ]);
+                    inflections.push([ Math.floor(currentX), currentY ]);
 
-                if (calcLabels) {
-                    me.labels.push(steps[tick]);
+                    if (calcLabels) {
+                        me.labels.push(steps[tick]);
+                    }
                 }
             }
         }
@@ -537,10 +574,10 @@ Ext.define('Ext.chart.axis.Axis', {
             }
         }
 
-        if (subDashValue) {
+        if (gutters && subDashValue) {
             for (tick = 0; tick < stepCount - 1; tick++) {
-                var begin = +steps[tick];
-                var end = +steps[tick+1];
+                begin = +steps[tick];
+                end = +steps[tick+1];
                 if (verticalAxis) {
                     for (value = begin + subDashValue; value < end; value += subDashValue) {
                         currentY = y - gutters.lower - (value - steps[0]) * trueLength / axisRange;

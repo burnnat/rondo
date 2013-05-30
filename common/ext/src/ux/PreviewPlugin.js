@@ -24,18 +24,18 @@ Ext.define('Ext.ux.PreviewPlugin', {
      */
     previewExpanded: true,
     
-    constructor: function(config) {
+    setCmp: function(grid) {
         this.callParent(arguments);
+        
         var bodyField   = this.bodyField,
             hideBodyCls = this.hideBodyCls,
-            section     = this.getCmp(),
             features    = [{
                 ftype: 'rowbody',
                 getAdditionalData: function(data, idx, record, orig, view) {
                     var getAdditionalData = Ext.grid.feature.RowBody.prototype.getAdditionalData,
                         additionalData = {
                             rowBody: data[bodyField],
-                            rowBodyCls: section.previewExpanded ? '' : hideBodyCls
+                            rowBodyCls: grid.previewExpanded ? '' : hideBodyCls
                         };
                         
                     if (getAdditionalData) {
@@ -47,11 +47,11 @@ Ext.define('Ext.ux.PreviewPlugin', {
                 ftype: 'rowwrap'
             }];
         
-        section.previewExpanded = this.previewExpanded;
-        if (!section.features) {
-            section.features = [];
+        grid.previewExpanded = this.previewExpanded;
+        if (!grid.features) {
+            grid.features = [];
         }
-        section.features = features.concat(section.features);
+        grid.features = features.concat(grid.features);
     },
     
     /**

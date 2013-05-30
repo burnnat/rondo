@@ -5,6 +5,7 @@ Ext.Loader.setConfig({
 });
 
 Ext.namespace('Tutti').offline = true;
+//</debug>
 
 Ext.Loader.setPath({
 	'Ext': '../common/touch/src',
@@ -14,7 +15,6 @@ Ext.Loader.setPath({
 	'Tutti': '../common/src',
 	'Rondo': 'app'
 });
-//</debug>
 
 Ext.application({
 	name: 'Rondo',

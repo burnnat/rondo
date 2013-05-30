@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * The Connection class encapsulates a connection to the page's originating domain, allowing requests to be made either
  * to a configured URL, or to a URL specified at request time.
@@ -38,6 +58,7 @@
  * - The return data can only be binary for now. Set the {@link Ext.data.Connection#binary binary} parameter to <tt>true</tt>.
  * - Only the 0, 1 and 4 (complete) readyState values will be reported to listeners.
  * - The flash object will be injected at the bottom of the document and should be invisible.
+ * - Important: See note about packaing the flash plugin with the app in the documenetation of {@link Ext.data.flash.BinaryXhr BinaryXhr}.
  * 
  */
 Ext.define('Ext.data.Connection', {
@@ -959,7 +980,7 @@ Ext.define('Ext.data.Connection', {
         var me = this;
 
         // Using CORS with IE doesn't support readyState so we fake it
-        if (request.xhr.readyState == 4 || me.isXdr) {
+        if ((request.xhr && request.xhr.readyState == 4) || me.isXdr) {
             me.clearTimeout(request);
             me.onComplete(request, xdrResult);
             me.cleanup(request);
@@ -970,7 +991,7 @@ Ext.define('Ext.data.Connection', {
     /**
      * Clears the timeout on the request
      * @private
-     * @param {Object} The request
+     * @param {Object} request The request
      */
     clearTimeout: function(request) {
         clearTimeout(request.timeout);
@@ -980,7 +1001,7 @@ Ext.define('Ext.data.Connection', {
     /**
      * Cleans up any left over information from the request
      * @private
-     * @param {Object} The request
+     * @param {Object} request The request
      */
     cleanup: function(request) {
         request.xhr = null;

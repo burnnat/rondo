@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * A Surface is an interface to render methods inside {@link Ext.draw.Component}.
  *
@@ -66,8 +86,7 @@ Ext.define('Ext.draw.Surface', {
             enginePriority = enginePriority || this.prototype.enginePriority;
 
             var i = 0,
-                len = enginePriority.length,
-                surfaceClass;
+                len = enginePriority.length;
 
             for (; i < len; i++) {
                 if (Ext.supports[enginePriority[i]]) {
@@ -354,7 +373,7 @@ Ext.define('Ext.draw.Surface', {
         var me = this,
             width = me.width,
             height = me.height,
-            gradientId, gradient, backgroundSprite;
+            gradientId, gradient;
         if (Ext.isString(config)) {
             config = {
                 fill : config
@@ -532,7 +551,6 @@ Ext.define('Ext.draw.Surface', {
     add: function() {
         var args = Array.prototype.slice.call(arguments),
             sprite,
-            index,
             hasMultipleArgs = args.length > 1,
             items,
             results,

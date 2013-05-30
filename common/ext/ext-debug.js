@@ -5,18 +5,22 @@ Copyright (c) 2011-2013 Sencha Inc
 
 Contact:  http://www.sencha.com/contact
 
-Pre-release code in the Ext repository is intended for development purposes only and will
-not always be stable. 
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
 
-Use of pre-release code is permitted with your application at your own risk under standard
-Ext license terms. Public redistribution is prohibited.
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
 
-For early licensing, please contact us at licensing@sencha.com
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
 
-Build date: 2013-01-08 23:25:56 (f0a3d96f987988f3e7bc5b0c0a7355723a686090)
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
 */
 
-//@tag foundation,core
+
+
 
 
 var Ext = Ext || {};
@@ -26,7 +30,7 @@ Ext._startTime = new Date().getTime();
         objectPrototype = Object.prototype,
         toString = objectPrototype.toString,
         enumerables = true,
-        enumerablesTest = { toString: 1 },
+        enumerablesTest = {toString: 1},
         emptyFn = function () {},
         
         
@@ -35,7 +39,9 @@ Ext._startTime = new Date().getTime();
             return method.$owner.prototype[method.$name].apply(this, arguments);
         },
         i,
-        nonWhitespaceRe = /\S/;
+        nonWhitespaceRe = /\S/,
+        ExtApp,
+        iterableRe = /\[object\s*(?:Array|Arguments|\w*Collection|\w*List|HTML\s+document\.all\s+class)\]/;
 
     Function.prototype.$extIsFunction = true;
 
@@ -80,8 +86,7 @@ Ext._startTime = new Date().getTime();
     };
 
     Ext.buildSettings = Ext.apply({
-        baseCSSPrefix: 'x-',
-        scopeResetCSS: false
+        baseCSSPrefix: 'x-'
     }, Ext.buildSettings || {});
 
     Ext.apply(Ext, {
@@ -387,21 +392,26 @@ Ext._startTime = new Date().getTime();
 
         
         isIterable: function(value) {
-            var type = typeof value,
-                checkLength = false;
-            if (value && type != 'string') {
-                
-                if (type == 'function') {
-                    
-                    
-                    if (Ext.isSafari) {
-                        checkLength = value instanceof NodeList || value instanceof HTMLCollection;
-                    }
-                } else {
-                    checkLength = true;
-                }
+            
+            if (!value || typeof value.length !== 'number' || typeof value === 'string' || value.$extIsFunction) {
+                return false;
             }
-            return checkLength ? value.length !== undefined : false;
+
+            
+            
+            
+            if (!value.propertyIsEnumerable) {
+                return !!value.item;
+            }
+
+            
+            
+            if (value.hasOwnProperty('length') && !value.propertyIsEnumerable('length')) {
+                return true;
+            }
+
+            
+            return iterableRe.test(toString.call(value));
         }
     });
 
@@ -456,7 +466,9 @@ Ext._startTime = new Date().getTime();
                 if (enumerables) {
                     for (j = enumerables.length; j--;) {
                         k = enumerables[j];
-                        clone[k] = item[k];
+                        if (item.hasOwnProperty(k)) {
+                            clone[k] = item[k];
+                        }
                     }
                 }
             }
@@ -540,11 +552,15 @@ Ext._startTime = new Date().getTime();
 
     
     Ext.type = Ext.typeOf;
-
-}());
-
-Ext.apply(Ext, {
-    app: {
+    
+    
+    
+    
+    ExtApp = Ext.app;
+    if (!ExtApp) {
+        ExtApp = Ext.app = {};
+    }
+    Ext.apply(ExtApp, {
         namespaces: {},
         
         
@@ -590,13 +606,12 @@ Ext.apply(Ext, {
                     (prefix + '.' === className.substring(0, prefix.length + 1))) {
                     deepestPrefix = prefix;
                 }
-
             }
 
             return deepestPrefix === '' ? undefined : deepestPrefix;
         }
-    }
-});
+    });
+}());
 
 
 Ext.globalEval = Ext.global.execScript
@@ -615,9 +630,8 @@ Ext.globalEval = Ext.global.execScript
         }());
     };
 
-//@tag foundation,core
 
-//@require ../Ext.js
+
 
 
 
@@ -625,7 +639,7 @@ Ext.globalEval = Ext.global.execScript
 
 
 
-var version = '4.2.0.265', Version;
+var version = '4.2.1.883', Version;
     Ext.Version = Version = Ext.extend(Object, {
 
         
@@ -832,9 +846,8 @@ var version = '4.2.0.265', Version;
 
 }());
 
-//@tag foundation,core
 
-//@require ../version/Version.js
+
 
 
 
@@ -1082,11 +1095,8 @@ Ext.htmlDecode = Ext.String.htmlDecode;
 
 Ext.urlAppend = Ext.String.urlAppend;
 
-//@tag foundation,core
 
-//@require String.js
 
-//@define Ext.Number
 
 
 
@@ -1189,6 +1199,14 @@ Ext.Number = new function() {
         
         randomInt: function (from, to) {
            return math.floor(math.random() * (to - from + 1) + from);
+        },
+        
+        
+        correctFloat: function(n) {
+            
+            
+            
+            return parseFloat(n.toPrecision(14));
         }
     });
 
@@ -1198,9 +1216,8 @@ Ext.Number = new function() {
     };
 };
 
-//@tag foundation,core
 
-//@require Number.js
+
 
 
 
@@ -1914,6 +1931,28 @@ Ext.Number = new function() {
             return map;
         },
 
+        
+        toValueMap: function(array, getKey, scope) {
+            var map = {},
+                i = array.length;
+
+            if (!getKey) {
+                while (i--) {
+                    map[array[i]] = array[i];
+                }
+            } else if (typeof getKey == 'string') {
+                while (i--) {
+                    map[array[i][getKey]] = array[i];
+                }
+            } else {
+                while (i--) {
+                    map[getKey.call(scope, array[i])] = array[i];
+                }
+            }
+
+            return map;
+        },
+
 
         
         erase: erase,
@@ -1984,9 +2023,8 @@ Ext.Number = new function() {
     };
 }());
 
-//@tag foundation,core
 
-//@require Array.js
+
 
 
 
@@ -2164,11 +2202,11 @@ Ext.Function = {
     createThrottled: function(fn, interval, scope) {
         var lastCallTime, elapsed, lastArgs, timer, execute = function() {
             fn.apply(scope || this, lastArgs);
-            lastCallTime = new Date().getTime();
+            lastCallTime = Ext.Date.now();
         };
 
         return function() {
-            elapsed = new Date().getTime() - lastCallTime;
+            elapsed = Ext.Date.now() - lastCallTime;
             lastArgs = arguments;
 
             clearTimeout(timer);
@@ -2213,9 +2251,8 @@ Ext.pass = Ext.Function.alias(Ext.Function, 'pass');
 
 Ext.bind = Ext.Function.alias(Ext.Function, 'bind');
 
-//@tag foundation,core
 
-//@require Function.js
+
 
 
 
@@ -2617,11 +2654,8 @@ Ext.urlDecode = function() {
 
 }());
 
-//@tag foundation,core
 
-//@require Object.js
 
-//@define Ext.Date
 
 
 
@@ -2638,7 +2672,7 @@ Ext.Date = new function() {
       MSFormatRe = new RegExp('\\/Date\\(([-+])?(\\d+)(?:[+-]\\d{4})?\\)\\/'),
       code = [
         
-        "var me = this, dt, y, m, d, h, i, s, ms, o, O, z, zz, u, v, W, year, jan4, week1monday,",
+        "var me = this, dt, y, m, d, h, i, s, ms, o, O, z, zz, u, v, W, year, jan4, week1monday, daysInMonth, dayMatched,",
             "def = me.defaults,",
             "from = Ext.Number.from,",
             "results = String(input).match(me.parseRegexes[{0}]);", 
@@ -2656,7 +2690,26 @@ Ext.Date = new function() {
 
                 "y = from(y, from(def.y, dt.getFullYear()));",
                 "m = from(m, from(def.m - 1, dt.getMonth()));",
+                "dayMatched = d !== undefined;",
                 "d = from(d, from(def.d, dt.getDate()));",
+                
+                
+                
+                
+                
+                
+                
+                
+                "if (!dayMatched) {", 
+                    "dt.setDate(1);",
+                    "dt.setMonth(m);",
+                    "dt.setFullYear(y);",
+                
+                    "daysInMonth = me.getDaysInMonth(dt);",
+                    "if (d > daysInMonth) {",
+                        "d = daysInMonth;",
+                    "}",
+                "}",
 
                 "h  = from(h, from(def.h, dt.getHours()));",
                 "i  = from(i, from(def.i, dt.getMinutes()));",
@@ -2782,7 +2835,7 @@ Ext.Date = new function() {
 
     
     getElapsed: function(dateA, dateB) {
-        return Math.abs(dateA - (dateB || new Date()));
+        return Math.abs(dateA - (dateB || utilDate.now()));
     },
 
     
@@ -3700,9 +3753,8 @@ Ext.Date = new function() {
   });
 };
 
-//@tag foundation,core
 
-//@require ../lang/Date.js
+
 
 
 
@@ -3784,6 +3836,7 @@ var noArgs = [],
 
         
         triggerExtended: function() {
+        
             var callbacks = this.$onExtended,
                 ln = callbacks.length,
                 i, callback;
@@ -3942,6 +3995,7 @@ var noArgs = [],
 
         
         borrow: function(fromClass, members) {
+            
             var prototype = this.prototype,
                 fromPrototype = fromClass.prototype,
                 i, ln, name, fn, toBorrow;
@@ -4369,9 +4423,8 @@ var noArgs = [],
 
 }(Ext.Function.flexSetter));
 
-//@tag foundation,core
 
-//@require Base.js
+
 
 
 
@@ -4421,9 +4474,11 @@ var noArgs = [],
     Ext.apply(ExtClass, {
         
         onBeforeCreated: function(Class, data, hooks) {
+        
             Class.addMembers(data);
 
             hooks.onCreated.call(Class, Class);
+            
         },
 
         
@@ -4608,7 +4663,8 @@ var noArgs = [],
     });
 
     
-    ExtClass.registerPreprocessor('extend', function(Class, data) {
+    ExtClass.registerPreprocessor('extend', function(Class, data, hooks) {
+        
         var Base = Ext.Base,
             basePrototype = Base.prototype,
             extend = data.extend,
@@ -4646,6 +4702,7 @@ var noArgs = [],
 
     
     ExtClass.registerPreprocessor('statics', function(Class, data) {
+        
         Class.addStatics(data.statics);
 
         delete data.statics;
@@ -4653,6 +4710,7 @@ var noArgs = [],
 
     
     ExtClass.registerPreprocessor('inheritableStatics', function(Class, data) {
+        
         Class.addInheritableStatics(data.inheritableStatics);
 
         delete data.inheritableStatics;
@@ -4660,6 +4718,7 @@ var noArgs = [],
 
     
     ExtClass.registerPreprocessor('config', function(Class, data) {
+        
         var config = data.config,
             prototype = Class.prototype;
 
@@ -4753,12 +4812,14 @@ var noArgs = [],
 
     
     ExtClass.registerPreprocessor('mixins', function(Class, data, hooks) {
+        
         var mixins = data.mixins,
             name, mixin, i, ln;
 
         delete data.mixins;
 
         Ext.Function.interceptBefore(hooks, 'onCreated', function() {
+        
             if (mixins instanceof Array) {
                 for (i = 0,ln = mixins.length; i < ln; i++) {
                     mixin = mixins[i];
@@ -4779,6 +4840,7 @@ var noArgs = [],
 
     
     Ext.extend = function(Class, Parent, members) {
+            
         if (arguments.length === 2 && Ext.isObject(Parent)) {
             members = Parent;
             Parent = Class;
@@ -4820,9 +4882,8 @@ var noArgs = [],
     };
 }());
 
-//@tag foundation,core
 
-//@require Class.js
+
 
 
 
@@ -4942,6 +5003,7 @@ var noArgs = [],
 
         
         onCreated: function(fn, scope, className) {
+            
             var listeners = this.createdListeners,
                 nameListeners = this.nameCreatedListeners,
                 listener = {
@@ -5180,7 +5242,7 @@ var noArgs = [],
                     (nameToAlternates[className] = []);
 
                 for (i  = 0; i < alternates[className].length; i++) {
-                    alternate = alternates[className];
+                    alternate = alternates[className][i];
                     if (!alternateToName[alternate]) {
                         alternateToName[alternate] = className;
                         aliasList.push(alternate);
@@ -5278,6 +5340,7 @@ var noArgs = [],
                 createdFn = clsData.createdFn;
 
             if (!postprocessor) {
+                
                 if (className) {
                     me.set(className, cls);
                 }
@@ -5569,6 +5632,7 @@ var noArgs = [],
 
     
     Manager.registerPostprocessor('alias', function(name, cls, data) {
+        
         var aliases = data.alias,
             i, ln;
 
@@ -5582,6 +5646,7 @@ var noArgs = [],
 
     
     Manager.registerPostprocessor('singleton', function(name, cls, data, fn) {
+        
         if (data.singleton) {
             fn.call(this, name, new cls(), data);
         }
@@ -5593,6 +5658,7 @@ var noArgs = [],
 
     
     Manager.registerPostprocessor('alternateClassName', function(name, cls, data) {
+        
         var alternates = data.alternateClassName,
             i, ln, alternate;
 
@@ -5656,6 +5722,7 @@ var noArgs = [],
 
         
         define: function (className, data, createdFn) {
+            
             if (data.override) {
                 return Manager.createOverride.apply(Manager, arguments);
             }
@@ -5663,6 +5730,55 @@ var noArgs = [],
             return Manager.create.apply(Manager, arguments);
         },
 
+        
+        undefine: function(className) {
+        
+            var classes = Manager.classes,
+                maps = Manager.maps,
+                aliasToName = maps.aliasToName,
+                nameToAliases = maps.nameToAliases,
+                alternateToName = maps.alternateToName,
+                nameToAlternates = maps.nameToAlternates,
+                aliases = nameToAliases[className],
+                alternates = nameToAlternates[className],
+                parts, partCount, namespace, i;
+
+            delete Manager.namespaceParseCache[className];
+            delete nameToAliases[className];
+            delete nameToAlternates[className];
+            delete classes[className];
+
+            if (aliases) {
+                for (i = aliases.length; i--;) {
+                    delete aliasToName[aliases[i]];
+                }
+            }
+
+            if (alternates) {
+                for (i = alternates.length; i--; ) {
+                    delete alternateToName[alternates[i]];
+                }
+            }
+
+            parts  = Manager.parseNamespace(className);
+            partCount = parts.length - 1;
+            namespace = parts[0];
+
+            for (i = 1; i < partCount; i++) {
+                namespace = namespace[parts[i]];
+                if (!namespace) {
+                    return;
+                }
+            }
+
+            
+            try {
+                delete namespace[parts[partCount]];
+            }
+            catch (e) {
+                namespace[parts[partCount]] = undefined;
+            }
+        },
 
         
         getClassName: alias(Manager, 'getName'),
@@ -5703,9 +5819,11 @@ var noArgs = [],
         if (data.$className) {
             cls.$className = data.$className;
         }
+        
     }, true, 'first');
 
     Class.registerPreprocessor('alias', function(cls, data) {
+        
         var prototype = cls.prototype,
             xtypes = arrayFrom(data.xtype),
             aliases = arrayFrom(data.alias),
@@ -5741,6 +5859,7 @@ var noArgs = [],
         data.xtypesMap = xtypesMap;
 
         Ext.Function.interceptAfter(data, 'onClassCreated', function() {
+        
             var mixins = prototype.mixins,
                 key, mixin;
 
@@ -5789,11 +5908,8 @@ if (Ext._aliasMetadata) {
     Ext._aliasMetadata = null;
 }
 
-//@tag foundation,core
 
-//@require ClassManager.js
 
-//@define Ext.Loader
 
 
 
@@ -6000,7 +6116,10 @@ Ext.Loader = new function() {
         scriptElements = {},
         readyListeners = [],
         usedClasses = [],
-        requiresMap = {};
+        requiresMap = {},
+        comparePriority = function(listenerA, listenerB) {
+            return listenerB.priority - listenerA.priority;
+        };
 
     Ext.apply(Loader, {
         
@@ -6260,7 +6379,7 @@ Ext.Loader = new function() {
                 }
 
                 status = (xhr.status === 1223) ? 204 :
-                    (xhr.status === 0 && (self.location || {}).protocol == 'file:') ? 200 : xhr.status;
+                    (xhr.status === 0 && ((self.location || {}).protocol == 'file:' || (self.location || {}).protocol == 'ionp:')) ? 200 : xhr.status;
 
                 isCrossOriginRestricted = isCrossOriginRestricted || (status === 0);
 
@@ -6417,14 +6536,15 @@ Ext.Loader = new function() {
                 
                 
                 if (syncModeEnabled && isClassFileLoaded.hasOwnProperty(className)) {
-                    Loader.numPendingFiles--;
-                    Loader.removeScriptElement(filePath);
-                    delete isClassFileLoaded[className];
+                    if (!isClassFileLoaded[className]) {
+                        Loader.numPendingFiles--;
+                        Loader.removeScriptElement(filePath);
+                        delete isClassFileLoaded[className];
+                    }
                 }
 
                 if (!isClassFileLoaded.hasOwnProperty(className)) {
                     isClassFileLoaded[className] = false;
-
                     classNameToFilePathMap[className] = filePath;
 
                     Loader.numPendingFiles++;
@@ -6451,12 +6571,17 @@ Ext.Loader = new function() {
 
         
         onFileLoaded: function(className, filePath) {
+            var loaded = isClassFileLoaded[className];
             Loader.numLoadedFiles++;
 
             isClassFileLoaded[className] = true;
             isFileLoaded[filePath] = true;
 
-            Loader.numPendingFiles--;
+            
+            
+            if (!loaded) {
+                Loader.numPendingFiles--;
+            }
 
             if (Loader.numPendingFiles === 0) {
                 Loader.refreshQueue();
@@ -6491,7 +6616,7 @@ Ext.Loader = new function() {
         
         triggerReady: function() {
             var listener,
-                i, refClasses = usedClasses;
+                refClasses = usedClasses;
 
             if (Loader.isLoading) {
                 Loader.isLoading = false;
@@ -6506,6 +6631,8 @@ Ext.Loader = new function() {
                     return Loader;
                 }
             }
+
+            Ext.Array.sort(readyListeners, comparePriority);
 
             
             
@@ -6538,7 +6665,8 @@ Ext.Loader = new function() {
             else {
                 readyListeners.push({
                     fn: fn,
-                    scope: scope
+                    scope: scope,
+                    priority: (options && options.priority) || 0
                 });
             }
         },
@@ -6578,6 +6706,7 @@ Ext.Loader = new function() {
 
     
     Class.registerPreprocessor('loader', function(cls, data, hooks, continueFn) {
+        
         var me = this,
             dependencies = [],
             dependency,
@@ -6665,6 +6794,7 @@ Ext.Loader = new function() {
 
     
     Manager.registerPostprocessor('uses', function(name, cls, data) {
+        
         var uses = data.uses;
         if (uses) {
             Loader.addUsedClasses(uses);
@@ -6692,7 +6822,8 @@ if (Ext._classPathMetadata) {
 
     Loader.setConfig({
         enabled: true,
-        disableCaching: true,
+        disableCaching:
+            true,
         paths: {
             'Ext': path + 'src'
         }
@@ -6706,9 +6837,8 @@ if (Ext._beforereadyhandler){
     Ext._beforereadyhandler();
 }
 
-//@tag foundation,core
 
-//@require ../class/Loader.js
+
 
 
 
@@ -6794,9 +6924,8 @@ Ext.deprecated = function (suggestion) {
 
 
 
-//@tag extras,core
 
-//@require ../lang/Error.js
+
 
 
 
@@ -6947,9 +7076,8 @@ Ext.encode = Ext.JSON.encode;
 
 Ext.decode = Ext.JSON.decode;
 
-//@tag extras,core
 
-//@require misc/JSON.js
+
 
 
 
@@ -7086,11 +7214,11 @@ Ext.apply(Ext, {
             if (arg) {
                 if (Ext.isArray(arg)) {
                     this.destroy.apply(this, arg);
-                }
-                else if (Ext.isFunction(arg.destroy)) {
+                } else if (arg.isStore) {
+                    arg.destroyStore();
+                } else if (Ext.isFunction(arg.destroy)) {
                     arg.destroy();
-                }
-                else if (arg.dom) {
+                } else if (arg.dom) {
                     arg.remove();
                 }
             }
@@ -7098,16 +7226,36 @@ Ext.apply(Ext, {
     },
 
     
-    callback: function(callback, scope, args, delay){
-        if(Ext.isFunction(callback)){
+    callback: function (callback, scope, args, delay) {
+        var fn, ret;
+
+        if (Ext.isFunction(callback)){
+            fn = callback;
+        } else if (scope && Ext.isString(callback)) {
+            fn = scope[callback];
+        }
+
+        if (fn) {
             args = args || [];
             scope = scope || window;
             if (delay) {
-                Ext.defer(callback, delay, scope, args);
+                Ext.defer(fn, delay, scope, args);
             } else {
-                callback.apply(scope, args);
+                ret = fn.apply(scope, args);
             }
         }
+
+        return ret;
+    },
+    
+    
+    resolveMethod: function(fn, scope) {
+        if (Ext.isFunction(fn)) {
+            return fn;
+        }
+        
+        
+        return scope[fn];
     },
 
     
@@ -7192,18 +7340,16 @@ window.undefined = window.undefined;
     nullLog.info = nullLog.warn = nullLog.error = Ext.emptyFn;
 
     
-    Ext.setVersion('extjs', '4.2.0.265');
+    Ext.setVersion('extjs', '4.2.1.883');
     Ext.apply(Ext, {
         
         SSL_SECURE_URL : isSecure && isIE ? 'javascript:\'\'' : 'about:blank',
 
         
 
-        
-        scopeResetCSS : Ext.buildSettings.scopeResetCSS,
+        plainTableCls: Ext.buildSettings.baseCSSPrefix + 'table-plain', 
 
-        
-        resetCls: Ext.buildSettings.baseCSSPrefix + 'reset',
+        plainListCls: Ext.buildSettings.baseCSSPrefix + 'list-plain', 
 
         
         enableNestedListenerRemoval : false,
@@ -7598,13 +7744,18 @@ window.undefined = window.undefined;
         },
 
         
+        setGlyphFontFamily: function(fontFamily) {
+            Ext._glyphFontFamily = fontFamily;
+        },
+
+        
         useShims: isIE6
     });
 }());
 
 
 Ext.application = function(config) {
-    var App;
+    var App, paths, ns;
     
     if (typeof config === "string") {
         Ext.require(config, function(){
@@ -7612,6 +7763,20 @@ Ext.application = function(config) {
         });
     }
     else {
+        
+        
+        Ext.Loader.setPath(config.name, config.appFolder || 'app');
+        
+        if (paths = config.paths) {
+            for (ns in paths) {
+                if (paths.hasOwnProperty(ns)) {
+                    Ext.Loader.setPath(ns, paths[ns]);
+                }
+            }
+        }
+        
+        config['paths processed'] = true;
+        
         
         
         Ext.define(config.name + ".$application", Ext.apply({
@@ -7630,29 +7795,32 @@ Ext.application = function(config) {
     });
 };
 
-//@tag extras,core
 
-//@require ../Ext-more.js
 
-//@define Ext.util.Format
 
 
 
 (function() {
     Ext.ns('Ext.util');
 
-    Ext.util.Format = {};
-    var UtilFormat     = Ext.util.Format,
+    var UtilFormat     = Ext.util.Format = {},
         stripTagsRE    = /<\/?[^>]+>/gi,
         stripScriptsRe = /(?:<script.*?>)((\n|\r|.)*?)(?:<\/script>)/ig,
         nl2brRe        = /\r?\n/g,
+        allHashes      = /^#+$/,
 
         
-        formatCleanRe  = /[^\d\.]/g,
+        formatPattern = /[\d,\.#]+/,
+
+        
+        formatCleanRe  = /[^\d\.#]/g,
 
         
         
-        I18NFormatCleanRe;
+        I18NFormatCleanRe,
+
+        
+        formatFns = {};
 
     Ext.apply(UtilFormat, {
         
@@ -7728,7 +7896,7 @@ Ext.application = function(config) {
                 negativeSign = '-';
             }
             decimals = Ext.isDefined(decimals) ? decimals : UtilFormat.currencyPrecision;
-            format += format + (decimals > 0 ? '.' : '');
+            format += (decimals > 0 ? '.' : '');
             for (; i < decimals; i++) {
                 format += '0';
             }
@@ -7769,15 +7937,29 @@ Ext.application = function(config) {
         },
 
         
-        fileSize : function(size) {
-            if (size < 1024) {
-                return size + " bytes";
-            } else if (size < 1048576) {
-                return (Math.round(((size*10) / 1024))/10) + " KB";
-            } else {
-                return (Math.round(((size*10) / 1048576))/10) + " MB";
-            }
-        },
+        fileSize : (function(){
+            var byteLimit = 1024,
+                kbLimit = 1048576,
+                mbLimit = 1073741824;
+                
+            return function(size) {
+                var out;
+                if (size < byteLimit) {
+                    if (size === 1) {
+                        out = '1 byte';    
+                    } else {
+                        out = size + ' bytes';
+                    }
+                } else if (size < kbLimit) {
+                    out = (Math.round(((size*10) / byteLimit))/10) + ' KB';
+                } else if (size < mbLimit) {
+                    out = (Math.round(((size*10) / kbLimit))/10) + ' MB';
+                } else {
+                    out = (Math.round(((size*10) / mbLimit))/10) + ' GB';
+                }
+                return out;
+            };
+        })(),
 
         
         math : (function(){
@@ -7806,83 +7988,114 @@ Ext.application = function(config) {
             if (!formatString) {
                 return v;
             }
-            v = Ext.Number.from(v, NaN);
-            if (isNaN(v)) {
-                return '';
-            }
-            var comma = UtilFormat.thousandSeparator,
-                dec   = UtilFormat.decimalSeparator,
-                neg   = v < 0,
-                hasComma,
-                psplit,
-                fnum,
-                cnum,
-                parr,
-                j,
-                m,
-                n,
-                i;
-
-            v = Math.abs(v);
+            var formatFn = formatFns[formatString];
 
             
             
-            
-            
-            if (formatString.substr(formatString.length - 2) == '/i') {
-                if (!I18NFormatCleanRe) {
-                    I18NFormatCleanRe = new RegExp('[^\\d\\' + UtilFormat.decimalSeparator + ']','g');
-                }
-                formatString = formatString.substr(0, formatString.length - 2);
-                hasComma = formatString.indexOf(comma) != -1;
-                psplit = formatString.replace(I18NFormatCleanRe, '').split(dec);
-            } else {
-                hasComma = formatString.indexOf(',') != -1;
-                psplit = formatString.replace(formatCleanRe, '').split('.');
-            }
+            if (!formatFn) {
 
-            if (psplit.length > 2) {
-            } else if (psplit.length > 1) {
-                v = Ext.Number.toFixed(v, psplit[1].length);
-            } else {
-                v = Ext.Number.toFixed(v, 0);
-            }
+                var originalFormatString = formatString,
+                    comma = UtilFormat.thousandSeparator,
+                    decimalSeparator = UtilFormat.decimalSeparator,
+                    hasComma,
+                    splitFormat,
+                    extraChars,
+                    precision = 0,
+                    multiplier,
+                    trimTrailingZeroes,
+                    code;
 
-            fnum = v.toString();
-
-            psplit = fnum.split('.');
-
-            if (hasComma) {
-                cnum = psplit[0];
-                parr = [];
-                j = cnum.length;
-                m = Math.floor(j / 3);
-                n = cnum.length % 3 || 3;
-
-                for (i = 0; i < j; i += n) {
-                    if (i !== 0) {
-                        n = 3;
-                    }
-
-                    parr[parr.length] = cnum.substr(i, n);
-                    m -= 1;
-                }
-                fnum = parr.join(comma);
-                if (psplit[1]) {
-                    fnum += dec + psplit[1];
-                }
-            } else {
-                if (psplit[1]) {
-                    fnum = psplit[0] + dec + psplit[1];
-                }
-            }
-
-            if (neg) {
                 
-                neg = fnum.replace(/[^1-9]/g, '') !== '';
-            }
+                
+                
+                
+                if (formatString.substr(formatString.length - 2) == '/i') {
+                    if (!I18NFormatCleanRe) {
+                        I18NFormatCleanRe = new RegExp('[^\\d\\' + UtilFormat.decimalSeparator + ']','g');
+                    }
+                    formatString = formatString.substr(0, formatString.length - 2);
+                    hasComma = formatString.indexOf(comma) != -1;
+                    splitFormat = formatString.replace(I18NFormatCleanRe, '').split(decimalSeparator);
+                } else {
+                    hasComma = formatString.indexOf(',') != -1;
+                    splitFormat = formatString.replace(formatCleanRe, '').split('.');
+                }
+                extraChars = formatString.replace(formatPattern, '');
 
-            return (neg ? '-' : '') + formatString.replace(/[\d,?\.?]+/, fnum);
+                if (splitFormat.length > 2) {
+                } else if (splitFormat.length === 2) {
+                    precision = splitFormat[1].length;
+
+                    
+                    trimTrailingZeroes = allHashes.test(splitFormat[1]);
+                }
+                
+                
+                code = [
+                    'var utilFormat=Ext.util.Format,extNumber=Ext.Number,neg,fnum,parts' +
+                        (hasComma ? ',thousandSeparator,thousands=[],j,n,i' : '') +
+                        (extraChars  ? ',formatString="' + formatString + '",formatPattern=/[\\d,\\.#]+/' : '') +
+                        (trimTrailingZeroes ? ',trailingZeroes=/\\.?0+$/;' : ';') +
+                    'return function(v){' +
+                    'if(typeof v!=="number"&&isNaN(v=extNumber.from(v,NaN)))return"";' +
+                    'neg=v<0;',
+                    'fnum=Ext.Number.toFixed(Math.abs(v), ' + precision + ');'
+                ];
+
+                if (hasComma) {
+                    
+                    
+                    
+                    if (precision) {
+                        code[code.length] = 'parts=fnum.split(".");';
+                        code[code.length] = 'fnum=parts[0];';
+                    }
+                    code[code.length] =
+                        'if(v>=1000) {';
+                            code[code.length] = 'thousandSeparator=utilFormat.thousandSeparator;' +
+                            'thousands.length=0;' +
+                            'j=fnum.length;' +
+                            'n=fnum.length%3||3;' +
+                            'for(i=0;i<j;i+=n){' +
+                                'if(i!==0){' +
+                                    'n=3;' +
+                                '}' +
+                                'thousands[thousands.length]=fnum.substr(i,n);' +
+                            '}' +
+                            'fnum=thousands.join(thousandSeparator);' + 
+                        '}';
+                    if (precision) {
+                        code[code.length] = 'fnum += utilFormat.decimalSeparator+parts[1];';
+                    }
+                    
+                } else if (precision) {
+                    
+                    code[code.length] = 'if(utilFormat.decimalSeparator!=="."){' +
+                        'parts=fnum.split(".");' +
+                        'fnum=parts[0]+utilFormat.decimalSeparator+parts[1];' +
+                    '}';
+                }
+
+                if (trimTrailingZeroes) {
+                    code[code.length] = 'fnum=fnum.replace(trailingZeroes,"");';
+                }
+
+                
+                code[code.length] = 'if(neg&&fnum!=="' + (precision ? '0.' + Ext.String.repeat('0', precision) : '0') + '")fnum="-"+fnum;';
+
+                code[code.length] = 'return ';
+
+                
+                if (extraChars) {
+                    code[code.length] = 'formatString.replace(formatPattern, fnum);';
+                } else {
+                    code[code.length] = 'fnum;';
+                }
+                code[code.length] = '};'
+
+                formatFn = formatFns[originalFormatString] = Ext.functionFactory('Ext', code.join(''))(Ext);
+            }
+            return formatFn(v);
         },
 
         
@@ -7979,9 +8192,7 @@ Ext.application = function(config) {
     });
 }());
 
-//@tag extras,core
 
-//@require Format.js
 
 
 
@@ -8017,7 +8228,7 @@ Ext.define('Ext.util.TaskRunner', {
     
     start: function(task) {
         var me = this,
-            now = new Date().getTime();
+            now = Ext.Date.now();
 
         if (!task.pending) {
             me.tasks.push(task);
@@ -8072,7 +8283,7 @@ Ext.define('Ext.util.TaskRunner', {
     onTick: function () {
         var me = this,
             tasks = me.tasks,
-            now = new Date().getTime(),
+            now = Ext.Date.now(),
             nextExpires = 1e99,
             len = tasks.length,
             expires, newTasks, i, task, rt, remove;
@@ -8154,7 +8365,7 @@ Ext.define('Ext.util.TaskRunner', {
             
             
             
-            me.startTimer(nextExpires - now, new Date().getTime());
+            me.startTimer(nextExpires - now, Ext.Date.now());
         }
         
         
@@ -8247,11 +8458,10 @@ function () {
 
 
 
-//@tag extras,core
 
 
 Ext.define('Ext.util.TaskManager', {
-    extend: 'Ext.util.TaskRunner',
+    extend:  Ext.util.TaskRunner ,
 
     alternateClassName: [
         'Ext.TaskManager'
@@ -8260,9 +8470,7 @@ Ext.define('Ext.util.TaskManager', {
     singleton: true
 });
 
-//@tag extras,core
 
-//@require ../util/TaskManager.js
 
 
 
@@ -8507,9 +8715,7 @@ function () {
     Ext.perf.getTimestamp = this.getTimestamp;
 });
 
-//@tag extras,core
 
-//@require Accumulator.js
 
 
 
@@ -8517,9 +8723,9 @@ Ext.define('Ext.perf.Monitor', {
     singleton: true,
     alternateClassName: 'Ext.Perf',
 
-    requires: [
-        'Ext.perf.Accumulator'
-    ],
+               
+                              
+      
 
     constructor: function () {
         this.accumulators = [];
@@ -8719,11 +8925,8 @@ Ext.define('Ext.perf.Monitor', {
     }
 });
 
-//@tag extras,core
 
-//@require perf/Monitor.js
 
-//@define Ext.Supports
 
 
 
@@ -8824,19 +9027,21 @@ Ext.is.init();
         return style[styleName];
     },
     supportsVectors = {
-        'IE6-quirks': [0,1,0,0,1,0,0,0,1,0,0,0,0,0,0,0,1,1,0,0,0,0,1,0,0,1,0,0,1,0,1,0],
-        'IE6-strict': [0,1,0,0,1,0,0,0,1,0,0,0,0,0,0,0,1,1,0,0,0,0,1,0,1,1,0,0,1,0,1,0],
-        'IE7-quirks': [0,1,0,0,1,0,0,0,1,0,0,0,0,0,0,0,1,1,0,0,0,0,1,0,0,1,0,0,1,0,1,0],
-        'IE7-strict': [0,1,0,0,1,0,0,0,1,0,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,1,0,0,1,0,1,0],
-        'IE8-quirks': [0,1,0,0,1,0,0,0,1,0,0,0,0,0,0,0,1,1,0,0,0,0,1,0,0,1,0,0,1,0,1,0],
-        'IE8-strict': [0,1,0,0,1,0,0,0,1,0,0,0,0,0,0,0,1,1,0,0,0,0,1,1,1,1,0,0,1,0,1,0],
-        'IE9-quirks': [0,1,0,0,1,0,0,0,1,0,0,0,0,0,0,0,1,1,1,0,0,0,1,0,0,1,0,0,1,0,1,0],
-        'IE9-strict': [0,1,0,0,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,0,1,1,1,1,1,1,1,0,1,0,0,0]
+        'IE6-quirks':  [0,1,0,0,1,0,0,0,1,0,0,0,0,0,0,0,1,1,0,0,0,0,1,0,0,1,0,0,1,0,1,0,0,0],
+        'IE6-strict':  [0,1,0,0,1,0,0,0,1,0,0,0,0,0,0,0,1,1,0,0,0,0,1,0,1,1,0,0,1,0,1,0,0,0],
+        'IE7-quirks':  [0,1,0,0,1,0,0,0,1,0,0,0,0,0,0,0,1,1,0,0,0,0,1,0,0,1,0,0,1,0,1,0,0,0],
+        'IE7-strict':  [0,1,0,0,1,0,0,0,1,0,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,1,0,0,1,0,1,0,0,0],
+        'IE8-quirks':  [0,1,0,0,1,0,0,0,1,0,0,0,0,0,0,0,1,1,0,0,0,0,1,0,0,1,0,0,1,0,1,0,0,0],
+        'IE8-strict':  [0,1,0,0,1,0,0,0,1,0,0,0,0,0,0,0,1,1,0,0,0,0,1,1,1,1,0,0,1,0,1,0,0,1],
+        'IE9-quirks':  [0,1,0,0,1,0,0,0,1,0,0,0,0,0,0,0,1,1,1,0,0,0,1,0,0,1,0,0,1,0,1,0,0,0],
+        'IE9-strict':  [0,1,0,0,1,1,1,1,1,1,1,0,0,0,1,1,1,1,1,0,1,1,1,1,1,1,1,0,1,0,0,0,0,1],
+        'IE10-quirks': [1,1,0,0,1,1,1,1,0,1,1,1,0,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,0,0,0,0,1],
+        'IE10-strict': [1,1,0,0,1,1,1,1,0,1,1,1,0,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,0,0,0,0,1]
     };
 
 function getBrowserKey() {
     var browser = Ext.isIE6 ? 'IE6' : Ext.isIE7 ? 'IE7' : Ext.isIE8 ? 'IE8' :
-        Ext.isIE9 ? 'IE9': '';
+        Ext.isIE9 ? 'IE9': Ext.isIE10 ? 'IE10' : '';
 
     return browser ? browser + (Ext.isStrict ? '-strict' : '-quirks') : '';
 }
@@ -9080,12 +9285,13 @@ Ext.supports = {
                     webkit   = '-webkit-gradient(linear, left top, right bottom, from(black), to(white))',
                     w3c      = 'linear-gradient(left top, black, white)',
                     moz      = '-moz-' + w3c,
+                    ms       = '-ms-' + w3c,
                     opera    = '-o-' + w3c,
-                    options  = [property + webkit, property + w3c, property + moz, property + opera];
+                    options  = [property + webkit, property + w3c, property + moz, property + ms, property + opera];
 
                 div.style.cssText = options.join(';');
 
-                return ("" + div.style.backgroundImage).indexOf('gradient') !== -1;
+                return (("" + div.style.backgroundImage).indexOf('gradient') !== -1) && !Ext.isIE9;
             }
         },
 
@@ -9109,7 +9315,8 @@ Ext.supports = {
         {
             identity: 'GeoLocation',
             fn: function() {
-                return (typeof navigator != 'undefined' && typeof navigator.geolocation != 'undefined') || (typeof google != 'undefined' && typeof google.gears != 'undefined');
+                
+                return (typeof navigator != 'undefined' && 'geolocation' in navigator) || (typeof google != 'undefined' && typeof google.gears != 'undefined');
             }
         },
         
@@ -9150,7 +9357,7 @@ Ext.supports = {
         {
             identity: 'Direct2DBug',
             fn: function() {
-                return Ext.isString(document.body.style.msTransformOrigin) && Ext.isIE9m;
+                return Ext.isString(document.body.style.msTransformOrigin) && Ext.isIE10m;
             }
         },
         
@@ -9279,6 +9486,49 @@ Ext.supports = {
                 
                 return hasBug;
             }
+        },
+        
+        {
+            identity: 'xOriginBug',
+            fn: function(doc, div) {
+               div.innerHTML = '<div id="b1" style="height:100px;width:100px;direction:rtl;position:relative;overflow:scroll">' +
+                    '<div id="b2" style="position:relative;width:100%;height:20px;"></div>' +
+                    '<div id="b3" style="position:absolute;width:20px;height:20px;top:0px;right:0px"></div>' +
+                '</div>';
+
+                var outerBox = document.getElementById('b1').getBoundingClientRect(),
+                    b2 = document.getElementById('b2').getBoundingClientRect(),
+                    b3 = document.getElementById('b3').getBoundingClientRect();
+
+                return (b2.left !== outerBox.left && b3.right !== outerBox.right);
+            }
+        },
+
+        
+        {
+            identity: 'ScrollWidthInlinePaddingBug',
+            fn: function(doc) {
+                var hasBug = false,
+                    style, el;
+
+                el = doc.createElement('div');
+                style = el.style;
+                style.height = '50px';
+                style.width = '50px';
+                style.padding = '10px';
+                style.overflow = 'hidden';
+                style.position = 'absolute';
+                
+                el.innerHTML =
+                    '<span style="display:inline-block;zoom:1;height:60px;width:60px;"></span>';
+                doc.body.appendChild(el);
+                if (el.scrollWidth === 70) {
+                    hasBug = true;
+                }
+                doc.body.removeChild(el);
+                
+                return hasBug;
+            }
         }
     ]
 };
@@ -9286,26 +9536,25 @@ Ext.supports = {
 
 Ext.supports.init(); 
 
-//@tag dom,core
 
-//@require ../Support.js
 
-//@define Ext.util.DelayedTask
 
 
 
 Ext.util.DelayedTask = function(fn, scope, args, cancelOnDelay) {
     var me = this,
-        id,
         delay,
         call = function() {
-            clearInterval(id);
-            id = null;
+            clearInterval(me.id);
+            me.id = null;
             fn.apply(scope, args || []);
             Ext.EventManager.idleEvent.fire();
         };
 
     cancelOnDelay = typeof cancelOnDelay === 'boolean' ? cancelOnDelay : true;
+
+    
+    me.id = null;
 
     
     me.delay = function(newDelay, newFn, newScope, newArgs) {
@@ -9316,21 +9565,20 @@ Ext.util.DelayedTask = function(fn, scope, args, cancelOnDelay) {
         fn    = newFn    || fn;
         scope = newScope || scope;
         args  = newArgs  || args;
-        if (!id) {
-            id = setInterval(call, delay);
+        if (!me.id) {
+            me.id = setInterval(call, delay);
         }
     };
 
     
     me.cancel = function() {
-        if (id) {
-            clearInterval(id);
-            id = null;
+        if (me.id) {
+            clearInterval(me.id);
+            me.id = null;
         }
     };
 };
 
-//@tag dom,core
 
 
 Ext.define('Ext.util.Event', function() {
@@ -9340,7 +9588,7 @@ Ext.define('Ext.util.Event', function() {
       DelayedTask = Ext.util.DelayedTask;
 
   return {
-    requires: 'Ext.util.DelayedTask',
+                                     
 
     
     isEvent: true,
@@ -9618,11 +9866,8 @@ Ext.define('Ext.util.Event', function() {
   };
 });
 
-//@tag dom,core
 
-//@require util/Event.js
 
-//@define Ext.EventManager
 
 
 
@@ -9630,7 +9875,10 @@ Ext.EventManager = new function() {
     var EventManager = this,
         doc = document,
         win = window,
+        escapeRx = /\\/g,
         prefix = Ext.baseCSSPrefix,
+        
+        supportsAddEventListener = !Ext.isIE9 && 'addEventListener' in doc,
         readyEvent,
         initExtCss = function() {
             
@@ -9639,9 +9887,7 @@ Ext.EventManager = new function() {
                 htmlCls = [],
                 supportsLG = Ext.supports.CSS3LinearGradient,
                 supportsBR = Ext.supports.CSS3BorderRadius,
-                resetCls = [],
-                html,
-                resetElementSpec;
+                html;
 
             if (!bd) {
                 return false;
@@ -9761,41 +10007,6 @@ Ext.EventManager = new function() {
             }
 
             
-            
-            
-            if (Ext.scopeResetCSS) {
-
-                
-                resetElementSpec = Ext.resetElementSpec = {
-                    cls: prefix + 'reset'
-                };
-                
-                if (!supportsLG) {
-                    resetCls.push(prefix + 'nlg');
-                }
-                
-                if (!supportsBR) {
-                    resetCls.push(prefix + 'nbr');
-                }
-                
-                if (resetCls.length) {                    
-                    resetElementSpec.cn = {
-                        cls: resetCls.join(' ')
-                    };
-                }
-                
-                Ext.resetElement = Ext.getBody().createChild(resetElementSpec);
-                if (resetCls.length) {
-                    Ext.resetElement = Ext.get(Ext.resetElement.dom.firstChild);
-                }
-            }
-            
-            else {
-                Ext.resetElement = Ext.getBody();
-                add('reset');
-            }
-
-            
             if (html) {
                 if (Ext.isStrict && (Ext.isIE6 || Ext.isIE7)) {
                     Ext.isBorderBox = false;
@@ -9804,8 +10015,8 @@ Ext.EventManager = new function() {
                     Ext.isBorderBox = true;
                 }
 
-                if(Ext.isBorderBox) {
-                    htmlCls.push(prefix + 'border-box');
+                if(!Ext.isBorderBox) {
+                    htmlCls.push(prefix + 'content-box');
                 }
                 if (Ext.isStrict) {
                     htmlCls.push(prefix + 'strict');
@@ -10047,7 +10258,11 @@ Ext.EventManager = new function() {
             }
 
             var dom = element.dom || Ext.getDom(element),
-                bind, wrap, cache, id, cacheItem;
+                hasAddEventListener, bind, wrap, cache, id, cacheItem, capture;
+            
+            if (typeof fn === 'string') {
+                fn = Ext.resolveMethod(fn, scope || element);
+            }
 
 
             
@@ -10059,8 +10274,11 @@ Ext.EventManager = new function() {
             
             cache = EventManager.getEventListenerCache(element.dom ? element : dom, eventName);
             eventName = bind.eventName;
+
             
-            if (dom.attachEvent) {
+            hasAddEventListener = supportsAddEventListener || (Ext.isIE9 && !dom.attachEvent);
+            
+            if (!hasAddEventListener) {
                 id = EventManager.normalizeId(dom);
                 
                 
@@ -10078,14 +10296,15 @@ Ext.EventManager = new function() {
                 }
             }
 
+            capture = !!options.capture;
             cache.push({
                 fn: fn,
                 wrap: wrap,
-                scope: scope
+                scope: scope,
+                capture: capture 
             });
 
-            
-            if (dom.attachEvent) {
+            if (!hasAddEventListener) {
                 
                 
                 if (cache.length === 1) {
@@ -10098,7 +10317,7 @@ Ext.EventManager = new function() {
                     dom.attachEvent('on' + eventName, fn);
                 }
             } else {
-                dom.addEventListener(eventName, wrap, options.capture || false);
+                dom.addEventListener(eventName, wrap, capture);
             }
 
             if (dom == doc && eventName == 'mousedown') {
@@ -10108,7 +10327,7 @@ Ext.EventManager = new function() {
         
         
         
-        normalizeId: function(dom) {
+        normalizeId: function(dom, force) {
             var id;
             if (dom === document) {
                 id = Ext.documentId;
@@ -10158,9 +10377,19 @@ Ext.EventManager = new function() {
                 id, el = element.dom ? element : Ext.get(dom),
                 cache = EventManager.getEventListenerCache(el, eventName),
                 bindName = EventManager.normalizeEvent(eventName).eventName,
-                i = cache.length, j, cacheItem,
+                i = cache.length, j, cacheItem, hasRemoveEventListener,
                 listener, wrap;
+                
+            if (!dom) {
+                return;
+            }
 
+            
+            hasRemoveEventListener = supportsAddEventListener || (Ext.isIE9 && !dom.detachEvent);
+            
+            if (typeof fn === 'string') {
+                fn = Ext.resolveMethod(fn, scope || element);
+            }
 
             while (i--) {
                 listener = cache[i];
@@ -10183,7 +10412,7 @@ Ext.EventManager = new function() {
                         delete wrap.tasks;
                     }
 
-                    if (dom.detachEvent) {
+                    if (!hasRemoveEventListener) {
                         
                         
                         id = EventManager.normalizeId(dom, true);
@@ -10199,7 +10428,7 @@ Ext.EventManager = new function() {
                             dom.detachEvent('on' + bindName, fn);
                         }
                     } else {
-                        dom.removeEventListener(bindName, wrap, false);
+                        dom.removeEventListener(bindName, wrap, listener.capture);
                     }
 
                     if (wrap && dom == doc && eventName == 'mousedown') {
@@ -10253,12 +10482,12 @@ Ext.EventManager = new function() {
         createListenerWrap : function(dom, ename, fn, scope, options) {
             options = options || {};
 
-            var f, gen, escapeRx = /\\/g, wrap = function(e, args) {
+            var f, gen, wrap = function(e, args) {
                 
                 if (!gen) {
                     f = ['if(!' + Ext.name + ') {return;}'];
 
-                    if(options.buffer || options.delay || options.freezeEvent) {
+                    if (options.buffer || options.delay || options.freezeEvent) {
                         if (options.freezeEvent) {
                             
                             
@@ -10282,7 +10511,7 @@ Ext.EventManager = new function() {
                         f.push('if(e.target !== options.target) {return;}');
                     }
 
-                    if(options.stopEvent) {
+                    if (options.stopEvent) {
                         f.push('e.stopEvent();');
                     } else {
                         if(options.preventDefault) {
@@ -10293,16 +10522,16 @@ Ext.EventManager = new function() {
                         }
                     }
 
-                    if(options.normalized === false) {
+                    if (options.normalized === false) {
                         f.push('e = e.browserEvent;');
                     }
 
-                    if(options.buffer) {
+                    if (options.buffer) {
                         f.push('(wrap.task && clearTimeout(wrap.task));');
                         f.push('wrap.task = setTimeout(function() {');
                     }
 
-                    if(options.delay) {
+                    if (options.delay) {
                         f.push('wrap.tasks = wrap.tasks || [];');
                         f.push('wrap.tasks.push(setTimeout(function() {');
                     }
@@ -10310,7 +10539,7 @@ Ext.EventManager = new function() {
                     
                     f.push('result = fn.call(scope || dom, e, t, options);');
 
-                    if(options.single) {
+                    if (options.single) {
                         f.push('evtMgr.removeListener(dom, ename, fn, scope);');
                     }
 
@@ -10322,11 +10551,11 @@ Ext.EventManager = new function() {
                         f.push('}');
                     }
 
-                    if(options.delay) {
+                    if (options.delay) {
                         f.push('}, ' + options.delay + '));');
                     }
 
-                    if(options.buffer) {
+                    if (options.buffer) {
                         f.push('}, ' + options.buffer + ');');
                     }
                     f.push('return result;');
@@ -10589,7 +10818,7 @@ Ext.EventManager = new function() {
     });
 
     
-    if(!('addEventListener' in document) && document.attachEvent) {
+    if(!supportsAddEventListener && document.attachEvent) {
         Ext.apply( EventManager, {
             
 
@@ -10711,16 +10940,773 @@ Ext.EventManager = new function() {
     Ext.onReady(initExtCss);
 };
 
-//@tag dom,core
 
-//@require EventManager.js
 
-//@define Ext.EventObject
+Ext.define('Ext.util.Observable', function(Observable) {
+
+    
+    var emptyArray = [],
+        arrayProto = Array.prototype,
+        arraySlice = arrayProto.slice,
+        ExtEvent = Ext.util.Event,
+        ListenerRemover = function(observable) {
+
+            
+            if (observable instanceof ListenerRemover) {
+                return observable;
+            }
+
+            this.observable = observable;
+
+            
+            
+            if (arguments[1].isObservable) {
+                this.managedListeners = true;
+            }
+            this.args = arraySlice.call(arguments, 1);
+        };
+
+    ListenerRemover.prototype.destroy = function() {
+        this.observable[this.managedListeners ? 'mun' : 'un'].apply(this.observable, this.args);
+    };
+
+    return {
+
+        
+
+                                                         
+
+        statics: {
+            
+            releaseCapture: function(o) {
+                o.fireEventArgs = this.prototype.fireEventArgs;
+            },
+
+            
+            capture: function(o, fn, scope) {
+                
+                
+                
+                
+                var newFn = function(eventName, args) {
+                    return fn.apply(scope, [eventName].concat(args));
+                }
+                
+                this.captureArgs(o, newFn, scope);
+            },
+            
+            
+            captureArgs: function(o, fn, scope) {
+                o.fireEventArgs = Ext.Function.createInterceptor(o.fireEventArgs, fn, scope);
+            },
+
+            
+            observe: function(cls, listeners) {
+                if (cls) {
+                    if (!cls.isObservable) {
+                        Ext.applyIf(cls, new this());
+                        this.captureArgs(cls.prototype, cls.fireEventArgs, cls);
+                    }
+                    if (Ext.isObject(listeners)) {
+                        cls.on(listeners);
+                    }
+                }
+                return cls;
+            },
+
+            
+            prepareClass: function (T, mixin) {
+                
+                
+
+                
+                
+
+                if (!T.HasListeners) {
+                    
+                    
+                    
+                    var HasListeners = function () {},
+                        SuperHL = T.superclass.HasListeners || (mixin && mixin.HasListeners) ||
+                                Observable.HasListeners;
+
+                    
+                    T.prototype.HasListeners = T.HasListeners = HasListeners;
+
+                    
+                    
+                    HasListeners.prototype = T.hasListeners = new SuperHL();
+                }
+            }
+        },
+
+        
+
+        
+
+        
+        isObservable: true,
+
+        
+        eventsSuspended: 0,
+
+        
+
+        constructor: function(config) {
+            var me = this;
+
+            Ext.apply(me, config);
+
+            
+            if (!me.hasListeners) {
+                me.hasListeners = new me.HasListeners();
+            }
+
+            me.events = me.events || {};
+            if (me.listeners) {
+                me.on(me.listeners);
+                me.listeners = null; 
+            }
+
+            if (me.bubbleEvents) {
+                me.enableBubble(me.bubbleEvents);
+            }
+        },
+
+        onClassExtended: function (T) {
+            if (!T.HasListeners) {
+                
+                
+                Observable.prepareClass(T);
+            }
+        },
+
+        
+        
+        eventOptionsRe : /^(?:scope|delay|buffer|single|stopEvent|preventDefault|stopPropagation|normalized|args|delegate|element|destroyable|vertical|horizontal|freezeEvent|priority)$/,
+
+        
+        addManagedListener: function(item, ename, fn, scope, options,  noDestroy) {
+            var me = this,
+                managedListeners = me.managedListeners = me.managedListeners || [],
+                config, passedOptions;
+
+            if (typeof ename !== 'string') {
+                
+                
+                
+                
+                passedOptions = arguments.length > 4 ? options : ename;
+
+                options = ename;
+                for (ename in options) {
+                    if (options.hasOwnProperty(ename)) {
+                        config = options[ename];
+                        if (!me.eventOptionsRe.test(ename)) {
+                            
+                            
+                            me.addManagedListener(item, ename, config.fn || config, config.scope || options.scope || scope, config.fn ? config : passedOptions, true);
+                        }
+                    }
+                }
+                if (options && options.destroyable) {
+                    return new ListenerRemover(me, item, options);
+                }
+            }
+            else {
+                if (typeof fn === 'string') {
+                    scope = scope || me;
+                    fn = Ext.resolveMethod(fn, scope);
+                }
+                
+                managedListeners.push({
+                    item: item,
+                    ename: ename,
+                    fn: fn,
+                    scope: scope,
+                    options: options
+                });
+
+                item.on(ename, fn, scope, options);
+
+                
+                if (!noDestroy && options && options.destroyable) {
+                    return new ListenerRemover(me, item, ename, fn, scope);
+                }
+            }
+        },
+
+        
+        removeManagedListener: function(item, ename, fn, scope) {
+            var me = this,
+                options,
+                config,
+                managedListeners,
+                length,
+                i, func;
+
+            if (typeof ename !== 'string') {
+                options = ename;
+                for (ename in options) {
+                    if (options.hasOwnProperty(ename)) {
+                        config = options[ename];
+                        if (!me.eventOptionsRe.test(ename)) {
+                            me.removeManagedListener(item, ename, config.fn || config, config.scope || options.scope || scope);
+                        }
+                    }
+                }
+            } else {
+                managedListeners = me.managedListeners ? me.managedListeners.slice() : [];
+                
+                if (typeof fn === 'string') {
+                    scope = scope || me;
+                    fn = Ext.resolveMethod(fn, scope);
+                }
+
+                for (i = 0, length = managedListeners.length; i < length; i++) {
+                    me.removeManagedListenerItem(false, managedListeners[i], item, ename, fn, scope);
+                }
+            }
+        },
+
+        
+        fireEvent: function(eventName) {
+            return this.fireEventArgs(eventName, arraySlice.call(arguments, 1));
+        },
+
+        
+        fireEventArgs: function(eventName, args) {
+            eventName = eventName.toLowerCase();
+            var me = this,
+                events = me.events,
+                event = events && events[eventName],
+                ret = true;
+
+            
+            
+            if (event && me.hasListeners[eventName]) {
+                ret = me.continueFireEvent(eventName, args || emptyArray, event.bubble);
+            }
+            return ret;
+        },
+
+        
+        continueFireEvent: function(eventName, args, bubbles) {
+            var target = this,
+                queue, event,
+                ret = true;
+
+            do {
+                if (target.eventsSuspended) {
+                    if ((queue = target.eventQueue)) {
+                        queue.push([eventName, args, bubbles]);
+                    }
+                    return ret;
+                } else {
+                    event = target.events[eventName];
+                    
+                    
+                    if (event && event !== true) {
+                        if ((ret = event.fire.apply(event, args)) === false) {
+                            break;
+                        }
+                    }
+                }
+            } while (bubbles && (target = target.getBubbleParent()));
+            return ret;
+        },
+
+        
+        getBubbleParent: function() {
+            var me = this, parent = me.getBubbleTarget && me.getBubbleTarget();
+            if (parent && parent.isObservable) {
+                return parent;
+            }
+            return null;
+        },
+
+        
+        addListener: function(ename, fn, scope, options) {
+            var me = this,
+                config, event,
+                prevListenerCount = 0;
+
+            
+            if (typeof ename !== 'string') {
+                options = ename;
+                for (ename in options) {
+                    if (options.hasOwnProperty(ename)) {
+                        config = options[ename];
+                        if (!me.eventOptionsRe.test(ename)) {
+                            
+                            me.addListener(ename, config.fn || config, config.scope || options.scope, config.fn ? config : options);
+                        }
+                    }
+                }
+                if (options && options.destroyable) {
+                    return new ListenerRemover(me, options);
+                }
+            }
+            
+            else {
+                ename = ename.toLowerCase();
+                event = me.events[ename];
+                if (event && event.isEvent) {
+                    prevListenerCount = event.listeners.length;
+                } else {
+                    me.events[ename] = event = new ExtEvent(me, ename);
+                }
+
+                
+                if (typeof fn === 'string') {
+                    scope = scope || me;
+                    fn = Ext.resolveMethod(fn, scope);
+                }
+                event.addListener(fn, scope, options);
+
+                
+                
+                if (event.listeners.length !== prevListenerCount) {
+                    me.hasListeners._incr_(ename);
+                }
+                if (options && options.destroyable) {
+                    return new ListenerRemover(me, ename, fn, scope, options);
+                }
+            }
+        },
+
+        
+        removeListener: function(ename, fn, scope) {
+            var me = this,
+                config,
+                event,
+                options;
+
+            if (typeof ename !== 'string') {
+                options = ename;
+                for (ename in options) {
+                    if (options.hasOwnProperty(ename)) {
+                        config = options[ename];
+                        if (!me.eventOptionsRe.test(ename)) {
+                            me.removeListener(ename, config.fn || config, config.scope || options.scope);
+                        }
+                    }
+                }
+            } else {
+                ename = ename.toLowerCase();
+                event = me.events[ename];
+                if (event && event.isEvent) {
+                    if (typeof fn === 'string') {
+                        scope = scope || me;
+                        fn = Ext.resolveMethod(fn, scope);
+                    }
+                    
+                    if (event.removeListener(fn, scope)) {
+                        me.hasListeners._decr_(ename);
+                    }
+                }
+            }
+        },
+
+        
+        clearListeners: function() {
+            var events = this.events,
+                hasListeners = this.hasListeners,
+                event,
+                key;
+
+            for (key in events) {
+                if (events.hasOwnProperty(key)) {
+                    event = events[key];
+                    if (event.isEvent) {
+                        delete hasListeners[key];
+                        event.clearListeners();
+                    }
+                }
+            }
+
+            this.clearManagedListeners();
+        },
+
+
+        
+        clearManagedListeners : function() {
+            var managedListeners = this.managedListeners || [],
+                i = 0,
+                len = managedListeners.length;
+
+            for (; i < len; i++) {
+                this.removeManagedListenerItem(true, managedListeners[i]);
+            }
+
+            this.managedListeners = [];
+        },
+
+        
+        removeManagedListenerItem: function(isClear, managedListener, item, ename, fn, scope){
+            if (isClear || (managedListener.item === item && managedListener.ename === ename && (!fn || managedListener.fn === fn) && (!scope || managedListener.scope === scope))) {
+                managedListener.item.un(managedListener.ename, managedListener.fn, managedListener.scope);
+                if (!isClear) {
+                    Ext.Array.remove(this.managedListeners, managedListener);
+                }
+            }
+        },
+
+
+        
+        addEvents: function(o) {
+            var me = this,
+                events = me.events || (me.events = {}),
+                arg, args, i;
+
+            if (typeof o == 'string') {
+                for (args = arguments, i = args.length; i--; ) {
+                    arg = args[i];
+                    if (!events[arg]) {
+                        events[arg] = true;
+                    }
+                }
+            } else {
+                Ext.applyIf(me.events, o);
+            }
+        },
+
+        
+        hasListener: function(ename) {
+            return !!this.hasListeners[ename.toLowerCase()];
+        },
+
+        
+        suspendEvents: function(queueSuspended) {
+            this.eventsSuspended += 1;
+            if (queueSuspended && !this.eventQueue) {
+                this.eventQueue = [];
+            }
+        },
+
+        
+        suspendEvent: function(eventName) {
+            var len = arguments.length,
+                i, event;
+
+            for (i = 0; i < len; i++) {
+                event = this.events[arguments[i]];
+
+                
+                if (event && event.suspend) {
+                    event.suspend();
+                }
+            }
+        },
+
+        
+        resumeEvent: function() {
+            var len = arguments.length,
+                i, event;
+
+            for (i = 0; i < len; i++) {
+
+                
+                event = this.events[arguments[i]];
+                if (event && event.resume) {
+                    event.resume();
+                }
+            }
+        },
+
+        
+        resumeEvents: function() {
+            var me = this,
+                queued = me.eventQueue,
+                qLen, q;
+
+            if (me.eventsSuspended && ! --me.eventsSuspended) {
+                delete me.eventQueue;
+
+                if (queued) {
+                    qLen = queued.length;
+                    for (q = 0; q < qLen; q++) {
+                        me.continueFireEvent.apply(me, queued[q]);
+                    }
+                }
+            }
+        },
+
+        
+        relayEvents : function(origin, events, prefix) {
+            var me = this,
+                len = events.length,
+                i = 0,
+                oldName,
+                relayers = {};
+
+            for (; i < len; i++) {
+                oldName = events[i];
+
+                
+                relayers[oldName] = me.createRelayer(prefix ? prefix + oldName : oldName);
+            }
+            
+            
+            
+            me.mon(origin, relayers, null, null, undefined);
+
+            
+            return new ListenerRemover(me, origin, relayers);
+        },
+
+        
+        createRelayer: function(newName, beginEnd) {
+            var me = this;
+            return function() {
+                return me.fireEventArgs.call(me, newName, beginEnd ? arraySlice.apply(arguments, beginEnd) : arguments);
+            };
+        },
+
+        
+        enableBubble: function(eventNames) {
+            if (eventNames) {
+                var me = this,
+                    names = (typeof eventNames == 'string') ? arguments : eventNames,
+                    length = names.length,
+                    events = me.events,
+                    ename, event, i;
+
+                for (i = 0; i < length; ++i) {
+                    ename = names[i].toLowerCase();
+                    event = events[ename];
+
+                    if (!event || typeof event == 'boolean') {
+                        events[ename] = event = new ExtEvent(me, ename);
+                    }
+
+                    
+                    
+                    me.hasListeners._incr_(ename);
+
+                    event.bubble = true;
+                }
+            }
+        }
+    };
+}, function() {
+    var Observable = this,
+        proto = Observable.prototype,
+        HasListeners = function () {},
+        prepareMixin = function (T) {
+            if (!T.HasListeners) {
+                var proto = T.prototype;
+
+                
+                Observable.prepareClass(T, this);
+
+                
+                
+                T.onExtended(function (U) {
+                    
+                    Observable.prepareClass(U);
+                });
+
+                
+                
+                if (proto.onClassMixedIn) {
+                    
+                    Ext.override(T, {
+                        onClassMixedIn: function (U) {
+                            prepareMixin.call(this, U);
+                            this.callParent(arguments);
+                        }
+                    });
+                } else {
+                    
+                    proto.onClassMixedIn = function (U) {
+                        prepareMixin.call(this, U);
+                    };
+                }
+            }
+        },
+        globalEvents;
+
+    HasListeners.prototype = {
+        
+        _decr_: function (ev) {
+            if (! --this[ev]) {
+                
+                
+                
+                delete this[ev];
+            }
+        },
+        _incr_: function (ev) {
+            if (this.hasOwnProperty(ev)) {
+                
+                ++this[ev];
+            } else {
+                
+                
+                this[ev] = 1;
+            }
+        }
+    };
+
+    proto.HasListeners = Observable.HasListeners = HasListeners;
+
+    Observable.createAlias({
+        
+        on: 'addListener',
+        
+        un: 'removeListener',
+        
+        mon: 'addManagedListener',
+        
+        mun: 'removeManagedListener'
+    });
+
+    
+    Observable.observeClass = Observable.observe;
+
+    
+    Ext.globalEvents = globalEvents = new Observable({
+        events: {
+            idle: Ext.EventManager.idleEvent,
+            ready: Ext.EventManager.readyEvent
+        }
+    });
+
+    
+    Ext.on = function() {
+        return globalEvents.addListener.apply(globalEvents, arguments);
+    };
+
+    
+    Ext.un = function() {
+        return globalEvents.removeListener.apply(globalEvents, arguments);
+    };
+
+    
+    
+    
+    function getMethodEvent(method){
+        var e = (this.methodEvents = this.methodEvents || {})[method],
+            returnValue,
+            v,
+            cancel,
+            obj = this,
+            makeCall;
+
+        if (!e) {
+            this.methodEvents[method] = e = {};
+            e.originalFn = this[method];
+            e.methodName = method;
+            e.before = [];
+            e.after = [];
+
+            makeCall = function(fn, scope, args){
+                if((v = fn.apply(scope || obj, args)) !== undefined){
+                    if (typeof v == 'object') {
+                        if(v.returnValue !== undefined){
+                            returnValue = v.returnValue;
+                        }else{
+                            returnValue = v;
+                        }
+                        cancel = !!v.cancel;
+                    }
+                    else
+                        if (v === false) {
+                            cancel = true;
+                        }
+                        else {
+                            returnValue = v;
+                        }
+                }
+            };
+
+            this[method] = function(){
+                var args = Array.prototype.slice.call(arguments, 0),
+                    b, i, len;
+                returnValue = v = undefined;
+                cancel = false;
+
+                for(i = 0, len = e.before.length; i < len; i++){
+                    b = e.before[i];
+                    makeCall(b.fn, b.scope, args);
+                    if (cancel) {
+                        return returnValue;
+                    }
+                }
+
+                if((v = e.originalFn.apply(obj, args)) !== undefined){
+                    returnValue = v;
+                }
+
+                for(i = 0, len = e.after.length; i < len; i++){
+                    b = e.after[i];
+                    makeCall(b.fn, b.scope, args);
+                    if (cancel) {
+                        return returnValue;
+                    }
+                }
+                return returnValue;
+            };
+        }
+        return e;
+    }
+
+    Ext.apply(proto, {
+        onClassMixedIn: prepareMixin,
+
+        
+        
+        
+        beforeMethod : function(method, fn, scope){
+            getMethodEvent.call(this, method).before.push({
+                fn: fn,
+                scope: scope
+            });
+        },
+
+        
+        afterMethod : function(method, fn, scope){
+            getMethodEvent.call(this, method).after.push({
+                fn: fn,
+                scope: scope
+            });
+        },
+
+        removeMethodListener: function(method, fn, scope){
+            var e = this.getMethodEvent(method),
+                i, len;
+            for(i = 0, len = e.before.length; i < len; i++){
+                if(e.before[i].fn == fn && e.before[i].scope == scope){
+                    Ext.Array.erase(e.before, i, 1);
+                    return;
+                }
+            }
+            for(i = 0, len = e.after.length; i < len; i++){
+                if(e.after[i].fn == fn && e.after[i].scope == scope){
+                    Ext.Array.erase(e.after, i, 1);
+                    return;
+                }
+            }
+        },
+
+        toggleEventLogging: function(toggle) {
+            Ext.util.Observable[toggle ? 'capture' : 'releaseCapture'](this, function(en) {
+                if (Ext.isDefined(Ext.global.console)) {
+                    Ext.global.console.log(en, arguments);
+                }
+            });
+        }
+    });
+});
+
+
+
 
 
 
 Ext.define('Ext.EventObjectImpl', {
-    uses: ['Ext.util.Point'],
+                             
 
     
     BACKSPACE: 8,
@@ -11164,7 +12150,7 @@ Ext.define('Ext.EventObjectImpl', {
                 result;
 
             if (t) {
-                result = Ext.fly(el).contains(t);
+                result = Ext.fly(el, '_internal').contains(t);
                 if (!result && allowEl) {
                     result = t == Ext.getDom(el);
                 }
@@ -11217,7 +12203,7 @@ Ext.define('Ext.EventObjectImpl', {
         
         
 
-        if (!Ext.isIE && document.createEvent) { 
+        if (!Ext.isIE9m && document.createEvent) { 
             API = {
                 createHtmlEvent: function (doc, type, bubbles, cancelable) {
                     var event = doc.createEvent('HTMLEvents');
@@ -11421,7 +12407,270 @@ Ext.EventObject = new Ext.EventObjectImpl();
 });
 
 
-//@tag dom,core
+
+
+
+
+Ext.define('Ext.dom.AbstractQuery', {
+    
+    select: function(q, root) {
+        var results = [],
+            nodes,
+            i,
+            j,
+            qlen,
+            nlen;
+
+        root = root || document;
+
+        if (typeof root == 'string') {
+            root = document.getElementById(root);
+        }
+
+        q = q.split(",");
+
+        for (i = 0,qlen = q.length; i < qlen; i++) {
+            if (typeof q[i] == 'string') {
+                
+                
+                if (typeof q[i][0] == '@') {
+                    nodes = root.getAttributeNode(q[i].substring(1));
+                    results.push(nodes);
+                } else {
+                    nodes = root.querySelectorAll(q[i]);
+
+                    for (j = 0,nlen = nodes.length; j < nlen; j++) {
+                        results.push(nodes[j]);
+                    }
+                }
+            }
+        }
+
+        return results;
+    },
+
+    
+    selectNode: function(q, root) {
+        return this.select(q, root)[0];
+    },
+
+    
+    is: function(el, q) {
+        if (typeof el == "string") {
+            el = document.getElementById(el);
+        }
+        return this.select(q).indexOf(el) !== -1;
+    }
+
+});
+
+
+
+
+
+Ext.define('Ext.dom.AbstractHelper', {
+    emptyTags : /^(?:br|frame|hr|img|input|link|meta|range|spacer|wbr|area|param|col)$/i,
+    confRe : /^(?:tag|children|cn|html|tpl|tplData)$/i,
+    endRe : /end/i,
+    styleSepRe: /\s*(?::|;)\s*/,
+
+    
+    attributeTransform: { cls : 'class', htmlFor : 'for' },
+
+    closeTags: {},
+
+    decamelizeName : (function () {
+        var camelCaseRe = /([a-z])([A-Z])/g,
+            cache = {};
+
+        function decamel (match, p1, p2) {
+            return p1 + '-' + p2.toLowerCase();
+        }
+
+        return function (s) {
+            return cache[s] || (cache[s] = s.replace(camelCaseRe, decamel));
+        };
+    }()),
+
+    generateMarkup: function(spec, buffer) {
+        var me = this,
+            specType = typeof spec,
+            attr, val, tag, i, closeTags;
+
+        if (specType == "string" || specType == "number") {
+            buffer.push(spec);
+        } else if (Ext.isArray(spec)) {
+            for (i = 0; i < spec.length; i++) {
+                if (spec[i]) {
+                    me.generateMarkup(spec[i], buffer);
+                }
+            }
+        } else {
+            tag = spec.tag || 'div';
+            buffer.push('<', tag);
+
+            for (attr in spec) {
+                if (spec.hasOwnProperty(attr)) {
+                    val = spec[attr];
+                    if (!me.confRe.test(attr)) {
+                        if (typeof val == "object") {
+                            buffer.push(' ', attr, '="');
+                            me.generateStyles(val, buffer).push('"');
+                        } else {
+                            buffer.push(' ', me.attributeTransform[attr] || attr, '="', val, '"');
+                        }
+                    }
+                }
+            }
+
+            
+            if (me.emptyTags.test(tag)) {
+                buffer.push('/>');
+            } else {
+                buffer.push('>');
+
+                
+                if ((val = spec.tpl)) {
+                    val.applyOut(spec.tplData, buffer);
+                }
+                if ((val = spec.html)) {
+                    buffer.push(val);
+                }
+                if ((val = spec.cn || spec.children)) {
+                    me.generateMarkup(val, buffer);
+                }
+
+                
+                closeTags = me.closeTags;
+                buffer.push(closeTags[tag] || (closeTags[tag] = '</' + tag + '>'));
+            }
+        }
+
+        return buffer;
+    },
+
+    
+    generateStyles: function (styles, buffer) {
+        var a = buffer || [],
+            name;
+
+        for (name in styles) {
+            if (styles.hasOwnProperty(name)) {
+                a.push(this.decamelizeName(name), ':', styles[name], ';');
+            }
+        }
+
+        return buffer || a.join('');
+    },
+
+    
+    markup: function(spec) {
+        if (typeof spec == "string") {
+            return spec;
+        }
+
+        var buf = this.generateMarkup(spec, []);
+        return buf.join('');
+    },
+
+    
+    applyStyles: function(el, styles) {
+        if (styles) {
+            var i = 0,
+                len;
+
+            el = Ext.fly(el, '_applyStyles');
+            if (typeof styles == 'function') {
+                styles = styles.call();
+            }
+            if (typeof styles == 'string') {
+                styles = Ext.util.Format.trim(styles).split(this.styleSepRe);
+                for (len = styles.length; i < len;) {
+                    el.setStyle(styles[i++], styles[i++]);
+                }
+            } else if (Ext.isObject(styles)) {
+                el.setStyle(styles);
+            }
+        }
+    },
+
+    
+    insertHtml: function(where, el, html) {
+        var hash = {},
+            setStart,
+            range,
+            frag,
+            rangeEl;
+
+        where = where.toLowerCase();
+
+        
+        hash['beforebegin'] = ['BeforeBegin', 'previousSibling'];
+        hash['afterend'] = ['AfterEnd', 'nextSibling'];
+
+        range = el.ownerDocument.createRange();
+        setStart = 'setStart' + (this.endRe.test(where) ? 'After' : 'Before');
+        if (hash[where]) {
+            range[setStart](el);
+            frag = range.createContextualFragment(html);
+            el.parentNode.insertBefore(frag, where == 'beforebegin' ? el : el.nextSibling);
+            return el[(where == 'beforebegin' ? 'previous' : 'next') + 'Sibling'];
+        }
+        else {
+            rangeEl = (where == 'afterbegin' ? 'first' : 'last') + 'Child';
+            if (el.firstChild) {
+                range[setStart](el[rangeEl]);
+                frag = range.createContextualFragment(html);
+                if (where == 'afterbegin') {
+                    el.insertBefore(frag, el.firstChild);
+                }
+                else {
+                    el.appendChild(frag);
+                }
+            }
+            else {
+                el.innerHTML = html;
+            }
+            return el[rangeEl];
+        }
+
+        throw 'Illegal insertion point -> "' + where + '"';
+    },
+
+    
+    insertBefore: function(el, o, returnElement) {
+        return this.doInsert(el, o, returnElement, 'beforebegin');
+    },
+
+    
+    insertAfter: function(el, o, returnElement) {
+        return this.doInsert(el, o, returnElement, 'afterend', 'nextSibling');
+    },
+
+    
+    insertFirst: function(el, o, returnElement) {
+        return this.doInsert(el, o, returnElement, 'afterbegin', 'firstChild');
+    },
+
+    
+    append: function(el, o, returnElement) {
+        return this.doInsert(el, o, returnElement, 'beforeend', '', true);
+    },
+
+    
+    overwrite: function(el, o, returnElement) {
+        el = Ext.getDom(el);
+        el.innerHTML = this.markup(o);
+        return returnElement ? Ext.get(el.firstChild) : el.firstChild;
+    },
+
+    doInsert: function(el, o, returnElement, pos, sibling, append) {
+        var newNode = this.insertHtml(pos, Ext.getDom(el), this.markup(o));
+        return returnElement ? Ext.get(newNode, true) : newNode;
+    }
+
+});
+
 
 
 Ext.define('Ext.dom.AbstractElement_static', {
@@ -11481,27 +12730,32 @@ Ext.define('Ext.dom.AbstractElement_static', {
         
         parseBox: function(box) {
             box = box || 0;
+            
+            var type = typeof box,
+                parts,
+                ln;
 
-            if (typeof box === 'number') {
+            if (type === 'number') {
                 return {
                     top   : box,
                     right : box,
                     bottom: box,
                     left  : box
                 };
+             } else if (type !== 'string') {
+                 
+                 return box;
              }
 
-            var parts  = box.split(' '),
-                ln = parts.length;
+            parts  = box.split(' ');
+            ln = parts.length;
 
             if (ln == 1) {
                 parts[1] = parts[2] = parts[3] = parts[0];
-            }
-            else if (ln == 2) {
+            } else if (ln == 2) {
                 parts[2] = parts[0];
                 parts[3] = parts[1];
-            }
-            else if (ln == 3) {
+            } else if (ln == 3) {
                 parts[3] = parts[1];
             }
 
@@ -11516,7 +12770,7 @@ Ext.define('Ext.dom.AbstractElement_static', {
         
         unitizeBox: function(box, units) {
             var a = this.addUnits,
-                b = Ext.isObject(box) ? box : this.parseBox(box);
+                b = this.parseBox(box);
 
             return a(b.top, units) + ' ' +
                    a(b.right, units) + ' ' +
@@ -11747,7 +13001,6 @@ function () {
     });
 });
 
-//@tag dom,core
 
 
 Ext.define('Ext.dom.AbstractElement_insertion', {
@@ -11914,7 +13167,6 @@ Ext.define('Ext.dom.AbstractElement_insertion', {
     }
 });
 
-//@tag dom,core
 
 
 Ext.define('Ext.dom.AbstractElement_style', {
@@ -12586,7 +13838,6 @@ Ext.define('Ext.dom.AbstractElement_style', {
 
 });
 
-//@tag dom,core
 
 
 Ext.define('Ext.dom.AbstractElement_traversal', {
@@ -12702,20 +13953,18 @@ Ext.define('Ext.dom.AbstractElement_traversal', {
     }
 });
 
-//@tag dom,core
 
-//@require Ext.Supports
 
 
 
 Ext.define('Ext.dom.AbstractElement', {
-    requires: [
-        'Ext.EventManager',
-        'Ext.dom.AbstractElement_static',
-        'Ext.dom.AbstractElement_insertion',
-        'Ext.dom.AbstractElement_style',
-        'Ext.dom.AbstractElement_traversal'
-    ],
+               
+                           
+                                         
+                                            
+                                        
+                                           
+      
 
     trimRe: /^\s+|\s+$/g,
     whitespaceRe: /\s/,
@@ -13234,280 +14483,9 @@ function() {
     }(this.prototype));
 });
 
-//@tag dom,core
-
-//@require ../EventObject.js
 
 
 
-Ext.define('Ext.dom.AbstractQuery', {
-    
-    select: function(q, root) {
-        var results = [],
-            nodes,
-            i,
-            j,
-            qlen,
-            nlen;
-
-        root = root || document;
-
-        if (typeof root == 'string') {
-            root = document.getElementById(root);
-        }
-
-        q = q.split(",");
-
-        for (i = 0,qlen = q.length; i < qlen; i++) {
-            if (typeof q[i] == 'string') {
-                
-                
-                if (typeof q[i][0] == '@') {
-                    nodes = root.getAttributeNode(q[i].substring(1));
-                    results.push(nodes);
-                } else {
-                    nodes = root.querySelectorAll(q[i]);
-
-                    for (j = 0,nlen = nodes.length; j < nlen; j++) {
-                        results.push(nodes[j]);
-                    }
-                }
-            }
-        }
-
-        return results;
-    },
-
-    
-    selectNode: function(q, root) {
-        return this.select(q, root)[0];
-    },
-
-    
-    is: function(el, q) {
-        if (typeof el == "string") {
-            el = document.getElementById(el);
-        }
-        return this.select(q).indexOf(el) !== -1;
-    }
-
-});
-
-//@tag dom,core
-
-//@require AbstractQuery.js
-
-
-
-Ext.define('Ext.dom.AbstractHelper', {
-    emptyTags : /^(?:br|frame|hr|img|input|link|meta|range|spacer|wbr|area|param|col)$/i,
-    confRe : /^(?:tag|children|cn|html|tpl|tplData)$/i,
-    endRe : /end/i,
-    styleSepRe: /\s*(?::|;)\s*/,
-
-    
-    attributeTransform: { cls : 'class', htmlFor : 'for' },
-
-    closeTags: {},
-
-    decamelizeName : (function () {
-        var camelCaseRe = /([a-z])([A-Z])/g,
-            cache = {};
-
-        function decamel (match, p1, p2) {
-            return p1 + '-' + p2.toLowerCase();
-        }
-
-        return function (s) {
-            return cache[s] || (cache[s] = s.replace(camelCaseRe, decamel));
-        };
-    }()),
-
-    generateMarkup: function(spec, buffer) {
-        var me = this,
-            specType = typeof spec,
-            attr, val, tag, i, closeTags;
-
-        if (specType == "string" || specType == "number") {
-            buffer.push(spec);
-        } else if (Ext.isArray(spec)) {
-            for (i = 0; i < spec.length; i++) {
-                if (spec[i]) {
-                    me.generateMarkup(spec[i], buffer);
-                }
-            }
-        } else {
-            tag = spec.tag || 'div';
-            buffer.push('<', tag);
-
-            for (attr in spec) {
-                if (spec.hasOwnProperty(attr)) {
-                    val = spec[attr];
-                    if (!me.confRe.test(attr)) {
-                        if (typeof val == "object") {
-                            buffer.push(' ', attr, '="');
-                            me.generateStyles(val, buffer).push('"');
-                        } else {
-                            buffer.push(' ', me.attributeTransform[attr] || attr, '="', val, '"');
-                        }
-                    }
-                }
-            }
-
-            
-            if (me.emptyTags.test(tag)) {
-                buffer.push('/>');
-            } else {
-                buffer.push('>');
-
-                
-                if ((val = spec.tpl)) {
-                    val.applyOut(spec.tplData, buffer);
-                }
-                if ((val = spec.html)) {
-                    buffer.push(val);
-                }
-                if ((val = spec.cn || spec.children)) {
-                    me.generateMarkup(val, buffer);
-                }
-
-                
-                closeTags = me.closeTags;
-                buffer.push(closeTags[tag] || (closeTags[tag] = '</' + tag + '>'));
-            }
-        }
-
-        return buffer;
-    },
-
-    
-    generateStyles: function (styles, buffer) {
-        var a = buffer || [],
-            name;
-
-        for (name in styles) {
-            if (styles.hasOwnProperty(name)) {
-                a.push(this.decamelizeName(name), ':', styles[name], ';');
-            }
-        }
-
-        return buffer || a.join('');
-    },
-
-    
-    markup: function(spec) {
-        if (typeof spec == "string") {
-            return spec;
-        }
-
-        var buf = this.generateMarkup(spec, []);
-        return buf.join('');
-    },
-
-    
-    applyStyles: function(el, styles) {
-        if (styles) {
-            var i = 0,
-                len;
-
-            el = Ext.fly(el, '_applyStyles');
-            if (typeof styles == 'function') {
-                styles = styles.call();
-            }
-            if (typeof styles == 'string') {
-                styles = Ext.util.Format.trim(styles).split(this.styleSepRe);
-                for (len = styles.length; i < len;) {
-                    el.setStyle(styles[i++], styles[i++]);
-                }
-            } else if (Ext.isObject(styles)) {
-                el.setStyle(styles);
-            }
-        }
-    },
-
-    
-    insertHtml: function(where, el, html) {
-        var hash = {},
-            setStart,
-            range,
-            frag,
-            rangeEl;
-
-        where = where.toLowerCase();
-
-        
-        hash['beforebegin'] = ['BeforeBegin', 'previousSibling'];
-        hash['afterend'] = ['AfterEnd', 'nextSibling'];
-
-        range = el.ownerDocument.createRange();
-        setStart = 'setStart' + (this.endRe.test(where) ? 'After' : 'Before');
-        if (hash[where]) {
-            range[setStart](el);
-            frag = range.createContextualFragment(html);
-            el.parentNode.insertBefore(frag, where == 'beforebegin' ? el : el.nextSibling);
-            return el[(where == 'beforebegin' ? 'previous' : 'next') + 'Sibling'];
-        }
-        else {
-            rangeEl = (where == 'afterbegin' ? 'first' : 'last') + 'Child';
-            if (el.firstChild) {
-                range[setStart](el[rangeEl]);
-                frag = range.createContextualFragment(html);
-                if (where == 'afterbegin') {
-                    el.insertBefore(frag, el.firstChild);
-                }
-                else {
-                    el.appendChild(frag);
-                }
-            }
-            else {
-                el.innerHTML = html;
-            }
-            return el[rangeEl];
-        }
-
-        throw 'Illegal insertion point -> "' + where + '"';
-    },
-
-    
-    insertBefore: function(el, o, returnElement) {
-        return this.doInsert(el, o, returnElement, 'beforebegin');
-    },
-
-    
-    insertAfter: function(el, o, returnElement) {
-        return this.doInsert(el, o, returnElement, 'afterend', 'nextSibling');
-    },
-
-    
-    insertFirst: function(el, o, returnElement) {
-        return this.doInsert(el, o, returnElement, 'afterbegin', 'firstChild');
-    },
-
-    
-    append: function(el, o, returnElement) {
-        return this.doInsert(el, o, returnElement, 'beforeend', '', true);
-    },
-
-    
-    overwrite: function(el, o, returnElement) {
-        el = Ext.getDom(el);
-        el.innerHTML = this.markup(o);
-        return returnElement ? Ext.get(el.firstChild) : el.firstChild;
-    },
-
-    doInsert: function(el, o, returnElement, pos, sibling, append) {
-        var newNode = this.insertHtml(pos, Ext.getDom(el), this.markup(o));
-        return returnElement ? Ext.get(newNode, true) : newNode;
-    }
-
-});
-
-//@tag dom,core
-
-//@define Ext.DomHelper
-
-
-//@define Ext.core.DomHelper
 
 
 
@@ -13540,8 +14518,8 @@ var afterbegin = 'afterbegin',
 
 
 return {
-    extend: 'Ext.dom.AbstractHelper',
-    requires:['Ext.dom.AbstractElement'],
+    extend:  Ext.dom.AbstractHelper ,
+                                         
 
     tableRe: /^(?:table|thead|tbody|tr|td)$/i,
 
@@ -13754,7 +14732,16 @@ return {
             }
 
             if ((hashVal = fullPositionHash[where])) {
-                el.insertAdjacentHTML(hashVal[0], html);
+
+                if (Ext.global.MSApp && Ext.global.MSApp.execUnsafeLocalFunction) {
+                    
+                    MSApp.execUnsafeLocalFunction(function () {
+                        el.insertAdjacentHTML(hashVal[0], html);
+                    });
+                } else {
+                    el.insertAdjacentHTML(hashVal[0], html);
+                }
+
                 return el[hashVal[1]];
             }
             
@@ -13810,19 +14797,1441 @@ return {
     Ext.DomHelper = Ext.core.DomHelper = new this;
 });
 
-//@tag dom,core
-
-//@require Helper.js
-
-//@define Ext.dom.Query
-
-//@define Ext.core.Query
-
-//@define Ext.DomQuery
 
 
+Ext.define('Ext.Template', {
+
+    
+
+                                                    
+
+    inheritableStatics: {
+        
+        from: function(el, config) {
+            el = Ext.getDom(el);
+            return new this(el.value || el.innerHTML, config || '');
+        }
+    },
+
+    
+
+    
+    constructor: function(html) {
+        var me = this,
+            args = arguments,
+            buffer = [],
+            i = 0,
+            length = args.length,
+            value;
+
+        me.initialConfig = {};
+        
+        
+        
+        
+        if (length === 1 && Ext.isArray(html)) {
+            args = html;
+            length = args.length;
+        }
+
+        if (length > 1) {
+            for (; i < length; i++) {
+                value = args[i];
+                if (typeof value == 'object') {
+                    Ext.apply(me.initialConfig, value);
+                    Ext.apply(me, value);
+                } else {
+                    buffer.push(value);
+                }
+            }
+        } else {
+            buffer.push(html);
+        }
+
+        
+        me.html = buffer.join('');
+
+        if (me.compiled) {
+            me.compile();
+        }
+    },
+
+    
+    isTemplate: true,
+
+    
+
+    
+    disableFormats: false,
+
+    re: /\{([\w\-]+)(?:\:([\w\.]*)(?:\((.*?)?\))?)?\}/g,
+
+    
+    apply: function(values) {
+        var me = this,
+            useFormat = me.disableFormats !== true,
+            fm = Ext.util.Format,
+            tpl = me,
+            ret;
+
+        if (me.compiled) {
+            return me.compiled(values).join('');
+        }
+
+        function fn(m, name, format, args) {
+            if (format && useFormat) {
+                if (args) {
+                    args = [values[name]].concat(Ext.functionFactory('return ['+ args +'];')());
+                } else {
+                    args = [values[name]];
+                }
+                if (format.substr(0, 5) == "this.") {
+                    return tpl[format.substr(5)].apply(tpl, args);
+                }
+                else {
+                    return fm[format].apply(fm, args);
+                }
+            }
+            else {
+                return values[name] !== undefined ? values[name] : "";
+            }
+        }
+
+        ret = me.html.replace(me.re, fn);
+        return ret;
+    },
+
+    
+    applyOut: function(values, out) {
+        var me = this;
+
+        if (me.compiled) {
+            out.push.apply(out, me.compiled(values));
+        } else {
+            out.push(me.apply(values));
+        }
+
+        return out;
+    },
+
+    
+    applyTemplate: function () {
+        return this.apply.apply(this, arguments);
+    },
+
+    
+    set: function(html, compile) {
+        var me = this;
+        me.html = html;
+        me.compiled = null;
+        return compile ? me.compile() : me;
+    },
+
+    compileARe: /\\/g,
+    compileBRe: /(\r\n|\n)/g,
+    compileCRe: /'/g,
+
+    /**
+     * Compiles the template into an internal function, eliminating the RegEx overhead.
+     * @return {Ext.Template} this
+     */
+    compile: function() {
+        var me = this,
+            fm = Ext.util.Format,
+            useFormat = me.disableFormats !== true,
+            body, bodyReturn;
+
+        function fn(m, name, format, args) {
+            if (format && useFormat) {
+                args = args ? ',' + args: "";
+                if (format.substr(0, 5) != "this.") {
+                    format = "fm." + format + '(';
+                }
+                else {
+                    format = 'this.' + format.substr(5) + '(';
+                }
+            }
+            else {
+                args = '';
+                format = "(values['" + name + "'] == undefined ? '' : ";
+            }
+            return "'," + format + "values['" + name + "']" + args + ") ,'";
+        }
+
+        bodyReturn = me.html.replace(me.compileARe, '\\\\').replace(me.compileBRe, '\\n').replace(me.compileCRe, "\\'").replace(me.re, fn);
+        body = "this.compiled = function(values){ return ['" + bodyReturn + "'];};";
+        eval(body);
+        return me;
+    },
+
+    /**
+     * Applies the supplied values to the template and inserts the new node(s) as the first child of el.
+     *
+     * @param {String/HTMLElement/Ext.Element} el The context element
+     * @param {Object/Array} values The template values. See {@link #applyTemplate} for details.
+     * @param {Boolean} returnElement (optional) true to return a Ext.Element.
+     * @return {HTMLElement/Ext.Element} The new node or Element
+     */
+    insertFirst: function(el, values, returnElement) {
+        return this.doInsert('afterBegin', el, values, returnElement);
+    },
+
+    /**
+     * Applies the supplied values to the template and inserts the new node(s) before el.
+     *
+     * @param {String/HTMLElement/Ext.Element} el The context element
+     * @param {Object/Array} values The template values. See {@link #applyTemplate} for details.
+     * @param {Boolean} returnElement (optional) true to return a Ext.Element.
+     * @return {HTMLElement/Ext.Element} The new node or Element
+     */
+    insertBefore: function(el, values, returnElement) {
+        return this.doInsert('beforeBegin', el, values, returnElement);
+    },
+
+    /**
+     * Applies the supplied values to the template and inserts the new node(s) after el.
+     *
+     * @param {String/HTMLElement/Ext.Element} el The context element
+     * @param {Object/Array} values The template values. See {@link #applyTemplate} for details.
+     * @param {Boolean} returnElement (optional) true to return a Ext.Element.
+     * @return {HTMLElement/Ext.Element} The new node or Element
+     */
+    insertAfter: function(el, values, returnElement) {
+        return this.doInsert('afterEnd', el, values, returnElement);
+    },
+
+    /**
+     * Applies the supplied `values` to the template and appends the new node(s) to the specified `el`.
+     *
+     * For example usage see {@link Ext.Template Ext.Template class docs}.
+     *
+     * @param {String/HTMLElement/Ext.Element} el The context element
+     * @param {Object/Array} values The template values. See {@link #applyTemplate} for details.
+     * @param {Boolean} returnElement (optional) true to return an Ext.Element.
+     * @return {HTMLElement/Ext.Element} The new node or Element
+     */
+    append: function(el, values, returnElement) {
+        return this.doInsert('beforeEnd', el, values, returnElement);
+    },
+
+    doInsert: function(where, el, values, returnElement) {
+        var newNode = Ext.DomHelper.insertHtml(where, Ext.getDom(el), this.apply(values));
+        return returnElement ? Ext.get(newNode) : newNode;
+    },
+
+    /**
+     * Applies the supplied values to the template and overwrites the content of el with the new node(s).
+     *
+     * @param {String/HTMLElement/Ext.Element} el The context element
+     * @param {Object/Array} values The template values. See {@link #applyTemplate} for details.
+     * @param {Boolean} returnElement (optional) true to return a Ext.Element.
+     * @return {HTMLElement/Ext.Element} The new node or Element
+     */
+    overwrite: function(el, values, returnElement) {
+        var newNode = Ext.DomHelper.overwrite(Ext.getDom(el), this.apply(values));
+        return returnElement ? Ext.get(newNode) : newNode;
+    }
+});
+
+// @tag core
+/**
+ * This class parses the XTemplate syntax and calls abstract methods to process the parts.
+ * @private
+ */
+Ext.define('Ext.XTemplateParser', {
+    constructor: function (config) {
+        Ext.apply(this, config);
+    },
+
+    /**
+     * @property {Number} level The 'for' or 'foreach' loop context level. This is adjusted
+     * up by one prior to calling {@link #doFor} or {@link #doForEach} and down by one after
+     * calling the corresponding {@link #doEnd} that closes the loop. This will be 1 on the
+     * first {@link #doFor} or {@link #doForEach} call.
+     */
+
+    /**
+     * This method is called to process a piece of raw text from the tpl.
+     * @param {String} text
+     * @method doText
+     */
+    // doText: function (text)
+
+    /**
+     * This method is called to process expressions (like `{[expr]}`).
+     * @param {String} expr The body of the expression (inside "{[" and "]}").
+     * @method doExpr
+     */
+    // doExpr: function (expr)
+
+    /**
+     * This method is called to process simple tags (like `{tag}`).
+     * @method doTag
+     */
+    // doTag: function (tag)
+
+    /**
+     * This method is called to process `<tpl else>`.
+     * @method doElse
+     */
+    // doElse: function ()
+
+    /**
+     * This method is called to process `{% text %}`.
+     * @param {String} text
+     * @method doEval
+     */
+    // doEval: function (text)
+
+    /**
+     * This method is called to process `<tpl if="action">`. If there are other attributes,
+     * these are passed in the actions object.
+     * @param {String} action
+     * @param {Object} actions Other actions keyed by the attribute name (such as 'exec').
+     * @method doIf
+     */
+    // doIf: function (action, actions)
+
+    /**
+     * This method is called to process `<tpl elseif="action">`. If there are other attributes,
+     * these are passed in the actions object.
+     * @param {String} action
+     * @param {Object} actions Other actions keyed by the attribute name (such as 'exec').
+     * @method doElseIf
+     */
+    // doElseIf: function (action, actions)
+
+    /**
+     * This method is called to process `<tpl switch="action">`. If there are other attributes,
+     * these are passed in the actions object.
+     * @param {String} action
+     * @param {Object} actions Other actions keyed by the attribute name (such as 'exec').
+     * @method doSwitch
+     */
+    // doSwitch: function (action, actions)
+
+    /**
+     * This method is called to process `<tpl case="action">`. If there are other attributes,
+     * these are passed in the actions object.
+     * @param {String} action
+     * @param {Object} actions Other actions keyed by the attribute name (such as 'exec').
+     * @method doCase
+     */
+    // doCase: function (action, actions)
+
+    /**
+     * This method is called to process `<tpl default>`.
+     * @method doDefault
+     */
+    // doDefault: function ()
+
+    /**
+     * This method is called to process `</tpl>`. It is given the action type that started
+     * the tpl and the set of additional actions.
+     * @param {String} type The type of action that is being ended.
+     * @param {Object} actions The other actions keyed by the attribute name (such as 'exec').
+     * @method doEnd
+     */
+    // doEnd: function (type, actions) 
+
+    /**
+     * This method is called to process `<tpl for="action">`. If there are other attributes,
+     * these are passed in the actions object.
+     * @param {String} action
+     * @param {Object} actions Other actions keyed by the attribute name (such as 'exec').
+     * @method doFor
+     */
+    // doFor: function (action, actions)
+
+    /**
+     * This method is called to process `<tpl foreach="action">`. If there are other
+     * attributes, these are passed in the actions object.
+     * @param {String} action
+     * @param {Object} actions Other actions keyed by the attribute name (such as 'exec').
+     * @method doForEach
+     */
+    // doForEach: function (action, actions)
+
+    /**
+     * This method is called to process `<tpl exec="action">`. If there are other attributes,
+     * these are passed in the actions object.
+     * @param {String} action
+     * @param {Object} actions Other actions keyed by the attribute name.
+     * @method doExec
+     */
+    // doExec: function (action, actions)
+
+    /**
+     * This method is called to process an empty `<tpl>`. This is unlikely to need to be
+     * implemented, so a default (do nothing) version is provided.
+     * @method
+     */
+    doTpl: Ext.emptyFn,
+
+    parse: function (str) {
+        var me = this,
+            len = str.length,
+            aliases = { elseif: 'elif' },
+            topRe = me.topRe,
+            actionsRe = me.actionsRe,
+            index, stack, s, m, t, prev, frame, subMatch, begin, end, actions,
+            prop;
+
+        me.level = 0;
+        me.stack = stack = [];
+
+        for (index = 0; index < len; index = end) {
+            topRe.lastIndex = index;
+            m = topRe.exec(str);
+
+            if (!m) {
+                me.doText(str.substring(index, len));
+                break;
+            }
+
+            begin = m.index;
+            end = topRe.lastIndex;
+
+            if (index < begin) {
+                me.doText(str.substring(index, begin));
+            }
+
+            if (m[1]) {
+                end = str.indexOf('%}', begin+2);
+                me.doEval(str.substring(begin+2, end));
+                end += 2;
+            } else if (m[2]) {
+                end = str.indexOf(']}', begin+2);
+                me.doExpr(str.substring(begin+2, end));
+                end += 2;
+            } else if (m[3]) { // if ('{' token)
+                me.doTag(m[3]);
+            } else if (m[4]) { // content of a <tpl xxxxxx xxx> tag
+                actions = null;
+                while ((subMatch = actionsRe.exec(m[4])) !== null) {
+                    s = subMatch[2] || subMatch[3];
+                    if (s) {
+                        s = Ext.String.htmlDecode(s); // decode attr value
+                        t = subMatch[1];
+                        t = aliases[t] || t;
+                        actions = actions || {};
+                        prev = actions[t];
+
+                        if (typeof prev == 'string') {
+                            actions[t] = [prev, s];
+                        } else if (prev) {
+                            actions[t].push(s);
+                        } else {
+                            actions[t] = s;
+                        }
+                    }
+                }
+
+                if (!actions) {
+                    if (me.elseRe.test(m[4])) {
+                        me.doElse();
+                    } else if (me.defaultRe.test(m[4])) {
+                        me.doDefault();
+                    } else {
+                        me.doTpl();
+                        stack.push({ type: 'tpl' });
+                    }
+                }
+                else if (actions['if']) {
+                    me.doIf(actions['if'], actions);
+                    stack.push({ type: 'if' });
+                }
+                else if (actions['switch']) {
+                    me.doSwitch(actions['switch'], actions);
+                    stack.push({ type: 'switch' });
+                }
+                else if (actions['case']) {
+                    me.doCase(actions['case'], actions);
+                }
+                else if (actions['elif']) {
+                    me.doElseIf(actions['elif'], actions);
+                }
+                else if (actions['for']) {
+                    ++me.level;
+
+                    // Extract property name to use from indexed item
+                    if (prop = me.propRe.exec(m[4])) {
+                        actions.propName = prop[1] || prop[2];
+                    }
+                    me.doFor(actions['for'], actions);
+                    stack.push({ type: 'for', actions: actions });
+                }
+                else if (actions['foreach']) {
+                    ++me.level;
+
+                    // Extract property name to use from indexed item
+                    if (prop = me.propRe.exec(m[4])) {
+                        actions.propName = prop[1] || prop[2];
+                    }
+                    me.doForEach(actions['foreach'], actions);
+                    stack.push({ type: 'foreach', actions: actions });
+                }
+                else if (actions.exec) {
+                    me.doExec(actions.exec, actions);
+                    stack.push({ type: 'exec', actions: actions });
+                }
+                /*
+                else {
+                    // todo - error
+                }
+                */
+            } else if (m[0].length === 5) {
+                // if the length of m[0] is 5, assume that we're dealing with an opening tpl tag with no attributes (e.g. <tpl>...</tpl>)
+                // in this case no action is needed other than pushing it on to the stack
+                stack.push({ type: 'tpl' });
+            } else {
+                frame = stack.pop();
+                me.doEnd(frame.type, frame.actions);
+                if (frame.type == 'for' || frame.type == 'foreach') {
+                    --me.level;
+                }
+            }
+        }
+    },
+
+    // Internal regexes
+    
+    topRe:     /(?:(\{\%)|(\{\[)|\{([^{}]+)\})|(?:<tpl([^>]*)\>)|(?:<\/tpl>)/g,
+    actionsRe: /\s*(elif|elseif|if|for|foreach|exec|switch|case|eval|between)\s*\=\s*(?:(?:"([^"]*)")|(?:'([^']*)'))\s*/g,
+    propRe:    /prop=(?:(?:"([^"]*)")|(?:'([^']*)'))/,
+    defaultRe: /^\s*default\s*$/,
+    elseRe:    /^\s*else\s*$/
+});
 
 
+
+Ext.define('Ext.XTemplateCompiler', {
+    extend:  Ext.XTemplateParser ,
+
+    
+    
+    
+    useEval: Ext.isGecko,
+
+    
+    
+    
+    useIndex: Ext.isIE8m,
+
+    useFormat: true,
+    
+    propNameRe: /^[\w\d\$]*$/,
+
+    compile: function (tpl) {
+        var me = this,
+            code = me.generate(tpl);
+
+        
+        
+        
+        
+        return me.useEval ? me.evalTpl(code) : (new Function('Ext', code))(Ext);
+    },
+
+    generate: function (tpl) {
+        var me = this,
+            
+            definitions = 'var fm=Ext.util.Format,ts=Object.prototype.toString;',
+            code;
+
+        
+        me.maxLevel = 0;
+
+        me.body = [
+            'var c0=values, a0=' + me.createArrayTest(0) + ', p0=parent, n0=xcount, i0=xindex, k0, v;\n'
+        ];
+        if (me.definitions) {
+            if (typeof me.definitions === 'string') {
+                me.definitions = [me.definitions, definitions ];
+            } else {
+                me.definitions.push(definitions);
+            }
+        } else {
+            me.definitions = [ definitions ];
+        }
+        me.switches = [];
+
+        me.parse(tpl);
+
+        me.definitions.push(
+            (me.useEval ? '$=' : 'return') + ' function (' + me.fnArgs + ') {',
+                me.body.join(''),
+            '}'
+        );
+
+        code = me.definitions.join('\n');
+
+        
+        me.definitions.length = me.body.length = me.switches.length = 0;
+        delete me.definitions;
+        delete me.body;
+        delete me.switches;
+
+        return code;
+    },
+
+    
+    
+
+    doText: function (text) {
+        var me = this,
+            out = me.body;
+
+        text = text.replace(me.aposRe, "\\'").replace(me.newLineRe, '\\n');
+        if (me.useIndex) {
+            out.push('out[out.length]=\'', text, '\'\n');
+        } else {
+            out.push('out.push(\'', text, '\')\n');
+        }
+    },
+
+    doExpr: function (expr) {
+        var out = this.body;
+        out.push('if ((v=' + expr + ') != null) out');
+
+        
+        
+        if (this.useIndex) {
+             out.push('[out.length]=v+\'\'\n');
+        } else {
+             out.push('.push(v+\'\')\n');
+        }
+    },
+
+    doTag: function (tag) {
+        var expr = this.parseTag(tag);
+        if (expr) {
+            this.doExpr(expr);
+        } else {
+            
+            this.doText('{' + tag + '}');
+        }
+    },
+
+    doElse: function () {
+        this.body.push('} else {\n');
+    },
+
+    doEval: function (text) {
+        this.body.push(text, '\n');
+    },
+
+    doIf: function (action, actions) {
+        var me = this;
+
+        
+        if (action === '.') {
+            me.body.push('if (values) {\n');
+        } else if (me.propNameRe.test(action)) {
+            me.body.push('if (', me.parseTag(action), ') {\n');
+        }
+        
+        else {
+            me.body.push('if (', me.addFn(action), me.callFn, ') {\n');
+        }
+        if (actions.exec) {
+            me.doExec(actions.exec);
+        }
+    },
+
+    doElseIf: function (action, actions) {
+        var me = this;
+
+        
+        if (action === '.') {
+            me.body.push('else if (values) {\n');
+        } else if (me.propNameRe.test(action)) {
+            me.body.push('} else if (', me.parseTag(action), ') {\n');
+        }
+        
+        else {
+            me.body.push('} else if (', me.addFn(action), me.callFn, ') {\n');
+        }
+        if (actions.exec) {
+            me.doExec(actions.exec);
+        }
+    },
+
+    doSwitch: function (action) {
+        var me = this;
+
+        
+        if (action === '.') {
+            me.body.push('switch (values) {\n');
+        } else if (me.propNameRe.test(action)) {
+            me.body.push('switch (', me.parseTag(action), ') {\n');
+        }
+        
+        else {
+            me.body.push('switch (', me.addFn(action), me.callFn, ') {\n');
+        }
+        me.switches.push(0);
+    },
+
+    doCase: function (action) {
+        var me = this,
+            cases = Ext.isArray(action) ? action : [action],
+            n = me.switches.length - 1,
+            match, i;
+
+        if (me.switches[n]) {
+            me.body.push('break;\n');
+        } else {
+            me.switches[n]++;
+        }
+
+        for (i = 0, n = cases.length; i < n; ++i) {
+            match = me.intRe.exec(cases[i]);
+            cases[i] = match ? match[1] : ("'" + cases[i].replace(me.aposRe,"\\'") + "'");
+        }
+
+        me.body.push('case ', cases.join(': case '), ':\n');
+    },
+
+    doDefault: function () {
+        var me = this,
+            n = me.switches.length - 1;
+
+        if (me.switches[n]) {
+            me.body.push('break;\n');
+        } else {
+            me.switches[n]++;
+        }
+
+        me.body.push('default:\n');
+    },
+
+    doEnd: function (type, actions) {
+        var me = this,
+            L = me.level-1;
+
+        if (type == 'for' || type == 'foreach') {
+            
+            if (actions.exec) {
+                me.doExec(actions.exec);
+            }
+
+            me.body.push('}\n');
+            me.body.push('parent=p',L,';values=r',L+1,';xcount=n'+L+';xindex=i',L,'+1;xkey=k',L,';\n');
+        } else if (type == 'if' || type == 'switch') {
+            me.body.push('}\n');
+        }
+    },
+
+    doFor: function (action, actions) {
+        var me = this,
+            s,
+            L = me.level,
+            up = L-1,
+            parentAssignment;
+
+        
+        if (action === '.') {
+            s = 'values';
+        } else if (me.propNameRe.test(action)) {
+            s = me.parseTag(action);
+        }
+        
+        else {
+            s = me.addFn(action) + me.callFn;
+        }
+
+        
+
+        
+        if (me.maxLevel < L) {
+            me.maxLevel = L;
+            me.body.push('var ');
+        }
+        
+        if (action == '.') {
+            parentAssignment = 'c' + L;
+        } else {
+            parentAssignment = 'a' + up + '?c' + up + '[i' + up + ']:c' + up;
+        }
+        
+        me.body.push('i',L,'=0,n', L, '=0,c',L,'=',s,',a',L,'=', me.createArrayTest(L),',r',L,'=values,p',L,',k',L,';\n',
+            'p',L,'=parent=',parentAssignment,'\n',
+            'if (c',L,'){if(a',L,'){n', L,'=c', L, '.length;}else if (c', L, '.isMixedCollection){c',L,'=c',L,'.items;n',L,'=c',L,'.length;}else if(c',L,'.isStore){c',L,'=c',L,'.data.items;n',L,'=c',L,'.length;}else{c',L,'=[c',L,'];n',L,'=1;}}\n',
+            'for (xcount=n',L,';i',L,'<n'+L+';++i',L,'){\n',
+            'values=c',L,'[i',L,']');
+        if (actions.propName) {
+            me.body.push('.', actions.propName);
+        }
+        me.body.push('\n',
+            'xindex=i',L,'+1\n');
+        
+        if (actions.between) {
+            me.body.push('if(xindex>1){ out.push("',actions.between,'"); } \n');
+        }
+    },
+
+    doForEach: function (action, actions) {
+        var me = this,
+            s,
+            L = me.level,
+            up = L-1,
+            parentAssignment;
+
+        
+        if (action === '.') {
+            s = 'values';
+        } else if (me.propNameRe.test(action)) {
+            s = me.parseTag(action);
+        }
+        
+        else {
+            s = me.addFn(action) + me.callFn;
+        }
+
+        
+
+        
+        if (me.maxLevel < L) {
+            me.maxLevel = L;
+            me.body.push('var ');
+        }
+        
+        if (action == '.') {
+            parentAssignment = 'c' + L;
+        } else {
+            parentAssignment = 'a' + up + '?c' + up + '[i' + up + ']:c' + up;
+        }
+        
+        me.body.push('i',L,'=-1,n',L,'=0,c',L,'=',s,',a',L,'=',me.createArrayTest(L),',r',L,'=values,p',L,',k',L,';\n',
+            'p',L,'=parent=',parentAssignment,'\n',
+            'for(k',L,' in c',L,'){\n',
+                'xindex=++i',L,'+1;\n',
+                'xkey=k',L,';\n',
+                'values=c',L,'[k',L,'];');
+        if (actions.propName) {
+            me.body.push('.', actions.propName);
+        }
+        
+        if (actions.between) {
+            me.body.push('if(xindex>1){ out.push("',actions.between,'"); } \n');
+        }
+    },
+
+    createArrayTest: ('isArray' in Array) ? function(L) {
+        return 'Array.isArray(c' + L + ')';
+    } : function(L) {
+        return 'ts.call(c' + L + ')==="[object Array]"';
+    },
+
+    doExec: function (action, actions) {
+        var me = this,
+            name = 'f' + me.definitions.length;
+
+        me.definitions.push('function ' + name + '(' + me.fnArgs + ') {',
+                            ' try { with(values) {',
+                            '  ' + action,
+                            ' }} catch(e) {',
+                            '}',
+                      '}');
+
+        me.body.push(name + me.callFn + '\n');
+    },
+
+    
+    
+
+    addFn: function (body) {
+        var me = this,
+            name = 'f' + me.definitions.length;
+
+        if (body === '.') {
+            me.definitions.push('function ' + name + '(' + me.fnArgs + ') {',
+                            ' return values',
+                       '}');
+        } else if (body === '..') {
+            me.definitions.push('function ' + name + '(' + me.fnArgs + ') {',
+                            ' return parent',
+                       '}');
+        } else {
+            me.definitions.push('function ' + name + '(' + me.fnArgs + ') {',
+                            ' try { with(values) {',
+                            '  return(' + body + ')',
+                            ' }} catch(e) {',
+                            '}',
+                       '}');
+        }
+
+        return name;
+    },
+
+    parseTag: function (tag) {
+        var me = this,
+            m = me.tagRe.exec(tag),
+            name, format, args, math, v;
+
+        if (!m) {
+            return null;
+        }
+
+        name = m[1];
+        format = m[2];
+        args = m[3];
+        math = m[4];
+
+        
+        if (name == '.') {
+            
+            if (!me.validTypes) {
+                me.definitions.push('var validTypes={string:1,number:1,boolean:1};');
+                me.validTypes = true;
+            }
+            v = 'validTypes[typeof values] || ts.call(values) === "[object Date]" ? values : ""';
+        }
+        
+        else if (name == '#') {
+            v = 'xindex';
+        }
+        
+        else if (name == '$') {
+            v = 'xkey';
+        }
+        else if (name.substr(0, 7) == "parent.") {
+            v = name;
+        }
+        
+        else if (isNaN(name) && name.indexOf('-') == -1 && name.indexOf('.') != -1) {
+            v = "values." + name;
+        }
+        
+        
+        else {    
+            v = "values['" + name + "']";
+        }
+
+        if (math) {
+            v = '(' + v + math + ')';
+        }
+
+        if (format && me.useFormat) {
+            args = args ? ',' + args : "";
+            if (format.substr(0, 5) != "this.") {
+                format = "fm." + format + '(';
+            } else {
+                format += '(';
+            }
+        } else {
+            return v;
+        }
+
+        return format + v + args + ')';
+    },
+
+    
+    evalTpl: function ($) {
+
+        
+        
+        
+        
+        eval($);
+        return $;
+    },
+
+    newLineRe: /\r\n|\r|\n/g,
+    aposRe: /[']/g,
+    intRe:  /^\s*(\d+)\s*$/,
+    tagRe:  /^([\w-\.\#\$]+)(?:\:([\w\.]*)(?:\((.*?)?\))?)?(\s?[\+\-\*\/]\s?[\d\.\+\-\*\/\(\)]+)?$/
+
+}, function () {
+    var proto = this.prototype;
+
+    proto.fnArgs = 'out,values,parent,xindex,xcount,xkey';
+    proto.callFn = '.call(this,' + proto.fnArgs + ')';
+});
+
+// @tag core
+/**
+ * A template class that supports advanced functionality like:
+ *
+ * - Autofilling arrays using templates and sub-templates
+ * - Conditional processing with basic comparison operators
+ * - Basic math function support
+ * - Execute arbitrary inline code with special built-in template variables
+ * - Custom member functions
+ * - Many special tags and built-in operators that aren't defined as part of the API, but are supported in the templates that can be created
+ *
+ * XTemplate provides the templating mechanism built into {@link Ext.view.View}.
+ *
+ * The {@link Ext.Template} describes the acceptable parameters to pass to the constructor. The following examples
+ * demonstrate all of the supported features.
+ *
+ * # Sample Data
+ *
+ * This is the data object used for reference in each code example:
+ *
+ *     var data = {
+ *         name: 'Don Griffin',
+ *         title: 'Senior Technomage',
+ *         company: 'Sencha Inc.',
+ *         drinks: ['Coffee', 'Water', 'More Coffee'],
+ *         kids: [
+ *             { name: 'Aubrey',  age: 17 },
+ *             { name: 'Joshua',  age: 13 },
+ *             { name: 'Cale',    age: 10 },
+ *             { name: 'Nikol',   age: 5 },
+ *             { name: 'Solomon', age: 0 }
+ *         ]
+ *     };
+ *
+ * # Auto filling of arrays
+ *
+ * The **tpl** tag and the **for** operator are used to process the provided data object:
+ *
+ * - If the value specified in for is an array, it will auto-fill, repeating the template block inside the tpl
+ *   tag for each item in the array.
+ * - If for="." is specified, the data object provided is examined.
+ * - If between="..." is specified, the provided value will be inserted between the items.
+ *   This is also supported in the "foreach" looping template.
+ * - While processing an array, the special variable {#} will provide the current array index + 1 (starts at 1, not 0).
+ *
+ * Examples:
+ *
+ *     <tpl for=".">...</tpl>       
+ *     <tpl for="foo">...</tpl>     
+ *     <tpl for="foo.bar">...</tpl> 
+ *     <tpl for="." between=",">...</tpl> 
+ *
+ * Using the sample data above:
+ *
+ *     var tpl = new Ext.XTemplate(
+ *         '<p>Kids: ',
+ *         '<tpl for=".">',       
+ *             '<p>{#}. {name}</p>',  
+ *         '</tpl></p>'
+ *     );
+ *     tpl.overwrite(panel.body, data.kids); 
+ *
+ * An example illustrating how the **for** property can be leveraged to access specified members of the provided data
+ * object to populate the template:
+ *
+ *     var tpl = new Ext.XTemplate(
+ *         '<p>Name: {name}</p>',
+ *         '<p>Title: {title}</p>',
+ *         '<p>Company: {company}</p>',
+ *         '<p>Kids: ',
+ *         '<tpl for="kids">',     
+ *             '<p>{name}</p>',
+ *         '</tpl></p>'
+ *     );
+ *     tpl.overwrite(panel.body, data);  
+ *
+ * Flat arrays that contain values (and not objects) can be auto-rendered using the special **`{.}`** variable inside a
+ * loop. This variable will represent the value of the array at the current index:
+ *
+ *     var tpl = new Ext.XTemplate(
+ *         '<p>{name}\'s favorite beverages:</p>',
+ *         '<tpl for="drinks">',
+ *             '<div> - {.}</div>',
+ *         '</tpl>'
+ *     );
+ *     tpl.overwrite(panel.body, data);
+ *
+ * When processing a sub-template, for example while looping through a child array, you can access the parent object's
+ * members via the **parent** object:
+ *
+ *     var tpl = new Ext.XTemplate(
+ *         '<p>Name: {name}</p>',
+ *         '<p>Kids: ',
+ *         '<tpl for="kids">',
+ *             '<tpl if="age &gt; 1">',
+ *                 '<p>{name}</p>',
+ *                 '<p>Dad: {parent.name}</p>',
+ *             '</tpl>',
+ *         '</tpl></p>'
+ *     );
+ *     tpl.overwrite(panel.body, data);
+ *     
+ * The **foreach** operator is used to loop over an object's properties.  The following
+ * example demonstrates looping over the main data object's properties:
+ * 
+ *     var tpl = new Ext.XTemplate(
+ *         '<dl>',
+ *             '<tpl foreach=".">',
+ *                 '<dt>{$}</dt>', // the special **`{$}`** variable contains the property name
+ *                 '<dd>{.}</dd>', // within the loop, the **`{.}`** variable is set to the property value
+ *             '</tpl>',
+ *         '</dl>'
+ *     );
+ *     tpl.overwrite(panel.body, data);
+ *
+ * # Conditional processing with basic comparison operators
+ *
+ * The **tpl** tag and the **if** operator are used to provide conditional checks for deciding whether or not to render
+ * specific parts of the template.
+ *
+ * Using the sample data above:
+ *
+ *     var tpl = new Ext.XTemplate(
+ *         '<p>Name: {name}</p>',
+ *         '<p>Kids: ',
+ *         '<tpl for="kids">',
+ *             '<tpl if="age &gt; 1">',
+ *                 '<p>{name}</p>',
+ *             '</tpl>',
+ *         '</tpl></p>'
+ *     );
+ *     tpl.overwrite(panel.body, data);
+ *
+ * More advanced conditionals are also supported:
+ *
+ *     var tpl = new Ext.XTemplate(
+ *         '<p>Name: {name}</p>',
+ *         '<p>Kids: ',
+ *         '<tpl for="kids">',
+ *             '<p>{name} is a ',
+ *             '<tpl if="age &gt;= 13">',
+ *                 '<p>teenager</p>',
+ *             '<tpl elseif="age &gt;= 2">',
+ *                 '<p>kid</p>',
+ *             '<tpl else>',
+ *                 '<p>baby</p>',
+ *             '</tpl>',
+ *         '</tpl></p>'
+ *     );
+ *
+ *     var tpl = new Ext.XTemplate(
+ *         '<p>Name: {name}</p>',
+ *         '<p>Kids: ',
+ *         '<tpl for="kids">',
+ *             '<p>{name} is a ',
+ *             '<tpl switch="name">',
+ *                 '<tpl case="Aubrey" case="Nikol">',
+ *                     '<p>girl</p>',
+ *                 '<tpl default>',
+ *                     '<p>boy</p>',
+ *             '</tpl>',
+ *         '</tpl></p>'
+ *     );
+ *
+ * A `break` is implied between each case and default, however, multiple cases can be listed
+ * in a single &lt;tpl&gt; tag.
+ *
+ * # Using double quotes
+ *
+ * Examples:
+ *
+ *     var tpl = new Ext.XTemplate(
+ *         "<tpl if='age &gt; 1 && age &lt; 10'>Child</tpl>",
+ *         "<tpl if='age &gt;= 10 && age &lt; 18'>Teenager</tpl>",
+ *         "<tpl if='this.isGirl(name)'>...</tpl>",
+ *         '<tpl if="id == \'download\'">...</tpl>',
+ *         "<tpl if='needsIcon'><img src='{icon}' class='{iconCls}'/></tpl>",
+ *         "<tpl if='name == \"Don\"'>Hello</tpl>"
+ *     );
+ *
+ * # Basic math support
+ *
+ * The following basic math operators may be applied directly on numeric data values:
+ *
+ *     + - * /
+ *
+ * For example:
+ *
+ *     var tpl = new Ext.XTemplate(
+ *         '<p>Name: {name}</p>',
+ *         '<p>Kids: ',
+ *         '<tpl for="kids">',
+ *             '<tpl if="age &gt; 1">',  
+ *                 '<p>{#}: {name}</p>',  
+ *                 '<p>In 5 Years: {age+5}</p>',  
+ *                 '<p>Dad: {parent.name}</p>',
+ *             '</tpl>',
+ *         '</tpl></p>'
+ *     );
+ *     tpl.overwrite(panel.body, data);
+ *
+ * # Execute arbitrary inline code with special built-in template variables
+ *
+ * Anything between `{[ ... ]}` is considered code to be executed in the scope of the template.
+ * The expression is evaluated and the result is included in the generated result. There are
+ * some special variables available in that code:
+ *
+ * - **out**: The output array into which the template is being appended (using `push` to later
+ *   `join`).
+ * - **values**: The values in the current scope. If you are using scope changing sub-templates,
+ *   you can change what values is.
+ * - **parent**: The scope (values) of the ancestor template.
+ * - **xindex**: If you are in a "for" or "foreach" looping template, the index of the loop you are in (1-based).
+ * - **xcount**: If you are in a "for" looping template, the total length of the array you are looping.
+ * - **xkey**: If you are in a "foreach" looping template, the key of the current property
+ * being examined.
+ *
+ * This example demonstrates basic row striping using an inline code block and the xindex variable:
+ *
+ *     var tpl = new Ext.XTemplate(
+ *         '<p>Name: {name}</p>',
+ *         '<p>Company: {[values.company.toUpperCase() + ", " + values.title]}</p>',
+ *         '<p>Kids: ',
+ *         '<tpl for="kids">',
+ *             '<div class="{[xindex % 2 === 0 ? "even" : "odd"]}">',
+ *             '{name}',
+ *             '</div>',
+ *         '</tpl></p>'
+ *      );
+ *
+ * Any code contained in "verbatim" blocks (using "{% ... %}") will be inserted directly in
+ * the generated code for the template. These blocks are not included in the output. This
+ * can be used for simple things like break/continue in a loop, or control structures or
+ * method calls (when they don't produce output). The `this` references the template instance.
+ *
+ *     var tpl = new Ext.XTemplate(
+ *         '<p>Name: {name}</p>',
+ *         '<p>Company: {[values.company.toUpperCase() + ", " + values.title]}</p>',
+ *         '<p>Kids: ',
+ *         '<tpl for="kids">',
+ *             '{% if (xindex % 2 === 0) continue; %}',
+ *             '{name}',
+ *             '{% if (xindex > 100) break; %}',
+ *             '</div>',
+ *         '</tpl></p>'
+ *      );
+ *
+ * # Template member functions
+ *
+ * One or more member functions can be specified in a configuration object passed into the XTemplate constructor for
+ * more complex processing:
+ *
+ *     var tpl = new Ext.XTemplate(
+ *         '<p>Name: {name}</p>',
+ *         '<p>Kids: ',
+ *         '<tpl for="kids">',
+ *             '<tpl if="this.isGirl(name)">',
+ *                 '<p>Girl: {name} - {age}</p>',
+ *             '<tpl else>',
+ *                 '<p>Boy: {name} - {age}</p>',
+ *             '</tpl>',
+ *             '<tpl if="this.isBaby(age)">',
+ *                 '<p>{name} is a baby!</p>',
+ *             '</tpl>',
+ *         '</tpl></p>',
+ *         {
+ *             // XTemplate configuration:
+ *             disableFormats: true,
+ *             // member functions:
+ *             isGirl: function(name){
+ *                return name == 'Aubrey' || name == 'Nikol';
+ *             },
+ *             isBaby: function(age){
+ *                return age < 1;
+ *             }
+ *         }
+ *     );
+ *     tpl.overwrite(panel.body, data);
+ */
+Ext.define('Ext.XTemplate', {
+    extend:  Ext.Template ,
+
+                                      
+
+    /**
+     * @private
+     */
+    emptyObj: {},
+
+    /**
+     * @cfg {Boolean} compiled
+     * Only applies to {@link Ext.Template}, XTemplates are compiled automatically on the
+     * first call to {@link #apply} or {@link #applyOut}.
+     * @hide
+     */
+
+    /**
+     * @cfg {String/Array} definitions
+     * Optional. A statement, or array of statements which set up `var`s which may then
+     * be accessed within the scope of the generated function.
+     */
+
+    apply: function(values, parent) {
+        return this.applyOut(values, [], parent).join('');
+    },
+
+    applyOut: function(values, out, parent) {
+        var me = this,
+            compiler;
+
+        if (!me.fn) {
+            compiler = new Ext.XTemplateCompiler({
+                useFormat: me.disableFormats !== true,
+                definitions: me.definitions
+            });
+
+            me.fn = compiler.compile(me.html);
+        }
+
+        try {
+            me.fn(out, values, parent || me.emptyObj, 1, 1);
+        } catch (e) {
+        }
+
+        return out;
+    },
+
+    /**
+     * Does nothing. XTemplates are compiled automatically, so this function simply returns this.
+     * @return {Ext.XTemplate} this
+     */
+    compile: function() {
+        return this;
+    },
+
+    statics: {
+        /**
+         * Gets an `XTemplate` from an object (an instance of an {@link Ext#define}'d class).
+         * Many times, templates are configured high in the class hierarchy and are to be
+         * shared by all classes that derive from that base. To further complicate matters,
+         * these templates are seldom actual instances but are rather configurations. For
+         * example:
+         *
+         *      Ext.define('MyApp.Class', {
+         *          extraCls: 'extra-class',
+         *
+         *          someTpl: [
+         *              '<div class="{%this.emitClass(out)%}"></div>',
+         *          {
+         *              
+         *              emitClass: function(out) {
+         *                  out.push(this.owner.extraCls);
+         *              }
+         *          }]
+         *      });
+         *
+         * The goal being to share that template definition with all instances and even
+         * instances of derived classes, until `someTpl` is overridden. This method will
+         * "upgrade" these configurations to be real `XTemplate` instances *in place* (to
+         * avoid creating one instance per object).
+         *
+         * The resulting XTemplate will have an `owner` reference injected which refers back
+         * to the owning object whether that is an object which has an *own instance*, or a
+         * class prototype. Through this link, XTemplate member functions will be able to access
+         * prototype properties of its owning class.
+         *
+         * @param {Object} instance The object from which to get the `XTemplate` (must be
+         * an instance of an {@link Ext#define}'d class).
+         * @param {String} name The name of the property by which to get the `XTemplate`.
+         * @return {Ext.XTemplate} The `XTemplate` instance or null if not found.
+         * @protected
+         * @static
+         */
+        getTpl: function (instance, name) {
+            var tpl = instance[name], // go for it! 99% of the time we will get it!
+                owner;
+
+            if (tpl && !tpl.isTemplate) { // tpl is just a configuration (not an instance)
+                // create the template instance from the configuration:
+                tpl = Ext.ClassManager.dynInstantiate('Ext.XTemplate', tpl);
+
+                // and replace the reference with the new instance:
+                if (instance.hasOwnProperty(name)) { // the tpl is on the instance
+                    owner = instance;
+                } else { // must be somewhere in the prototype chain
+                    for (owner = instance.self.prototype; owner && !owner.hasOwnProperty(name); owner = owner.superclass) {
+                    }
+                }
+                owner[name] = tpl;
+                tpl.owner = owner;
+            }
+            // else !tpl (no such tpl) or the tpl is an instance already... either way, tpl
+            // is ready to return
+
+            return tpl || null;
+        }
+    }
+});
+
+// @tag dom,core
+// @require Helper.js
+// @define Ext.dom.Query
+// @define Ext.core.DomQuery
+// @define Ext.DomQuery
+
+/*
+ * This is code is also distributed under MIT license for use
+ * with jQuery and prototype JavaScript libraries.
+ */
+/**
+ * @class Ext.dom.Query
+ * @alternateClassName Ext.DomQuery
+ * @alternateClassName Ext.core.DomQuery
+ * @singleton
+ *
+ * Provides high performance selector/xpath processing by compiling queries into reusable functions. New pseudo classes
+ * and matchers can be plugged. It works on HTML and XML documents (if a content node is passed in).
+ *
+ * DomQuery supports most of the [CSS3 selectors spec][1], along with some custom selectors and basic XPath.
+ *
+ * All selectors, attribute filters and pseudos below can be combined infinitely in any order. For example
+ * `div.foo:nth-child(odd)[@foo=bar].bar:first` would be a perfectly valid selector. Node filters are processed
+ * in the order in which they appear, which allows you to optimize your queries for your document structure.
+ *
+ * ## Element Selectors:
+ *
+ *   - **`*`** any element
+ *   - **`E`** an element with the tag E
+ *   - **`E F`** All descendent elements of E that have the tag F
+ *   - **`E > F`** or **E/F** all direct children elements of E that have the tag F
+ *   - **`E + F`** all elements with the tag F that are immediately preceded by an element with the tag E
+ *   - **`E ~ F`** all elements with the tag F that are preceded by a sibling element with the tag E
+ *
+ * ## Attribute Selectors:
+ *
+ * The use of `@` and quotes are optional. For example, `div[@foo='bar']` is also a valid attribute selector.
+ *
+ *   - **`E[foo]`** has an attribute "foo"
+ *   - **`E[foo=bar]`** has an attribute "foo" that equals "bar"
+ *   - **`E[foo^=bar]`** has an attribute "foo" that starts with "bar"
+ *   - **`E[foo$=bar]`** has an attribute "foo" that ends with "bar"
+ *   - **`E[foo*=bar]`** has an attribute "foo" that contains the substring "bar"
+ *   - **`E[foo%=2]`** has an attribute "foo" that is evenly divisible by 2
+ *   - **`E[foo!=bar]`** attribute "foo" does not equal "bar"
+ *
+ * ## Pseudo Classes:
+ *
+ *   - **`E:first-child`** E is the first child of its parent
+ *   - **`E:last-child`** E is the last child of its parent
+ *   - **`E:nth-child(_n_)`** E is the _n_th child of its parent (1 based as per the spec)
+ *   - **`E:nth-child(odd)`** E is an odd child of its parent
+ *   - **`E:nth-child(even)`** E is an even child of its parent
+ *   - **`E:only-child`** E is the only child of its parent
+ *   - **`E:checked`** E is an element that is has a checked attribute that is true (e.g. a radio or checkbox)
+ *   - **`E:first`** the first E in the resultset
+ *   - **`E:last`** the last E in the resultset
+ *   - **`E:nth(_n_)`** the _n_th E in the resultset (1 based)
+ *   - **`E:odd`** shortcut for :nth-child(odd)
+ *   - **`E:even`** shortcut for :nth-child(even)
+ *   - **`E:contains(foo)`** E's innerHTML contains the substring "foo"
+ *   - **`E:nodeValue(foo)`** E contains a textNode with a nodeValue that equals "foo"
+ *   - **`E:not(S)`** an E element that does not match simple selector S
+ *   - **`E:has(S)`** an E element that has a descendent that matches simple selector S
+ *   - **`E:next(S)`** an E element whose next sibling matches simple selector S
+ *   - **`E:prev(S)`** an E element whose previous sibling matches simple selector S
+ *   - **`E:any(S1|S2|S2)`** an E element which matches any of the simple selectors S1, S2 or S3
+ *   - **`E:visible(true)`** an E element which is deeply visible according to {@link Ext.dom.Element#isVisible}
+ *
+ * ## CSS Value Selectors:
+ *
+ *   - **`E{display=none}`** css value "display" that equals "none"
+ *   - **`E{display^=none}`** css value "display" that starts with "none"
+ *   - **`E{display$=none}`** css value "display" that ends with "none"
+ *   - **`E{display*=none}`** css value "display" that contains the substring "none"
+ *   - **`E{display%=2}`** css value "display" that is evenly divisible by 2
+ *   - **`E{display!=none}`** css value "display" that does not equal "none"
+ * 
+ * ## XML Namespaces:
+ *   - **`ns|E`** an element with tag E and namespace prefix ns
+ *
+ * [1]: http:
+ */
 Ext.ns('Ext.core');
 
 Ext.dom.Query = Ext.core.DomQuery = Ext.DomQuery = (function() {
@@ -13899,9 +16308,7 @@ Ext.dom.Query = Ext.core.DomQuery = Ext.DomQuery = (function() {
         
         
         unescapeCssSelector = function(selector) {
-            return (hasEscapes)
-                ? selector.replace(longHex, longHexToChar)
-                : selector;
+            return (hasEscapes) ? selector.replace(longHex, longHexToChar) : selector;
         },
 
         
@@ -13924,7 +16331,7 @@ Ext.dom.Query = Ext.core.DomQuery = Ext.DomQuery = (function() {
     
     child = useChildrenCollection ?
         function child(parent, index) {
-            return parent.children[index]
+            return parent.children[index];
         } :
         function child(parent, index) {
             var i = 0,
@@ -14578,7 +16985,7 @@ Ext.dom.Query = Ext.core.DomQuery = Ext.DomQuery = (function() {
                 return a && a.indexOf(v) !== -1;
             },
             "%=": function(a, v) {
-                return (a % v) == 0;
+                return (a % v) === 0;
             },
             "|=": function(a, v) {
                 return a && (a == v || a.substr(0, v.length + 1) == v + '-');
@@ -14631,10 +17038,10 @@ Ext.dom.Query = Ext.core.DomQuery = Ext.DomQuery = (function() {
                         pn._batch = batch;
                     }
                     if (f == 1) {
-                        if (l == 0 || n.nodeIndex == l) {
+                        if (l === 0 || n.nodeIndex == l) {
                             r[++ri] = n;
                         }
-                    } else if ((n.nodeIndex + l) % f == 0) {
+                    } else if ((n.nodeIndex + l) % f === 0) {
                         r[++ri] = n;
                     }
                 }
@@ -14700,7 +17107,7 @@ Ext.dom.Query = Ext.core.DomQuery = Ext.DomQuery = (function() {
                 var r = [], ri = -1,
                     i, ci;
                 for (i = 0; ci = c[i]; i++) {
-                    if (ci.checked == true) {
+                    if (ci.checked === true) {
                         r[++ri] = ci;
                     }
                 }
@@ -14822,7 +17229,6 @@ Ext.dom.Query = Ext.core.DomQuery = Ext.DomQuery = (function() {
 
 Ext.query = Ext.DomQuery.select;
 
-//@tag dom,core
 
 
 
@@ -15288,7 +17694,9 @@ Ext.define('Ext.dom.Element_anim', {
                 beforeanimate: {
                     fn: beforeAnim
                 }
-            }
+            },
+            callback: obj.callback,
+            scope: obj.scope
         });
         return me;
     },
@@ -15356,7 +17764,9 @@ Ext.define('Ext.dom.Element_anim', {
                 beforeanimate: {
                     fn: beforeAnim
                 }
-            }
+            },
+            callback: obj.callback,
+            scope: obj.scope
         });
         return me;
     },
@@ -15567,7 +17977,6 @@ Ext.define('Ext.dom.Element_anim', {
     }
 });
 
-//@tag dom,core
 
 
 Ext.define('Ext.dom.Element_dd', {
@@ -15592,7 +18001,6 @@ Ext.define('Ext.dom.Element_dd', {
     }
 });
 
-//@tag dom,core
 
 
 Ext.define('Ext.dom.Element_fx', {
@@ -15764,7 +18172,6 @@ Element.override({
 
 });
 
-//@tag dom,core
 
 
 Ext.define('Ext.dom.Element_position', {
@@ -16210,9 +18617,11 @@ var flyInstance,
         }
     });
 
+    
+    Element.getTrueXY = Element.getXY;
+
 });
 
-//@tag dom,core
 
 
 Ext.define('Ext.dom.Element_scroll', {
@@ -16308,10 +18717,10 @@ Ext.define('Ext.dom.Element_scroll', {
         }
 
         if (deltaX) {
-            me.scrollTo('left', Math.max(Math.min(dom.scrollLeft + deltaX, dom.scrollWidth - dom.clientWidth), 0), animate);
+            me.scrollTo('left', me.constrainScrollLeft(dom.scrollLeft + deltaX), animate);
         }
         if (deltaY) {
-            me.scrollTo('top', Math.max(Math.min(dom.scrollTop + deltaY, dom.scrollHeight - dom.clientHeight), 0), animate);
+            me.scrollTo('top', me.constrainScrollTop(dom.scrollTop + deltaY), animate);
         }
 
         return me;
@@ -16322,13 +18731,12 @@ Ext.define('Ext.dom.Element_scroll', {
         
         var top = /top/i.test(side),
             me = this,
+            prop = top ? 'scrollTop' : 'scrollLeft',
             dom = me.dom,
-            animCfg,
-            prop;
+            animCfg;
 
         if (!animate || !me.anim) {
             
-            prop = 'scroll' + (top ? 'Top' : 'Left');
             dom[prop] = value;
             
             dom[prop] = value;
@@ -16337,7 +18745,7 @@ Ext.define('Ext.dom.Element_scroll', {
             animCfg = {
                 to: {}
             };
-            animCfg.to['scroll' + (top ? 'Top' : 'Left')] = value;
+            animCfg.to[prop] = value;
             if (Ext.isObject(animate)) {
                 Ext.applyIf(animCfg, animate);
             }
@@ -16347,7 +18755,7 @@ Ext.define('Ext.dom.Element_scroll', {
     },
 
     
-    scrollIntoView: function(container, hscroll, animate) {
+    scrollIntoView: function(container, hscroll, animate, highlight) {
         var me = this,
             dom = me.dom,
             offsets = me.getOffsetsTo(container = Ext.getDom(container) || Ext.getBody().dom),
@@ -16365,14 +18773,18 @@ Ext.define('Ext.dom.Element_scroll', {
             newPos;
 
         
-        if (animate) {
-            animate = Ext.apply({
-                listeners: {
-                    afteranimate: function() {
-                        me.scrollChildFly.attach(dom).highlight();
+        if (highlight) {
+            if (animate) {
+                animate = Ext.apply({
+                    listeners: {
+                        afteranimate: function() {
+                            me.scrollChildFly.attach(dom).highlight();
+                        }
                     }
-                }
-            }, animate);
+                }, animate);
+            } else {
+                me.scrollChildFly.attach(dom).highlight();
+            }
         }
 
         if (dom.offsetHeight > ctClientHeight || top < ctScrollTop) {
@@ -16408,34 +18820,46 @@ Ext.define('Ext.dom.Element_scroll', {
         if (!this.isScrollable()) {
             return false;
         }
-        var el = this.dom,
-            l = el.scrollLeft, t = el.scrollTop,
-            w = el.scrollWidth, h = el.scrollHeight,
-            cw = el.clientWidth, ch = el.clientHeight,
-            scrolled = false, v,
-            hash = {
-                l: Math.min(l + distance, w - cw),
-                r: v = Math.max(l - distance, 0),
-                t: Math.max(t - distance, 0),
-                b: Math.min(t + distance, h - ch)
-            };
+        var me = this,
+            dom = me.dom,
+            side = direction === 'r' || direction === 'l' ? 'left' : 'top',
+            scrolled = false,
+            currentScroll, constrainedScroll;
 
-        hash.d = hash.b;
-        hash.u = hash.t;
-
-        direction = direction.substr(0, 1);
-        if ((v = hash[direction]) > -1) {
-            scrolled = true;
-            this.scrollTo(direction == 'l' || direction == 'r' ? 'left' : 'top', v, this.anim(animate));
+        if (direction === 'r') {
+            distance = -distance;
         }
+
+        if (side === 'left') {
+            currentScroll = dom.scrollLeft;
+            constrainedScroll = me.constrainScrollLeft(currentScroll + distance);
+        } else {
+            currentScroll = dom.scrollTop;
+            constrainedScroll = me.constrainScrollTop(currentScroll + distance);
+        }
+
+        if (constrainedScroll !== currentScroll) {
+            this.scrollTo(side, constrainedScroll, animate);
+            scrolled = true;
+        }
+
         return scrolled;
+    },
+
+    constrainScrollLeft: function(left) {
+        var dom = this.dom;
+        return Math.max(Math.min(left, dom.scrollWidth - dom.clientWidth), 0);
+    },
+
+    constrainScrollTop: function(top) {
+        var dom = this.dom;
+        return Math.max(Math.min(top, dom.scrollHeight - dom.clientHeight), 0);
     }
 }, function() {
     this.prototype.scrollChildFly = new this.Fly();
     this.prototype.scrolltoFly = new this.Fly();
 });
 
-//@tag dom,core
 
 
 Ext.define('Ext.dom.Element_style', {
@@ -16458,7 +18882,7 @@ var Element = this,
     DOCORBODYRE = /#document|body/i,
     
     
-    styleHooks,
+    styleHooks, verticalStyleHooks90, verticalStyleHooks270,
     edges, k, edge, borderWidth;
 
 if (!view || !view.getComputedStyle) {
@@ -16588,7 +19012,7 @@ Element.override({
         
         
         
-        if (Ext.supports.BoundingClientRect) {
+        if (preciseWidth && Ext.supports.BoundingClientRect) {
             rect = dom.getBoundingClientRect();
             
             
@@ -16596,13 +19020,14 @@ Element.override({
             
             width = (me.vertical && !Ext.isIE9 && !Ext.supports.RotatedBoundingClientRect) ?
                     (rect.bottom - rect.top) : (rect.right - rect.left);
-            width = preciseWidth ? width : Math.ceil(width);
         } else {
             width = dom.offsetWidth;
         }
 
         
-        if (Ext.supports.Direct2DBug) {
+        
+        
+        if (Ext.supports.Direct2DBug && !me.vertical) {
             
             floating = me.adjustDirect2DDimension(WIDTH);
             if (preciseWidth) {
@@ -17070,7 +19495,7 @@ Element.override({
     },
 
     
-    setVertical: function(cls) {
+    setVertical: function(angle, cls) {
         var me = this,
             proto = Element.prototype,
             hooks;
@@ -17092,15 +19517,8 @@ Element.override({
         }
 
         
-        
-        
-        
-        
-        
-        
-        hooks = me.styleHooks = Ext.Object.chain(Element.prototype.styleHooks);
-        hooks.width = { name: 'height' };
-        hooks.height = { name: 'width' };
+        me.styleHooks = (angle === 270) ?
+            Element.prototype.verticalStyleHooks270 : Element.prototype.verticalStyleHooks90;
     },
 
     
@@ -17128,6 +19546,41 @@ Element.override({
 });
 
 Element.prototype.styleHooks = styleHooks = Ext.dom.AbstractElement.prototype.styleHooks;
+
+
+
+Element.prototype.verticalStyleHooks90 = verticalStyleHooks90 = Ext.Object.chain(Element.prototype.styleHooks);
+Element.prototype.verticalStyleHooks270 = verticalStyleHooks270 = Ext.Object.chain(Element.prototype.styleHooks);
+
+verticalStyleHooks90.width = { name: 'height' };
+verticalStyleHooks90.height = { name: 'width' };
+verticalStyleHooks90['margin-top'] = { name: 'marginLeft' };
+verticalStyleHooks90['margin-right'] = { name: 'marginTop' };
+verticalStyleHooks90['margin-bottom'] = { name: 'marginRight' };
+verticalStyleHooks90['margin-left'] = { name: 'marginBottom' };
+verticalStyleHooks90['padding-top'] = { name: 'paddingLeft' };
+verticalStyleHooks90['padding-right'] = { name: 'paddingTop' };
+verticalStyleHooks90['padding-bottom'] = { name: 'paddingRight' };
+verticalStyleHooks90['padding-left'] = { name: 'paddingBottom' };
+verticalStyleHooks90['border-top'] = { name: 'borderLeft' };
+verticalStyleHooks90['border-right'] = { name: 'borderTop' };
+verticalStyleHooks90['border-bottom'] = { name: 'borderRight' };
+verticalStyleHooks90['border-left'] = { name: 'borderBottom' };
+
+verticalStyleHooks270.width = { name: 'height' };
+verticalStyleHooks270.height = { name: 'width' };
+verticalStyleHooks270['margin-top'] = { name: 'marginRight' };
+verticalStyleHooks270['margin-right'] = { name: 'marginBottom' };
+verticalStyleHooks270['margin-bottom'] = { name: 'marginLeft' };
+verticalStyleHooks270['margin-left'] = { name: 'marginTop' };
+verticalStyleHooks270['padding-top'] = { name: 'paddingRight' };
+verticalStyleHooks270['padding-right'] = { name: 'paddingBottom' };
+verticalStyleHooks270['padding-bottom'] = { name: 'paddingLeft' };
+verticalStyleHooks270['padding-left'] = { name: 'paddingTop' };
+verticalStyleHooks270['border-top'] = { name: 'borderRight' };
+verticalStyleHooks270['border-right'] = { name: 'borderBottom' };
+verticalStyleHooks270['border-bottom'] = { name: 'borderLeft' };
+verticalStyleHooks270['border-left'] = { name: 'borderTop' };
 
 if (Ext.isIE7m) {
     styleHooks.fontSize = styleHooks['font-size'] = {
@@ -17288,7 +19741,6 @@ Ext.onReady(function () {
     
 });
 
-//@tag core
 
 
 Ext.define('Ext.util.Positionable', {
@@ -17385,15 +19837,17 @@ Ext.define('Ext.util.Positionable', {
                         break;
             case 'b'  : xy = [round(myWidth * 0.5), myHeight];
                         break;
+            case 'tc' : xy = [round(myWidth * 0.5), 0];
+                        break;
+            case 'bc' : xy = [round(myWidth * 0.5), myHeight];
+                        break;
             case 'br' : xy = [myWidth, myHeight];
         }
         return [xy[0] + extraX, xy[1] + extraY];
     },
 
     
-    convertPositionSpec: function(posSpec) {
-        return posSpec;
-    },
+    convertPositionSpec: Ext.identityFn,
 
     
     getAlignToXY: function(alignToEl, posSpec, offset) {
@@ -17558,8 +20012,8 @@ Ext.define('Ext.util.Positionable', {
         
         
         
-        constrainTo = constrainTo || me.constrainTo || parentNode || me.container || me.el.getScopeParent();
-        vector = (me.constrainHeader ? me.header.el : me.el).getConstrainVector(constrainTo, proposedConstrainPosition, proposedSize);
+        constrainTo = constrainTo || me.constrainTo || parentNode || me.container || me.el.parent();
+        vector = (me.constrainHeader ? me.header : me).getConstrainVector(constrainTo, proposedConstrainPosition, proposedSize);
 
         
         if (vector) {
@@ -17573,13 +20027,19 @@ Ext.define('Ext.util.Positionable', {
     
     getConstrainVector: function(constrainTo, proposedPosition, proposedSize) {
         var thisRegion = this.getRegion(),
-            el = this.el,
             vector = [0, 0],
             shadowSize = (this.shadow && this.constrainShadow && !this.shadowDisabled) ? this.shadow.getShadowSize() : undefined,
-            overflowed = false;
+            overflowed = false,
+            constraintInsets = this.constraintInsets;
 
         if (!(constrainTo instanceof Ext.util.Region)) {
             constrainTo = Ext.get(constrainTo.el || constrainTo).getViewRegion();
+        }
+
+        
+        if (constraintInsets) {
+            constraintInsets = Ext.isObject(constraintInsets) ? constraintInsets : Ext.Element.parseBox(constraintInsets);
+            constrainTo.adjust(constraintInsets.top, constraintInsets.right, constraintInsets.bottom, constraintInsets.length);
         }
 
         
@@ -17709,7 +20169,8 @@ Ext.define('Ext.util.Positionable', {
             xy = [x, y],
             w = box.width,
             h = box.height,
-            constrainedPos = me.constrain && me.calculateConstrainedPosition(null, [x, y], false, [w, h]);
+            doConstrain = (me.constrain || me.constrainHeader),
+            constrainedPos = doConstrain && me.calculateConstrainedPosition(null, [x, y], false, [w, h]);
 
         
         if (constrainedPos) {
@@ -17785,7 +20246,6 @@ Ext.define('Ext.util.Positionable', {
     }
 });
 
-//@tag dom,core
 
 
 Ext.define('Ext.dom.Element', function(Element) {
@@ -17823,24 +20283,24 @@ Ext.define('Ext.dom.Element', function(Element) {
 
     return {
 
-        extend: 'Ext.dom.AbstractElement',
+        extend:  Ext.dom.AbstractElement ,
 
         alternateClassName: ['Ext.Element', 'Ext.core.Element'],
 
-        requires: [
-            'Ext.dom.Query',
-            'Ext.dom.Element_anim',
-            'Ext.dom.Element_dd',
-            'Ext.dom.Element_fx',
-            'Ext.dom.Element_position',
-            'Ext.dom.Element_scroll',
-            'Ext.dom.Element_style'
-        ],
+                   
+                            
+                                   
+                                 
+                                 
+                                       
+                                     
+                                   
+          
         
         tableTagRe: /^(?:tr|td|table|tbody)$/i,
 
         mixins: [
-            'Ext.util.Positionable'
+             Ext.util.Positionable 
         ],
 
         addUnits: function() {
@@ -17849,25 +20309,14 @@ Ext.define('Ext.dom.Element', function(Element) {
 
         
         focus: function(defer,  dom) {
-            var me = this,
-                scrollTop,
-                body;
+            var me = this;
 
             dom = dom || me.dom;
-            body = (dom.ownerDocument || DOC).body || DOC.body;
             try {
                 if (Number(defer)) {
                     Ext.defer(me.focus, defer, me, [null, dom]);
                 } else {
-                    
-                    
-                    if (dom.offsetHeight > Ext.dom.Element.getViewHeight()) {
-                        scrollTop = body.scrollTop;
-                    }
                     dom.focus();
-                    if (scrollTop !== undefined) {
-                        body.scrollTop = scrollTop;
-                    }
                 }
             } catch(e) {
             }
@@ -17876,11 +20325,19 @@ Ext.define('Ext.dom.Element', function(Element) {
 
         
         blur: function() {
-            try {
-                this.dom.blur();
-            } catch(e) {
+            var me = this,
+                dom = me.dom;
+            
+            
+            if (dom !== document.body) {
+                try {
+                    dom.blur();
+                } catch(e) {
+                }
+                return me;
+            } else {
+                return me.focus(undefined, dom);
             }
-            return this;
         },
 
         
@@ -18305,7 +20762,7 @@ Ext.define('Ext.dom.Element', function(Element) {
         EC              = Ext.cache,
         Element         = this,
         AbstractElement = Ext.dom.AbstractElement,
-        focusRe         = /a|button|embed|iframe|img|input|object|select|textarea/i,
+        focusRe         = /^a|button|embed|iframe|input|object|select|textarea$/i,
         nonSpaceRe      = /\S/,
         scriptTagRe     = /(?:<script([^>]*)?>)((\n|\r|.)*?)(?:<\/script>)/ig,
         replaceScriptTagRe = /(?:<script.*?>)((\n|\r|.)*?)(?:<\/script>)/ig,
@@ -18358,8 +20815,8 @@ Ext.define('Ext.dom.Element', function(Element) {
                 
                 
                 
-                if (!d.parentNode || (!d.offsetParent && !Ext.getElementById(eid))) {
-                    if (d && Ext.enableListenerCollection) {
+                if (d && (!d.parentNode || (!d.offsetParent && !Ext.getElementById(eid)))) {
+                    if (Ext.enableListenerCollection) {
                         Ext.EventManager.removeAll(d);
                     }
                     delete EC[eid];
@@ -18503,7 +20960,10 @@ Ext.define('Ext.dom.Element', function(Element) {
                 nodeType, newAttrs, attLen, attName;
 
             
-            if (dest.mergeAttributes) {
+            
+            
+            
+            if (Ext.isIE9m && dest.mergeAttributes) {
                 dest.mergeAttributes(source, true);
 
                 
@@ -18641,21 +21101,6 @@ Ext.define('Ext.dom.Element', function(Element) {
         },
         
         
-        getScopeParent: function() {
-            var parent = this.dom.parentNode;
-            if (Ext.scopeResetCSS) {
-                
-                parent = parent.parentNode;
-                if (!Ext.supports.CSS3LinearGradient || !Ext.supports.CSS3BorderRadius) {
-                    
-                    
-                    parent = parent.parentNode;
-                }
-            }
-            return parent;
-        },
-
-        
         needsTabIndex: function() {
             if (this.dom) {
                 if ((this.dom.nodeName === 'a') && (!this.dom.href)) {
@@ -18668,14 +21113,28 @@ Ext.define('Ext.dom.Element', function(Element) {
         
         isFocusable: function ( asFocusEl) {
             var dom = this.dom,
-                tabIndex = dom.tabIndex,
+                tabIndexAttr = dom.getAttributeNode('tabIndex'),
+                tabIndex,
                 nodeName = dom.nodeName,
                 canFocus = false;
 
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            if (tabIndexAttr && tabIndexAttr.specified) {
+                tabIndex = tabIndexAttr.value;
+            }
             if (dom && !dom.disabled) {
                 
                 
-                if (tabIndex === -1) {
+                if (tabIndex == -1) { 
                     canFocus = Ext.FocusManager && Ext.FocusManager.enabled && asFocusEl;
                 }
                 else {
@@ -18687,7 +21146,7 @@ Ext.define('Ext.dom.Element', function(Element) {
                     }
                     
                     else {
-                        canFocus = tabIndex >= 0;
+                        canFocus = tabIndex != null && tabIndex >= 0;
                     }
                 }
                 canFocus = canFocus && this.isVisible(true);
@@ -18775,13 +21234,12 @@ Ext.define('Ext.dom.Element', function(Element) {
     }
 });
 
-//@tag dom,core
 
 
 Ext.define('Ext.dom.CompositeElementLite', {
     alternateClassName: 'Ext.CompositeElementLite',
 
-    requires: ['Ext.dom.Element', 'Ext.dom.Query'],
+                                                   
 
     statics: {
         
@@ -19095,13 +21553,12 @@ Ext.define('Ext.dom.CompositeElementLite', {
     };
 });
 
-//@tag dom,core
 
 
 Ext.define('Ext.dom.CompositeElement', {
     alternateClassName: 'Ext.CompositeElement',
 
-    extend: 'Ext.dom.CompositeElementLite',
+    extend:  Ext.dom.CompositeElementLite ,
 
     
     getElement: function(el) {
@@ -19135,2175 +21592,13 @@ Ext.define('Ext.dom.CompositeElement', {
 
 Ext.select = Ext.Element.select;
 
-//@tag core
-
-
-Ext.define('Ext.Template', {
-
-    
-
-    requires: ['Ext.dom.Helper', 'Ext.util.Format'],
-
-    inheritableStatics: {
-        
-        from: function(el, config) {
-            el = Ext.getDom(el);
-            return new this(el.value || el.innerHTML, config || '');
-        }
-    },
-
-    
-
-    
-    constructor: function(html) {
-        var me = this,
-            args = arguments,
-            buffer = [],
-            i = 0,
-            length = args.length,
-            value;
-
-        me.initialConfig = {};
-        
-        
-        
-        
-        if (length === 1 && Ext.isArray(html)) {
-            args = html;
-            length = args.length;
-        }
-
-        if (length > 1) {
-            for (; i < length; i++) {
-                value = args[i];
-                if (typeof value == 'object') {
-                    Ext.apply(me.initialConfig, value);
-                    Ext.apply(me, value);
-                } else {
-                    buffer.push(value);
-                }
-            }
-        } else {
-            buffer.push(html);
-        }
-
-        
-        me.html = buffer.join('');
-
-        if (me.compiled) {
-            me.compile();
-        }
-    },
-
-    
-    isTemplate: true,
-
-    
-
-    
-    disableFormats: false,
-
-    re: /\{([\w\-]+)(?:\:([\w\.]*)(?:\((.*?)?\))?)?\}/g,
-
-    
-    apply: function(values) {
-        var me = this,
-            useFormat = me.disableFormats !== true,
-            fm = Ext.util.Format,
-            tpl = me,
-            ret;
-
-        if (me.compiled) {
-            return me.compiled(values).join('');
-        }
-
-        function fn(m, name, format, args) {
-            if (format && useFormat) {
-                if (args) {
-                    args = [values[name]].concat(Ext.functionFactory('return ['+ args +'];')());
-                } else {
-                    args = [values[name]];
-                }
-                if (format.substr(0, 5) == "this.") {
-                    return tpl[format.substr(5)].apply(tpl, args);
-                }
-                else {
-                    return fm[format].apply(fm, args);
-                }
-            }
-            else {
-                return values[name] !== undefined ? values[name] : "";
-            }
-        }
-
-        ret = me.html.replace(me.re, fn);
-        return ret;
-    },
-
-    
-    applyOut: function(values, out) {
-        var me = this;
-
-        if (me.compiled) {
-            out.push.apply(out, me.compiled(values));
-        } else {
-            out.push(me.apply(values));
-        }
-
-        return out;
-    },
-
-    
-    applyTemplate: function () {
-        return this.apply.apply(this, arguments);
-    },
-
-    
-    set: function(html, compile) {
-        var me = this;
-        me.html = html;
-        me.compiled = null;
-        return compile ? me.compile() : me;
-    },
-
-    compileARe: /\\/g,
-    compileBRe: /(\r\n|\n)/g,
-    compileCRe: /'/g,
-
-    /**
-     * Compiles the template into an internal function, eliminating the RegEx overhead.
-     * @return {Ext.Template} this
-     */
-    compile: function() {
-        var me = this,
-            fm = Ext.util.Format,
-            useFormat = me.disableFormats !== true,
-            body, bodyReturn;
-
-        function fn(m, name, format, args) {
-            if (format && useFormat) {
-                args = args ? ',' + args: "";
-                if (format.substr(0, 5) != "this.") {
-                    format = "fm." + format + '(';
-                }
-                else {
-                    format = 'this.' + format.substr(5) + '(';
-                }
-            }
-            else {
-                args = '';
-                format = "(values['" + name + "'] == undefined ? '' : ";
-            }
-            return "'," + format + "values['" + name + "']" + args + ") ,'";
-        }
-
-        bodyReturn = me.html.replace(me.compileARe, '\\\\').replace(me.compileBRe, '\\n').replace(me.compileCRe, "\\'").replace(me.re, fn);
-        body = "this.compiled = function(values){ return ['" + bodyReturn + "'];};";
-        eval(body);
-        return me;
-    },
-
-    /**
-     * Applies the supplied values to the template and inserts the new node(s) as the first child of el.
-     *
-     * @param {String/HTMLElement/Ext.Element} el The context element
-     * @param {Object/Array} values The template values. See {@link #applyTemplate} for details.
-     * @param {Boolean} returnElement (optional) true to return a Ext.Element.
-     * @return {HTMLElement/Ext.Element} The new node or Element
-     */
-    insertFirst: function(el, values, returnElement) {
-        return this.doInsert('afterBegin', el, values, returnElement);
-    },
-
-    /**
-     * Applies the supplied values to the template and inserts the new node(s) before el.
-     *
-     * @param {String/HTMLElement/Ext.Element} el The context element
-     * @param {Object/Array} values The template values. See {@link #applyTemplate} for details.
-     * @param {Boolean} returnElement (optional) true to return a Ext.Element.
-     * @return {HTMLElement/Ext.Element} The new node or Element
-     */
-    insertBefore: function(el, values, returnElement) {
-        return this.doInsert('beforeBegin', el, values, returnElement);
-    },
-
-    /**
-     * Applies the supplied values to the template and inserts the new node(s) after el.
-     *
-     * @param {String/HTMLElement/Ext.Element} el The context element
-     * @param {Object/Array} values The template values. See {@link #applyTemplate} for details.
-     * @param {Boolean} returnElement (optional) true to return a Ext.Element.
-     * @return {HTMLElement/Ext.Element} The new node or Element
-     */
-    insertAfter: function(el, values, returnElement) {
-        return this.doInsert('afterEnd', el, values, returnElement);
-    },
-
-    /**
-     * Applies the supplied `values` to the template and appends the new node(s) to the specified `el`.
-     *
-     * For example usage see {@link Ext.Template Ext.Template class docs}.
-     *
-     * @param {String/HTMLElement/Ext.Element} el The context element
-     * @param {Object/Array} values The template values. See {@link #applyTemplate} for details.
-     * @param {Boolean} returnElement (optional) true to return an Ext.Element.
-     * @return {HTMLElement/Ext.Element} The new node or Element
-     */
-    append: function(el, values, returnElement) {
-        return this.doInsert('beforeEnd', el, values, returnElement);
-    },
-
-    doInsert: function(where, el, values, returnElement) {
-        var newNode = Ext.DomHelper.insertHtml(where, Ext.getDom(el), this.apply(values));
-        return returnElement ? Ext.get(newNode) : newNode;
-    },
-
-    /**
-     * Applies the supplied values to the template and overwrites the content of el with the new node(s).
-     *
-     * @param {String/HTMLElement/Ext.Element} el The context element
-     * @param {Object/Array} values The template values. See {@link #applyTemplate} for details.
-     * @param {Boolean} returnElement (optional) true to return a Ext.Element.
-     * @return {HTMLElement/Ext.Element} The new node or Element
-     */
-    overwrite: function(el, values, returnElement) {
-        var newNode = Ext.DomHelper.overwrite(Ext.getDom(el), this.apply(values));
-        return returnElement ? Ext.get(newNode) : newNode;
-    }
-});
-
-//@tag core
-/**
- * This class parses the XTemplate syntax and calls abstract methods to process the parts.
- * @private
- */
-Ext.define('Ext.XTemplateParser', {
-    constructor: function (config) {
-        Ext.apply(this, config);
-    },
-
-    /**
-     * @property {Number} level The 'for' or 'foreach' loop context level. This is adjusted
-     * up by one prior to calling {@link #doFor} or {@link #doForEach} and down by one after
-     * calling the corresponding {@link #doEnd} that closes the loop. This will be 1 on the
-     * first {@link #doFor} or {@link #doForEach} call.
-     */
-
-    /**
-     * This method is called to process a piece of raw text from the tpl.
-     * @param {String} text
-     * @method doText
-     */
-    // doText: function (text)
-
-    /**
-     * This method is called to process expressions (like `{[expr]}`).
-     * @param {String} expr The body of the expression (inside "{[" and "]}").
-     * @method doExpr
-     */
-    // doExpr: function (expr)
-
-    /**
-     * This method is called to process simple tags (like `{tag}`).
-     * @method doTag
-     */
-    // doTag: function (tag)
-
-    /**
-     * This method is called to process `<tpl else>`.
-     * @method doElse
-     */
-    // doElse: function ()
-
-    /**
-     * This method is called to process `{% text %}`.
-     * @param {String} text
-     * @method doEval
-     */
-    // doEval: function (text)
-
-    /**
-     * This method is called to process `<tpl if="action">`. If there are other attributes,
-     * these are passed in the actions object.
-     * @param {String} action
-     * @param {Object} actions Other actions keyed by the attribute name (such as 'exec').
-     * @method doIf
-     */
-    // doIf: function (action, actions)
-
-    /**
-     * This method is called to process `<tpl elseif="action">`. If there are other attributes,
-     * these are passed in the actions object.
-     * @param {String} action
-     * @param {Object} actions Other actions keyed by the attribute name (such as 'exec').
-     * @method doElseIf
-     */
-    // doElseIf: function (action, actions)
-
-    /**
-     * This method is called to process `<tpl switch="action">`. If there are other attributes,
-     * these are passed in the actions object.
-     * @param {String} action
-     * @param {Object} actions Other actions keyed by the attribute name (such as 'exec').
-     * @method doSwitch
-     */
-    // doSwitch: function (action, actions)
-
-    /**
-     * This method is called to process `<tpl case="action">`. If there are other attributes,
-     * these are passed in the actions object.
-     * @param {String} action
-     * @param {Object} actions Other actions keyed by the attribute name (such as 'exec').
-     * @method doCase
-     */
-    // doCase: function (action, actions)
-
-    /**
-     * This method is called to process `<tpl default>`.
-     * @method doDefault
-     */
-    // doDefault: function ()
-
-    /**
-     * This method is called to process `</tpl>`. It is given the action type that started
-     * the tpl and the set of additional actions.
-     * @param {String} type The type of action that is being ended.
-     * @param {Object} actions The other actions keyed by the attribute name (such as 'exec').
-     * @method doEnd
-     */
-    // doEnd: function (type, actions) 
-
-    /**
-     * This method is called to process `<tpl for="action">`. If there are other attributes,
-     * these are passed in the actions object.
-     * @param {String} action
-     * @param {Object} actions Other actions keyed by the attribute name (such as 'exec').
-     * @method doFor
-     */
-    // doFor: function (action, actions)
-
-    /**
-     * This method is called to process `<tpl foreach="action">`. If there are other
-     * attributes, these are passed in the actions object.
-     * @param {String} action
-     * @param {Object} actions Other actions keyed by the attribute name (such as 'exec').
-     * @method doForEach
-     */
-    // doForEach: function (action, actions)
-
-    /**
-     * This method is called to process `<tpl exec="action">`. If there are other attributes,
-     * these are passed in the actions object.
-     * @param {String} action
-     * @param {Object} actions Other actions keyed by the attribute name.
-     * @method doExec
-     */
-    // doExec: function (action, actions)
-
-    /**
-     * This method is called to process an empty `<tpl>`. This is unlikely to need to be
-     * implemented, so a default (do nothing) version is provided.
-     * @method
-     */
-    doTpl: Ext.emptyFn,
-
-    parse: function (str) {
-        var me = this,
-            len = str.length,
-            aliases = { elseif: 'elif' },
-            topRe = me.topRe,
-            actionsRe = me.actionsRe,
-            index, stack, s, m, t, prev, frame, subMatch, begin, end, actions,
-            prop;
-
-        me.level = 0;
-        me.stack = stack = [];
-
-        for (index = 0; index < len; index = end) {
-            topRe.lastIndex = index;
-            m = topRe.exec(str);
-
-            if (!m) {
-                me.doText(str.substring(index, len));
-                break;
-            }
-
-            begin = m.index;
-            end = topRe.lastIndex;
-
-            if (index < begin) {
-                me.doText(str.substring(index, begin));
-            }
-
-            if (m[1]) {
-                end = str.indexOf('%}', begin+2);
-                me.doEval(str.substring(begin+2, end));
-                end += 2;
-            } else if (m[2]) {
-                end = str.indexOf(']}', begin+2);
-                me.doExpr(str.substring(begin+2, end));
-                end += 2;
-            } else if (m[3]) { // if ('{' token)
-                me.doTag(m[3]);
-            } else if (m[4]) { // content of a <tpl xxxxxx xxx> tag
-                actions = null;
-                while ((subMatch = actionsRe.exec(m[4])) !== null) {
-                    s = subMatch[2] || subMatch[3];
-                    if (s) {
-                        s = Ext.String.htmlDecode(s); // decode attr value
-                        t = subMatch[1];
-                        t = aliases[t] || t;
-                        actions = actions || {};
-                        prev = actions[t];
-
-                        if (typeof prev == 'string') {
-                            actions[t] = [prev, s];
-                        } else if (prev) {
-                            actions[t].push(s);
-                        } else {
-                            actions[t] = s;
-                        }
-                    }
-                }
-
-                if (!actions) {
-                    if (me.elseRe.test(m[4])) {
-                        me.doElse();
-                    } else if (me.defaultRe.test(m[4])) {
-                        me.doDefault();
-                    } else {
-                        me.doTpl();
-                        stack.push({ type: 'tpl' });
-                    }
-                }
-                else if (actions['if']) {
-                    me.doIf(actions['if'], actions);
-                    stack.push({ type: 'if' });
-                }
-                else if (actions['switch']) {
-                    me.doSwitch(actions['switch'], actions);
-                    stack.push({ type: 'switch' });
-                }
-                else if (actions['case']) {
-                    me.doCase(actions['case'], actions);
-                }
-                else if (actions['elif']) {
-                    me.doElseIf(actions['elif'], actions);
-                }
-                else if (actions['for']) {
-                    ++me.level;
-
-                    // Extract property name to use from indexed item
-                    if (prop = me.propRe.exec(m[4])) {
-                        actions.propName = prop[1] || prop[2];
-                    }
-                    me.doFor(actions['for'], actions);
-                    stack.push({ type: 'for', actions: actions });
-                }
-                else if (actions['foreach']) {
-                    ++me.level;
-
-                    // Extract property name to use from indexed item
-                    if (prop = me.propRe.exec(m[4])) {
-                        actions.propName = prop[1] || prop[2];
-                    }
-                    me.doForEach(actions['foreach'], actions);
-                    stack.push({ type: 'foreach', actions: actions });
-                }
-                else if (actions.exec) {
-                    me.doExec(actions.exec, actions);
-                    stack.push({ type: 'exec', actions: actions });
-                }
-                /*
-                else {
-                    // todo - error
-                }
-                */
-            } else if (m[0].length === 5) {
-                // if the length of m[0] is 5, assume that we're dealing with an opening tpl tag with no attributes (e.g. <tpl>...</tpl>)
-                // in this case no action is needed other than pushing it on to the stack
-                stack.push({ type: 'tpl' });
-            } else {
-                frame = stack.pop();
-                me.doEnd(frame.type, frame.actions);
-                if (frame.type == 'for' || frame.type == 'foreach') {
-                    --me.level;
-                }
-            }
-        }
-    },
-
-    // Internal regexes
-    
-    topRe:     /(?:(\{\%)|(\{\[)|\{([^{}]+)\})|(?:<tpl([^>]*)\>)|(?:<\/tpl>)/g,
-    actionsRe: /\s*(elif|elseif|if|for|foreach|exec|switch|case|eval|between)\s*\=\s*(?:(?:"([^"]*)")|(?:'([^']*)'))\s*/g,
-    propRe:    /prop=(?:(?:"([^"]*)")|(?:'([^']*)'))/,
-    defaultRe: /^\s*default\s*$/,
-    elseRe:    /^\s*else\s*$/
-});
-
-//@tag core
-
-
-Ext.define('Ext.XTemplateCompiler', {
-    extend: 'Ext.XTemplateParser',
-
-    
-    
-    
-    useEval: Ext.isGecko,
-
-    
-    
-    
-    useIndex: Ext.isIE7m,
-
-    useFormat: true,
-    
-    propNameRe: /^[\w\d\$]*$/,
-
-    compile: function (tpl) {
-        var me = this,
-            code = me.generate(tpl);
-
-        
-        
-        
-        
-        return me.useEval ? me.evalTpl(code) : (new Function('Ext', code))(Ext);
-    },
-
-    generate: function (tpl) {
-        var me = this,
-            
-            definitions = 'var fm=Ext.util.Format,ts=Object.prototype.toString;',
-            code;
-
-        
-        me.maxLevel = 0;
-
-        me.body = [
-            'var c0=values, a0=' + me.createArrayTest(0) + ', p0=parent, n0=xcount, i0=xindex, k0, v;\n'
-        ];
-        if (me.definitions) {
-            if (typeof me.definitions === 'string') {
-                me.definitions = [me.definitions, definitions ];
-            } else {
-                me.definitions.push(definitions);
-            }
-        } else {
-            me.definitions = [ definitions ];
-        }
-        me.switches = [];
-
-        me.parse(tpl);
-
-        me.definitions.push(
-            (me.useEval ? '$=' : 'return') + ' function (' + me.fnArgs + ') {',
-                me.body.join(''),
-            '}'
-        );
-
-        code = me.definitions.join('\n');
-
-        
-        me.definitions.length = me.body.length = me.switches.length = 0;
-        delete me.definitions;
-        delete me.body;
-        delete me.switches;
-
-        return code;
-    },
-
-    
-    
-
-    doText: function (text) {
-        var me = this,
-            out = me.body;
-
-        text = text.replace(me.aposRe, "\\'").replace(me.newLineRe, '\\n');
-        if (me.useIndex) {
-            out.push('out[out.length]=\'', text, '\'\n');
-        } else {
-            out.push('out.push(\'', text, '\')\n');
-        }
-    },
-
-    doExpr: function (expr) {
-        var out = this.body;
-        out.push('if ((v=' + expr + ') != null) out');
-
-        
-        
-        if (this.useIndex) {
-             out.push('[out.length]=v+\'\'\n');
-        } else {
-             out.push('.push(v+\'\')\n');
-        }
-    },
-
-    doTag: function (tag) {
-        var expr = this.parseTag(tag);
-        if (expr) {
-            this.doExpr(expr);
-        } else {
-            
-            this.doText('{' + tag + '}');
-        }
-    },
-
-    doElse: function () {
-        this.body.push('} else {\n');
-    },
-
-    doEval: function (text) {
-        this.body.push(text, '\n');
-    },
-
-    doIf: function (action, actions) {
-        var me = this;
-
-        
-        if (action === '.') {
-            me.body.push('if (values) {\n');
-        } else if (me.propNameRe.test(action)) {
-            me.body.push('if (', me.parseTag(action), ') {\n');
-        }
-        
-        else {
-            me.body.push('if (', me.addFn(action), me.callFn, ') {\n');
-        }
-        if (actions.exec) {
-            me.doExec(actions.exec);
-        }
-    },
-
-    doElseIf: function (action, actions) {
-        var me = this;
-
-        
-        if (action === '.') {
-            me.body.push('else if (values) {\n');
-        } else if (me.propNameRe.test(action)) {
-            me.body.push('} else if (', me.parseTag(action), ') {\n');
-        }
-        
-        else {
-            me.body.push('} else if (', me.addFn(action), me.callFn, ') {\n');
-        }
-        if (actions.exec) {
-            me.doExec(actions.exec);
-        }
-    },
-
-    doSwitch: function (action) {
-        var me = this;
-
-        
-        if (action === '.') {
-            me.body.push('switch (values) {\n');
-        } else if (me.propNameRe.test(action)) {
-            me.body.push('switch (', me.parseTag(action), ') {\n');
-        }
-        
-        else {
-            me.body.push('switch (', me.addFn(action), me.callFn, ') {\n');
-        }
-        me.switches.push(0);
-    },
-
-    doCase: function (action) {
-        var me = this,
-            cases = Ext.isArray(action) ? action : [action],
-            n = me.switches.length - 1,
-            match, i;
-
-        if (me.switches[n]) {
-            me.body.push('break;\n');
-        } else {
-            me.switches[n]++;
-        }
-
-        for (i = 0, n = cases.length; i < n; ++i) {
-            match = me.intRe.exec(cases[i]);
-            cases[i] = match ? match[1] : ("'" + cases[i].replace(me.aposRe,"\\'") + "'");
-        }
-
-        me.body.push('case ', cases.join(': case '), ':\n');
-    },
-
-    doDefault: function () {
-        var me = this,
-            n = me.switches.length - 1;
-
-        if (me.switches[n]) {
-            me.body.push('break;\n');
-        } else {
-            me.switches[n]++;
-        }
-
-        me.body.push('default:\n');
-    },
-
-    doEnd: function (type, actions) {
-        var me = this,
-            L = me.level-1;
-
-        if (type == 'for' || type == 'foreach') {
-            
-            if (actions.exec) {
-                me.doExec(actions.exec);
-            }
-
-            me.body.push('}\n');
-            me.body.push('parent=p',L,';values=r',L+1,';xcount=n'+L+';xindex=i',L,'+1;xkey=k',L,';\n');
-        } else if (type == 'if' || type == 'switch') {
-            me.body.push('}\n');
-        }
-    },
-
-    doFor: function (action, actions) {
-        var me = this,
-            s,
-            L = me.level,
-            up = L-1,
-            parentAssignment;
-
-        
-        if (action === '.') {
-            s = 'values';
-        } else if (me.propNameRe.test(action)) {
-            s = me.parseTag(action);
-        }
-        
-        else {
-            s = me.addFn(action) + me.callFn;
-        }
-
-        
-
-        
-        if (me.maxLevel < L) {
-            me.maxLevel = L;
-            me.body.push('var ');
-        }
-        
-        if (action == '.') {
-            parentAssignment = 'c' + L;
-        } else {
-            parentAssignment = 'a' + up + '?c' + up + '[i' + up + ']:c' + up;
-        }
-        
-        me.body.push('i',L,'=0,n', L, '=0,c',L,'=',s,',a',L,'=', me.createArrayTest(L),',r',L,'=values,p',L,',k',L,';\n',
-            'p',L,'=parent=',parentAssignment,'\n',
-            'if (c',L,'){if(a',L,'){n', L,'=c', L, '.length;}else if (c', L, '.isMixedCollection){c',L,'=c',L,'.items;n',L,'=c',L,'.length;}else if(c',L,'.isStore){c',L,'=c',L,'.data.items;n',L,'=c',L,'.length;}else{c',L,'=[c',L,'];n',L,'=1;}}\n',
-            'for (xcount=n',L,';i',L,'<n'+L+';++i',L,'){\n',
-            'values=c',L,'[i',L,']');
-        if (actions.propName) {
-            me.body.push('.', actions.propName);
-        }
-        me.body.push('\n',
-            'xindex=i',L,'+1\n');
-        
-        if (actions.between) {
-            me.body.push('if(xindex>1){ out.push("',actions.between,'"); } \n');
-        }
-    },
-
-    doForEach: function (action, actions) {
-        var me = this,
-            s,
-            L = me.level,
-            up = L-1,
-            parentAssignment;
-
-        
-        if (action === '.') {
-            s = 'values';
-        } else if (me.propNameRe.test(action)) {
-            s = me.parseTag(action);
-        }
-        
-        else {
-            s = me.addFn(action) + me.callFn;
-        }
-
-        
-
-        
-        if (me.maxLevel < L) {
-            me.maxLevel = L;
-            me.body.push('var ');
-        }
-        
-        if (action == '.') {
-            parentAssignment = 'c' + L;
-        } else {
-            parentAssignment = 'a' + up + '?c' + up + '[i' + up + ']:c' + up;
-        }
-        
-        me.body.push('i',L,'=-1,n',L,'=0,c',L,'=',s,',a',L,'=',me.createArrayTest(L),',r',L,'=values,p',L,',k',L,';\n',
-            'p',L,'=parent=',parentAssignment,'\n',
-            'for(k',L,' in c',L,'){\n',
-                'xindex=++i',L,'+1;\n',
-                'xkey=k',L,';\n',
-                'values=c',L,'[k',L,'];');
-        if (actions.propName) {
-            me.body.push('.', actions.propName);
-        }
-        
-        if (actions.between) {
-            me.body.push('if(xindex>1){ out.push("',actions.between,'"); } \n');
-        }
-    },
-
-    createArrayTest: ('isArray' in Array) ? function(L) {
-        return 'Array.isArray(c' + L + ')';
-    } : function(L) {
-        return 'ts.call(c' + L + ')==="[object Array]"';
-    },
-
-    doExec: function (action, actions) {
-        var me = this,
-            name = 'f' + me.definitions.length;
-
-        me.definitions.push('function ' + name + '(' + me.fnArgs + ') {',
-                            ' try { with(values) {',
-                            '  ' + action,
-                            ' }} catch(e) {',
-                            '}',
-                      '}');
-
-        me.body.push(name + me.callFn + '\n');
-    },
-
-    
-    
-
-    addFn: function (body) {
-        var me = this,
-            name = 'f' + me.definitions.length;
-
-        if (body === '.') {
-            me.definitions.push('function ' + name + '(' + me.fnArgs + ') {',
-                            ' return values',
-                       '}');
-        } else if (body === '..') {
-            me.definitions.push('function ' + name + '(' + me.fnArgs + ') {',
-                            ' return parent',
-                       '}');
-        } else {
-            me.definitions.push('function ' + name + '(' + me.fnArgs + ') {',
-                            ' try { with(values) {',
-                            '  return(' + body + ')',
-                            ' }} catch(e) {',
-                            '}',
-                       '}');
-        }
-
-        return name;
-    },
-
-    parseTag: function (tag) {
-        var me = this,
-            m = me.tagRe.exec(tag),
-            name, format, args, math, v;
-
-        if (!m) {
-            return null;
-        }
-
-        name = m[1];
-        format = m[2];
-        args = m[3];
-        math = m[4];
-
-        
-        if (name == '.') {
-            
-            if (!me.validTypes) {
-                me.definitions.push('var validTypes={string:1,number:1,boolean:1};');
-                me.validTypes = true;
-            }
-            v = 'validTypes[typeof values] || ts.call(values) === "[object Date]" ? values : ""';
-        }
-        
-        else if (name == '#') {
-            v = 'xindex';
-        }
-        
-        else if (name == '$') {
-            v = 'xkey';
-        }
-        else if (name.substr(0, 7) == "parent.") {
-            v = name;
-        }
-        
-        else if (isNaN(name) && name.indexOf('-') == -1 && name.indexOf('.') != -1) {
-            v = "values." + name;
-        }
-        
-        
-        else {    
-            v = "values['" + name + "']";
-        }
-
-        if (math) {
-            v = '(' + v + math + ')';
-        }
-
-        if (format && me.useFormat) {
-            args = args ? ',' + args : "";
-            if (format.substr(0, 5) != "this.") {
-                format = "fm." + format + '(';
-            } else {
-                format += '(';
-            }
-        } else {
-            return v;
-        }
-
-        return format + v + args + ')';
-    },
-
-    
-    evalTpl: function ($) {
-
-        
-        
-        
-        
-        eval($);
-        return $;
-    },
-
-    newLineRe: /\r\n|\r|\n/g,
-    aposRe: /[']/g,
-    intRe:  /^\s*(\d+)\s*$/,
-    tagRe:  /^([\w-\.\#\$]+)(?:\:([\w\.]*)(?:\((.*?)?\))?)?(\s?[\+\-\*\/]\s?[\d\.\+\-\*\/\(\)]+)?$/
-
-}, function () {
-    var proto = this.prototype;
-
-    proto.fnArgs = 'out,values,parent,xindex,xcount,xkey';
-    proto.callFn = '.call(this,' + proto.fnArgs + ')';
-});
-
-//@tag core
-/**
- * A template class that supports advanced functionality like:
- *
- * - Autofilling arrays using templates and sub-templates
- * - Conditional processing with basic comparison operators
- * - Basic math function support
- * - Execute arbitrary inline code with special built-in template variables
- * - Custom member functions
- * - Many special tags and built-in operators that aren't defined as part of the API, but are supported in the templates that can be created
- *
- * XTemplate provides the templating mechanism built into {@link Ext.view.View}.
- *
- * The {@link Ext.Template} describes the acceptable parameters to pass to the constructor. The following examples
- * demonstrate all of the supported features.
- *
- * # Sample Data
- *
- * This is the data object used for reference in each code example:
- *
- *     var data = {
- *         name: 'Don Griffin',
- *         title: 'Senior Technomage',
- *         company: 'Sencha Inc.',
- *         drinks: ['Coffee', 'Water', 'More Coffee'],
- *         kids: [
- *             { name: 'Aubrey',  age: 17 },
- *             { name: 'Joshua',  age: 13 },
- *             { name: 'Cale',    age: 10 },
- *             { name: 'Nikol',   age: 5 },
- *             { name: 'Solomon', age: 0 }
- *         ]
- *     };
- *
- * # Auto filling of arrays
- *
- * The **tpl** tag and the **for** operator are used to process the provided data object:
- *
- * - If the value specified in for is an array, it will auto-fill, repeating the template block inside the tpl
- *   tag for each item in the array.
- * - If for="." is specified, the data object provided is examined.
- * - If between="..." is specified, the provided value will be inserted between the items.
- *   This is also supported in the "foreach" looping template.
- * - While processing an array, the special variable {#} will provide the current array index + 1 (starts at 1, not 0).
- *
- * Examples:
- *
- *     <tpl for=".">...</tpl>       
- *     <tpl for="foo">...</tpl>     
- *     <tpl for="foo.bar">...</tpl> 
- *     <tpl for="." between=",">...</tpl> 
- *
- * Using the sample data above:
- *
- *     var tpl = new Ext.XTemplate(
- *         '<p>Kids: ',
- *         '<tpl for=".">',       
- *             '<p>{#}. {name}</p>',  
- *         '</tpl></p>'
- *     );
- *     tpl.overwrite(panel.body, data.kids); 
- *
- * An example illustrating how the **for** property can be leveraged to access specified members of the provided data
- * object to populate the template:
- *
- *     var tpl = new Ext.XTemplate(
- *         '<p>Name: {name}</p>',
- *         '<p>Title: {title}</p>',
- *         '<p>Company: {company}</p>',
- *         '<p>Kids: ',
- *         '<tpl for="kids">',     
- *             '<p>{name}</p>',
- *         '</tpl></p>'
- *     );
- *     tpl.overwrite(panel.body, data);  
- *
- * Flat arrays that contain values (and not objects) can be auto-rendered using the special **`{.}`** variable inside a
- * loop. This variable will represent the value of the array at the current index:
- *
- *     var tpl = new Ext.XTemplate(
- *         '<p>{name}\'s favorite beverages:</p>',
- *         '<tpl for="drinks">',
- *             '<div> - {.}</div>',
- *         '</tpl>'
- *     );
- *     tpl.overwrite(panel.body, data);
- *
- * When processing a sub-template, for example while looping through a child array, you can access the parent object's
- * members via the **parent** object:
- *
- *     var tpl = new Ext.XTemplate(
- *         '<p>Name: {name}</p>',
- *         '<p>Kids: ',
- *         '<tpl for="kids">',
- *             '<tpl if="age &gt; 1">',
- *                 '<p>{name}</p>',
- *                 '<p>Dad: {parent.name}</p>',
- *             '</tpl>',
- *         '</tpl></p>'
- *     );
- *     tpl.overwrite(panel.body, data);
- *     
- * The **foreach** operator is used to loop over an object's properties.  The following
- * example demonstrates looping over the main data object's properties:
- * 
- *     var tpl = new Ext.XTemplate(
- *         '<dl>',
- *             '<tpl foreach=".">',
- *                 '<dt>{$}</dt>', // the special **`{$}`** variable contains the property name
- *                 '<dd>{.}</dd>', // within the loop, the **`{.}`** variable is set to the property value
- *             '</tpl>',
- *         '</dl>'
- *     );
- *     tpl.overwrite(panel.body, data);
- *
- * # Conditional processing with basic comparison operators
- *
- * The **tpl** tag and the **if** operator are used to provide conditional checks for deciding whether or not to render
- * specific parts of the template.
- *
- * Using the sample data above:
- *
- *     var tpl = new Ext.XTemplate(
- *         '<p>Name: {name}</p>',
- *         '<p>Kids: ',
- *         '<tpl for="kids">',
- *             '<tpl if="age &gt; 1">',
- *                 '<p>{name}</p>',
- *             '</tpl>',
- *         '</tpl></p>'
- *     );
- *     tpl.overwrite(panel.body, data);
- *
- * More advanced conditionals are also supported:
- *
- *     var tpl = new Ext.XTemplate(
- *         '<p>Name: {name}</p>',
- *         '<p>Kids: ',
- *         '<tpl for="kids">',
- *             '<p>{name} is a ',
- *             '<tpl if="age &gt;= 13">',
- *                 '<p>teenager</p>',
- *             '<tpl elseif="age &gt;= 2">',
- *                 '<p>kid</p>',
- *             '<tpl else>',
- *                 '<p>baby</p>',
- *             '</tpl>',
- *         '</tpl></p>'
- *     );
- *
- *     var tpl = new Ext.XTemplate(
- *         '<p>Name: {name}</p>',
- *         '<p>Kids: ',
- *         '<tpl for="kids">',
- *             '<p>{name} is a ',
- *             '<tpl switch="name">',
- *                 '<tpl case="Aubrey" case="Nikol">',
- *                     '<p>girl</p>',
- *                 '<tpl default>',
- *                     '<p>boy</p>',
- *             '</tpl>',
- *         '</tpl></p>'
- *     );
- *
- * A `break` is implied between each case and default, however, multiple cases can be listed
- * in a single &lt;tpl&gt; tag.
- *
- * # Using double quotes
- *
- * Examples:
- *
- *     var tpl = new Ext.XTemplate(
- *         "<tpl if='age &gt; 1 && age &lt; 10'>Child</tpl>",
- *         "<tpl if='age &gt;= 10 && age &lt; 18'>Teenager</tpl>",
- *         "<tpl if='this.isGirl(name)'>...</tpl>",
- *         '<tpl if="id == \'download\'">...</tpl>',
- *         "<tpl if='needsIcon'><img src='{icon}' class='{iconCls}'/></tpl>",
- *         "<tpl if='name == \"Don\"'>Hello</tpl>"
- *     );
- *
- * # Basic math support
- *
- * The following basic math operators may be applied directly on numeric data values:
- *
- *     + - * /
- *
- * For example:
- *
- *     var tpl = new Ext.XTemplate(
- *         '<p>Name: {name}</p>',
- *         '<p>Kids: ',
- *         '<tpl for="kids">',
- *             '<tpl if="age &gt; 1">',  
- *                 '<p>{#}: {name}</p>',  
- *                 '<p>In 5 Years: {age+5}</p>',  
- *                 '<p>Dad: {parent.name}</p>',
- *             '</tpl>',
- *         '</tpl></p>'
- *     );
- *     tpl.overwrite(panel.body, data);
- *
- * # Execute arbitrary inline code with special built-in template variables
- *
- * Anything between `{[ ... ]}` is considered code to be executed in the scope of the template.
- * The expression is evaluated and the result is included in the generated result. There are
- * some special variables available in that code:
- *
- * - **out**: The output array into which the template is being appended (using `push` to later
- *   `join`).
- * - **values**: The values in the current scope. If you are using scope changing sub-templates,
- *   you can change what values is.
- * - **parent**: The scope (values) of the ancestor template.
- * - **xindex**: If you are in a "for" or "foreach" looping template, the index of the loop you are in (1-based).
- * - **xcount**: If you are in a "for" looping template, the total length of the array you are looping.
- * - **xkey**: If you are in a "foreach" looping template, the key of the current property
- * being examined.
- *
- * This example demonstrates basic row striping using an inline code block and the xindex variable:
- *
- *     var tpl = new Ext.XTemplate(
- *         '<p>Name: {name}</p>',
- *         '<p>Company: {[values.company.toUpperCase() + ", " + values.title]}</p>',
- *         '<p>Kids: ',
- *         '<tpl for="kids">',
- *             '<div class="{[xindex % 2 === 0 ? "even" : "odd"]}">',
- *             '{name}',
- *             '</div>',
- *         '</tpl></p>'
- *      );
- *
- * Any code contained in "verbatim" blocks (using "{% ... %}") will be inserted directly in
- * the generated code for the template. These blocks are not included in the output. This
- * can be used for simple things like break/continue in a loop, or control structures or
- * method calls (when they don't produce output). The `this` references the template instance.
- *
- *     var tpl = new Ext.XTemplate(
- *         '<p>Name: {name}</p>',
- *         '<p>Company: {[values.company.toUpperCase() + ", " + values.title]}</p>',
- *         '<p>Kids: ',
- *         '<tpl for="kids">',
- *             '{% if (xindex % 2 === 0) continue; %}',
- *             '{name}',
- *             '{% if (xindex > 100) break; %}',
- *             '</div>',
- *         '</tpl></p>'
- *      );
- *
- * # Template member functions
- *
- * One or more member functions can be specified in a configuration object passed into the XTemplate constructor for
- * more complex processing:
- *
- *     var tpl = new Ext.XTemplate(
- *         '<p>Name: {name}</p>',
- *         '<p>Kids: ',
- *         '<tpl for="kids">',
- *             '<tpl if="this.isGirl(name)">',
- *                 '<p>Girl: {name} - {age}</p>',
- *             '<tpl else>',
- *                 '<p>Boy: {name} - {age}</p>',
- *             '</tpl>',
- *             '<tpl if="this.isBaby(age)">',
- *                 '<p>{name} is a baby!</p>',
- *             '</tpl>',
- *         '</tpl></p>',
- *         {
- *             // XTemplate configuration:
- *             disableFormats: true,
- *             // member functions:
- *             isGirl: function(name){
- *                return name == 'Aubrey' || name == 'Nikol';
- *             },
- *             isBaby: function(age){
- *                return age < 1;
- *             }
- *         }
- *     );
- *     tpl.overwrite(panel.body, data);
- */
-Ext.define('Ext.XTemplate', {
-    extend: 'Ext.Template',
-
-    requires: 'Ext.XTemplateCompiler',
-
-    /**
-     * @private
-     */
-    emptyObj: {},
-
-    /**
-     * @cfg {Boolean} compiled
-     * Only applies to {@link Ext.Template}, XTemplates are compiled automatically on the
-     * first call to {@link #apply} or {@link #applyOut}.
-     * @hide
-     */
-
-    /**
-     * @cfg {String/Array} definitions
-     * Optional. A statement, or array of statements which set up `var`s which may then
-     * be accessed within the scope of the generated function.
-     */
-
-    apply: function(values, parent) {
-        return this.applyOut(values, [], parent).join('');
-    },
-
-    applyOut: function(values, out, parent) {
-        var me = this,
-            compiler;
-
-        if (!me.fn) {
-            compiler = new Ext.XTemplateCompiler({
-                useFormat: me.disableFormats !== true,
-                definitions: me.definitions
-            });
-
-            me.fn = compiler.compile(me.html);
-        }
-
-        try {
-            me.fn(out, values, parent || me.emptyObj, 1, 1);
-        } catch (e) {
-        }
-
-        return out;
-    },
-
-    /**
-     * Does nothing. XTemplates are compiled automatically, so this function simply returns this.
-     * @return {Ext.XTemplate} this
-     */
-    compile: function() {
-        return this;
-    },
-
-    statics: {
-        /**
-         * Gets an `XTemplate` from an object (an instance of an {@link Ext#define}'d class).
-         * Many times, templates are configured high in the class hierarchy and are to be
-         * shared by all classes that derive from that base. To further complicate matters,
-         * these templates are seldom actual instances but are rather configurations. For
-         * example:
-         *
-         *      Ext.define('MyApp.Class', {
-         *          extraCls: 'extra-class',
-         *
-         *          someTpl: [
-         *              '<div class="{%this.emitClass(out)%}"></div>',
-         *          {
-         *              
-         *              emitClass: function(out) {
-         *                  out.push(this.owner.extraCls);
-         *              }
-         *          }]
-         *      });
-         *
-         * The goal being to share that template definition with all instances and even
-         * instances of derived classes, until `someTpl` is overridden. This method will
-         * "upgrade" these configurations to be real `XTemplate` instances *in place* (to
-         * avoid creating one instance per object).
-         *
-         * The resulting XTemplate will have an `owner` reference injected which refers back
-         * to the owning object whether that is an object which has an *own instance*, or a
-         * class prototype. Through this link, XTemplate member functions will be able to access
-         * prototype properties of its owning class.
-         *
-         * @param {Object} instance The object from which to get the `XTemplate` (must be
-         * an instance of an {@link Ext#define}'d class).
-         * @param {String} name The name of the property by which to get the `XTemplate`.
-         * @return {Ext.XTemplate} The `XTemplate` instance or null if not found.
-         * @protected
-         * @static
-         */
-        getTpl: function (instance, name) {
-            var tpl = instance[name], // go for it! 99% of the time we will get it!
-                owner;
-
-            if (tpl && !tpl.isTemplate) { // tpl is just a configuration (not an instance)
-                // create the template instance from the configuration:
-                tpl = Ext.ClassManager.dynInstantiate('Ext.XTemplate', tpl);
-
-                // and replace the reference with the new instance:
-                if (instance.hasOwnProperty(name)) { // the tpl is on the instance
-                    owner = instance;
-                } else { // must be somewhere in the prototype chain
-                    for (owner = instance.self.prototype; owner && !owner.hasOwnProperty(name); owner = owner.superclass) {
-                    }
-                }
-                owner[name] = tpl;
-                tpl.owner = owner;
-            }
-            // else !tpl (no such tpl) or the tpl is an instance already... either way, tpl
-            // is ready to return
-
-            return tpl || null;
-        }
-    }
-});
-
-//@tag core
-/**
- * Base class that provides a common interface for publishing events. Subclasses are expected to to have a property
- * "events" with all the events defined, and, optionally, a property "listeners" with configured listeners defined.
- *
- * For example:
- *
- *     Ext.define('Employee', {
- *         mixins: {
- *             observable: 'Ext.util.Observable'
- *         },
- *
- *         constructor: function (config) {
- *             // The Observable constructor copies all of the properties of `config` on
- *             // to `this` using {@link Ext#apply}. Further, the `listeners` property is
- *             // processed to add listeners.
- *             //
- *             this.mixins.observable.constructor.call(this, config);
- *
- *             this.addEvents(
- *                 'fired',
- *                 'quit'
- *             );
- *         }
- *     });
- *
- * This could then be used like this:
- *
- *     var newEmployee = new Employee({
- *         name: employeeName,
- *         listeners: {
- *             quit: function() {
- *                 // By default, "this" will be the object that fired the event.
- *                 alert(this.name + " has quit!");
- *             }
- *         }
- *     });
- */
-Ext.define('Ext.util.Observable', function(Observable) {
-
-    // Private Destroyable class which removes listeners
-    var emptyArray = [],
-        arrayProto = Array.prototype,
-        arraySlice = arrayProto.slice,
-        ExtEvent = Ext.util.Event,
-        ListenerRemover = function(observable) {
-
-            // Passed a ListenerRemover: return it
-            if (observable instanceof ListenerRemover) {
-                return observable;
-            }
-
-            this.observable = observable;
-
-            // Called when addManagedListener is used with the event source as the second arg:
-            // (owner, eventSource, args...)
-            if (arguments[1].isObservable) {
-                this.managedListeners = true;
-            }
-            this.args = arraySlice.call(arguments, 1);
-        };
-
-    ListenerRemover.prototype.destroy = function() {
-        this.observable[this.managedListeners ? 'mun' : 'un'].apply(this.observable, this.args);
-    };
-
-    return {
-
-        /* Begin Definitions */
-
-        requires: ['Ext.util.Event', 'Ext.EventManager'],
-
-        statics: {
-            /**
-            * Removes **all** added captures from the Observable.
-            *
-            * @param {Ext.util.Observable} o The Observable to release
-            * @static
-            */
-            releaseCapture: function(o) {
-                o.fireEvent = this.prototype.fireEvent;
-            },
-
-            /**
-            * Starts capture on the specified Observable. All events will be passed to the supplied function with the event
-            * name + standard signature of the event **before** the event is fired. If the supplied function returns false,
-            * the event will not fire.
-            *
-            * @param {Ext.util.Observable} o The Observable to capture events from.
-            * @param {Function} fn The function to call when an event is fired.
-            * @param {Object} scope (optional) The scope (`this` reference) in which the function is executed. Defaults to
-            * the Observable firing the event.
-            * @static
-            */
-            capture: function(o, fn, scope) {
-                o.fireEvent = Ext.Function.createInterceptor(o.fireEvent, fn, scope);
-            },
-
-            /**
-            * Sets observability on the passed class constructor.
-            *
-            * This makes any event fired on any instance of the passed class also fire a single event through
-            * the **class** allowing for central handling of events on many instances at once.
-            *
-            * Usage:
-            *
-            *     Ext.util.Observable.observe(Ext.data.Connection);
-            *     Ext.data.Connection.on('beforerequest', function(con, options) {
-            *         console.log('Ajax request made to ' + options.url);
-            *     });
-            *
-            * @param {Function} c The class constructor to make observable.
-            * @param {Object} listeners An object containing a series of listeners to add. See {@link #addListener}.
-            * @static
-            */
-            observe: function(cls, listeners) {
-                if (cls) {
-                    if (!cls.isObservable) {
-                        Ext.applyIf(cls, new this());
-                        this.capture(cls.prototype, cls.fireEvent, cls);
-                    }
-                    if (Ext.isObject(listeners)) {
-                        cls.on(listeners);
-                    }
-                }
-                return cls;
-            },
-
-            /**
-            * Prepares a given class for observable instances. This method is called when a
-            * class derives from this class or uses this class as a mixin.
-            * @param {Function} T The class constructor to prepare.
-            * @private
-            */
-            prepareClass: function (T, mixin) {
-                // T.hasListeners is the object to track listeners on class T. This object's
-                
-
-                
-                
-
-                if (!T.HasListeners) {
-                    
-                    
-                    
-                    var HasListeners = function () {},
-                        SuperHL = T.superclass.HasListeners || (mixin && mixin.HasListeners) ||
-                                Observable.HasListeners;
-
-                    
-                    T.prototype.HasListeners = T.HasListeners = HasListeners;
-
-                    
-                    
-                    HasListeners.prototype = T.hasListeners = new SuperHL();
-                }
-            }
-        },
-
-        
-
-        
-
-        
-        isObservable: true,
-
-        
-        eventsSuspended: 0,
-
-        
-
-        constructor: function(config) {
-            var me = this;
-
-            Ext.apply(me, config);
-
-            
-            if (!me.hasListeners) {
-                me.hasListeners = new me.HasListeners();
-            }
-
-            me.events = me.events || {};
-            if (me.listeners) {
-                me.on(me.listeners);
-                me.listeners = null; 
-            }
-
-            if (me.bubbleEvents) {
-                me.enableBubble(me.bubbleEvents);
-            }
-        },
-
-        onClassExtended: function (T) {
-            if (!T.HasListeners) {
-                
-                
-                Observable.prepareClass(T);
-            }
-        },
-
-        
-        
-        eventOptionsRe : /^(?:scope|delay|buffer|single|stopEvent|preventDefault|stopPropagation|normalized|args|delegate|element|destroyable|vertical|horizontal|freezeEvent|priority)$/,
-
-        
-        addManagedListener : function(item, ename, fn, scope, options,  noDestroy) {
-            var me = this,
-                managedListeners = me.managedListeners = me.managedListeners || [],
-                config, passedOptions;
-
-            if (typeof ename !== 'string') {
-                
-                
-                
-                
-                passedOptions = arguments.length > 4 ? options : ename;
-
-                options = ename;
-                for (ename in options) {
-                    if (options.hasOwnProperty(ename)) {
-                        config = options[ename];
-                        if (!me.eventOptionsRe.test(ename)) {
-                            
-                            
-                            me.addManagedListener(item, ename, config.fn || config, config.scope || options.scope || scope, config.fn ? config : passedOptions, true);
-                        }
-                    }
-                }
-                if (options && options.destroyable) {
-                    return new ListenerRemover(me, item, options);
-                }
-            }
-            else {
-                if (typeof fn === 'string') {
-                    scope = scope || me;
-                    fn = scope[fn];
-                }
-                managedListeners.push({
-                    item: item,
-                    ename: ename,
-                    fn: fn,
-                    scope: scope,
-                    options: options
-                });
-
-                item.on(ename, fn, scope, options);
-
-                
-                if (!noDestroy && options && options.destroyable) {
-                    return new ListenerRemover(me, item, ename, fn, scope);
-                }
-            }
-        },
-
-        
-        removeManagedListener : function(item, ename, fn, scope) {
-            var me = this,
-                options,
-                config,
-                managedListeners,
-                length,
-                i;
-
-            if (typeof ename !== 'string') {
-                options = ename;
-                for (ename in options) {
-                    if (options.hasOwnProperty(ename)) {
-                        config = options[ename];
-                        if (!me.eventOptionsRe.test(ename)) {
-                            me.removeManagedListener(item, ename, config.fn || config, config.scope || options.scope || scope);
-                        }
-                    }
-                }
-            } else {
-
-                managedListeners = me.managedListeners ? me.managedListeners.slice() : [];
-
-                for (i = 0, length = managedListeners.length; i < length; i++) {
-                    me.removeManagedListenerItem(false, managedListeners[i], item, ename, fn, scope);
-                }
-            }
-        },
-
-        
-        fireEvent: function(eventName) {
-            return this.fireEventArgs(eventName, Array.prototype.slice.call(arguments, 1));
-        },
-
-        
-        fireEventArgs: function(eventName, args) {
-            eventName = eventName.toLowerCase();
-            var me = this,
-                events = me.events,
-                event = events && events[eventName],
-                ret = true;
-
-            
-            
-            if (event && me.hasListeners[eventName]) {
-                ret = me.continueFireEvent(eventName, args || emptyArray, event.bubble);
-            }
-            return ret;
-        },
-
-        
-        continueFireEvent: function(eventName, args, bubbles) {
-            var target = this,
-                queue, event,
-                ret = true;
-
-            do {
-                if (target.eventsSuspended) {
-                    if ((queue = target.eventQueue)) {
-                        queue.push([eventName, args, bubbles]);
-                    }
-                    return ret;
-                } else {
-                    event = target.events[eventName];
-                    
-                    
-                    if (event && event != true) {
-                        if ((ret = event.fire.apply(event, args)) === false) {
-                            break;
-                        }
-                    }
-                }
-            } while (bubbles && (target = target.getBubbleParent()));
-            return ret;
-        },
-
-        
-        getBubbleParent: function() {
-            var me = this, parent = me.getBubbleTarget && me.getBubbleTarget();
-            if (parent && parent.isObservable) {
-                return parent;
-            }
-            return null;
-        },
-
-        
-        addListener: function(ename, fn, scope, options) {
-            var me = this,
-                config, event,
-                prevListenerCount = 0;
-
-            
-            if (typeof ename !== 'string') {
-                options = ename;
-                for (ename in options) {
-                    if (options.hasOwnProperty(ename)) {
-                        config = options[ename];
-                        if (!me.eventOptionsRe.test(ename)) {
-                            
-                            me.addListener(ename, config.fn || config, config.scope || options.scope, config.fn ? config : options);
-                        }
-                    }
-                }
-                if (options && options.destroyable) {
-                    return new ListenerRemover(me, options);
-                }
-            }
-            
-            else {
-                ename = ename.toLowerCase();
-                event = me.events[ename];
-                if (event && event.isEvent) {
-                    prevListenerCount = event.listeners.length;
-                } else {
-                    me.events[ename] = event = new ExtEvent(me, ename);
-                }
-
-                
-                if (typeof fn === 'string') {
-                    scope = scope || me;
-                    fn = scope[fn];
-                }
-                event.addListener(fn, scope, options);
-
-                
-                
-                if (event.listeners.length !== prevListenerCount) {
-                    me.hasListeners._incr_(ename);
-                }
-                if (options && options.destroyable) {
-                    return new ListenerRemover(me, ename, fn, scope, options);
-                }
-            }
-        },
-
-        
-        removeListener: function(ename, fn, scope) {
-            var me = this,
-                config,
-                event,
-                options;
-
-            if (typeof ename !== 'string') {
-                options = ename;
-                for (ename in options) {
-                    if (options.hasOwnProperty(ename)) {
-                        config = options[ename];
-                        if (!me.eventOptionsRe.test(ename)) {
-                            me.removeListener(ename, config.fn || config, config.scope || options.scope);
-                        }
-                    }
-                }
-            } else {
-                ename = ename.toLowerCase();
-                event = me.events[ename];
-                if (event && event.isEvent) {
-                    if (event.removeListener(fn, scope)) {
-                        me.hasListeners._decr_(ename);
-                    }
-                }
-            }
-        },
-
-        
-        clearListeners: function() {
-            var events = this.events,
-                hasListeners = this.hasListeners,
-                event,
-                key;
-
-            for (key in events) {
-                if (events.hasOwnProperty(key)) {
-                    event = events[key];
-                    if (event.isEvent) {
-                        delete hasListeners[key];
-                        event.clearListeners();
-                    }
-                }
-            }
-
-            this.clearManagedListeners();
-        },
-
-
-        
-        clearManagedListeners : function() {
-            var managedListeners = this.managedListeners || [],
-                i = 0,
-                len = managedListeners.length;
-
-            for (; i < len; i++) {
-                this.removeManagedListenerItem(true, managedListeners[i]);
-            }
-
-            this.managedListeners = [];
-        },
-
-        
-        removeManagedListenerItem: function(isClear, managedListener, item, ename, fn, scope){
-            if (isClear || (managedListener.item === item && managedListener.ename === ename && (!fn || managedListener.fn === fn) && (!scope || managedListener.scope === scope))) {
-                managedListener.item.un(managedListener.ename, managedListener.fn, managedListener.scope);
-                if (!isClear) {
-                    Ext.Array.remove(this.managedListeners, managedListener);
-                }
-            }
-        },
-
-
-        
-        addEvents: function(o) {
-            var me = this,
-                events = me.events || (me.events = {}),
-                arg, args, i;
-
-            if (typeof o == 'string') {
-                for (args = arguments, i = args.length; i--; ) {
-                    arg = args[i];
-                    if (!events[arg]) {
-                        events[arg] = true;
-                    }
-                }
-            } else {
-                Ext.applyIf(me.events, o);
-            }
-        },
-
-        
-        hasListener: function(ename) {
-            return !!this.hasListeners[ename.toLowerCase()];
-        },
-
-        
-        suspendEvents: function(queueSuspended) {
-            this.eventsSuspended += 1;
-            if (queueSuspended && !this.eventQueue) {
-                this.eventQueue = [];
-            }
-        },
-
-        
-        suspendEvent: function(eventName) {
-            var len = arguments.length,
-                i, event;
-
-            for (i = 0; i < len; i++) {
-                event = this.events[arguments[i]];
-
-                
-                if (event && event.suspend) {
-                    event.suspend();
-                }
-            }
-        },
-
-        
-        resumeEvent: function() {
-            var len = arguments.length,
-                i, event;
-
-            for (i = 0; i < len; i++) {
-
-                
-                event = this.events[arguments[i]];
-                if (event && event.resume) {
-                    event.resume();
-                }
-            }
-        },
-
-        
-        resumeEvents: function() {
-            var me = this,
-                queued = me.eventQueue,
-                qLen, q;
-
-            if (me.eventsSuspended && ! --me.eventsSuspended) {
-                delete me.eventQueue;
-
-                if (queued) {
-                    qLen = queued.length;
-                    for (q = 0; q < qLen; q++) {
-                        me.continueFireEvent.apply(me, queued[q]);
-                    }
-                }
-            }
-        },
-
-        
-        relayEvents : function(origin, events, prefix) {
-            var me = this,
-                len = events.length,
-                i = 0,
-                oldName,
-                relayers = {};
-
-            for (; i < len; i++) {
-                oldName = events[i];
-
-                
-                relayers[oldName] = me.createRelayer(prefix ? prefix + oldName : oldName);
-            }
-            
-            
-            
-            me.mon(origin, relayers, null, null, undefined);
-
-            
-            return new ListenerRemover(me, origin, relayers);
-        },
-
-        
-        createRelayer: function(newName, beginEnd) {
-            var me = this;
-            return function() {
-                return me.fireEventArgs.call(me, newName, beginEnd ? Array.prototype.slice.apply(arguments, beginEnd) : arguments);
-            };
-        },
-
-        
-        enableBubble: function(eventNames) {
-            if (eventNames) {
-                var me = this,
-                    names = (typeof eventNames == 'string') ? arguments : eventNames,
-                    length = names.length,
-                    events = me.events,
-                    ename, event, i;
-
-                for (i = 0; i < length; ++i) {
-                    ename = names[i].toLowerCase();
-                    event = events[ename];
-
-                    if (!event || typeof event == 'boolean') {
-                        events[ename] = event = new ExtEvent(me, ename);
-                    }
-
-                    
-                    
-                    me.hasListeners._incr_(ename);
-
-                    event.bubble = true;
-                }
-            }
-        }
-    };
-}, function() {
-    var Observable = this,
-        proto = Observable.prototype,
-        HasListeners = function () {},
-        prepareMixin = function (T) {
-            if (!T.HasListeners) {
-                var proto = T.prototype;
-
-                
-                Observable.prepareClass(T, this);
-
-                
-                
-                T.onExtended(function (U) {
-                    Observable.prepareClass(U);
-                });
-
-                
-                
-                if (proto.onClassMixedIn) {
-                    
-                    Ext.override(T, {
-                        onClassMixedIn: function (U) {
-                            prepareMixin.call(this, U);
-                            this.callParent(arguments);
-                        }
-                    });
-                } else {
-                    
-                    proto.onClassMixedIn = function (U) {
-                        prepareMixin.call(this, U);
-                    };
-                }
-            }
-        },
-        globalEvents;
-
-    HasListeners.prototype = {
-        
-        _decr_: function (ev) {
-            if (! --this[ev]) {
-                
-                
-                
-                delete this[ev];
-            }
-        },
-        _incr_: function (ev) {
-            if (this.hasOwnProperty(ev)) {
-                
-                ++this[ev];
-            } else {
-                
-                
-                this[ev] = 1;
-            }
-        }
-    };
-
-    proto.HasListeners = Observable.HasListeners = HasListeners;
-
-    Observable.createAlias({
-        
-        on: 'addListener',
-        
-        un: 'removeListener',
-        
-        mon: 'addManagedListener',
-        
-        mun: 'removeManagedListener'
-    });
-
-    
-    Observable.observeClass = Observable.observe;
-
-    
-    Ext.globalEvents = globalEvents = new Observable({
-        events: {
-            idle: Ext.EventManager.idleEvent,
-            ready: Ext.EventManager.readyEvent
-        }
-    });
-
-    
-    Ext.on = function() {
-        return globalEvents.addListener.apply(globalEvents, arguments);
-    };
-
-    
-    Ext.un = function() {
-        return globalEvents.removeListener.apply(globalEvents, arguments);
-    };
-
-    
-    
-    
-    function getMethodEvent(method){
-        var e = (this.methodEvents = this.methodEvents || {})[method],
-            returnValue,
-            v,
-            cancel,
-            obj = this,
-            makeCall;
-
-        if (!e) {
-            this.methodEvents[method] = e = {};
-            e.originalFn = this[method];
-            e.methodName = method;
-            e.before = [];
-            e.after = [];
-
-            makeCall = function(fn, scope, args){
-                if((v = fn.apply(scope || obj, args)) !== undefined){
-                    if (typeof v == 'object') {
-                        if(v.returnValue !== undefined){
-                            returnValue = v.returnValue;
-                        }else{
-                            returnValue = v;
-                        }
-                        cancel = !!v.cancel;
-                    }
-                    else
-                        if (v === false) {
-                            cancel = true;
-                        }
-                        else {
-                            returnValue = v;
-                        }
-                }
-            };
-
-            this[method] = function(){
-                var args = Array.prototype.slice.call(arguments, 0),
-                    b, i, len;
-                returnValue = v = undefined;
-                cancel = false;
-
-                for(i = 0, len = e.before.length; i < len; i++){
-                    b = e.before[i];
-                    makeCall(b.fn, b.scope, args);
-                    if (cancel) {
-                        return returnValue;
-                    }
-                }
-
-                if((v = e.originalFn.apply(obj, args)) !== undefined){
-                    returnValue = v;
-                }
-
-                for(i = 0, len = e.after.length; i < len; i++){
-                    b = e.after[i];
-                    makeCall(b.fn, b.scope, args);
-                    if (cancel) {
-                        return returnValue;
-                    }
-                }
-                return returnValue;
-            };
-        }
-        return e;
-    }
-
-    Ext.apply(proto, {
-        onClassMixedIn: prepareMixin,
-
-        
-        
-        
-        beforeMethod : function(method, fn, scope){
-            getMethodEvent.call(this, method).before.push({
-                fn: fn,
-                scope: scope
-            });
-        },
-
-        
-        afterMethod : function(method, fn, scope){
-            getMethodEvent.call(this, method).after.push({
-                fn: fn,
-                scope: scope
-            });
-        },
-
-        removeMethodListener: function(method, fn, scope){
-            var e = this.getMethodEvent(method),
-                i, len;
-            for(i = 0, len = e.before.length; i < len; i++){
-                if(e.before[i].fn == fn && e.before[i].scope == scope){
-                    Ext.Array.erase(e.before, i, 1);
-                    return;
-                }
-            }
-            for(i = 0, len = e.after.length; i < len; i++){
-                if(e.after[i].fn == fn && e.after[i].scope == scope){
-                    Ext.Array.erase(e.after, i, 1);
-                    return;
-                }
-            }
-        },
-
-        toggleEventLogging: function(toggle) {
-            Ext.util.Observable[toggle ? 'capture' : 'releaseCapture'](this, function(en) {
-                if (Ext.isDefined(Ext.global.console)) {
-                    Ext.global.console.log(en, arguments);
-                }
-            });
-        }
-    });
-});
-
 Ext.ClassManager.addNameAlternateMappings({
+  "Ext.rtl.layout.container.boxOverflow.Menu": [],
   "Ext.draw.engine.ImageExporter": [],
   "Ext.layout.component.Auto": [],
   "Ext.grid.property.Store": [
     "Ext.grid.PropertyStore"
   ],
-  "Ext.rtl.layout.container.Container": [],
   "Ext.layout.container.Box": [
     "Ext.layout.BoxLayout"
   ],
@@ -21350,6 +21645,7 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.layout.container.Border": [
     "Ext.layout.BorderLayout"
   ],
+  "Ext.rtl.layout.container.Column": [],
   "Ext.data.JsonPStore": [],
   "Ext.layout.component.field.TextArea": [],
   "Ext.layout.container.Container": [
@@ -21369,10 +21665,12 @@ Ext.ClassManager.addNameAlternateMappings({
     "Ext.Direct.Transaction"
   ],
   "Ext.util.Offset": [],
+  "Ext.container.Monitor": [],
   "Ext.view.DragZone": [],
   "Ext.util.KeyNav": [
     "Ext.KeyNav"
   ],
+  "Ext.rtl.dom.Element_static": [],
   "Ext.form.field.File": [
     "Ext.form.FileUploadField",
     "Ext.ux.form.FileUploadField",
@@ -21398,15 +21696,17 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.layout.component.BoundList": [],
   "Ext.tab.Bar": [],
   "Ext.app.Application": [],
-  "Ext.ShadowPool": [],
   "Ext.layout.container.Accordion": [
     "Ext.layout.AccordionLayout"
   ],
+  "Ext.ShadowPool": [],
+  "Ext.grid.locking.HeaderContainer": [],
   "Ext.resizer.ResizeTracker": [],
+  "Ext.panel.Tool": [],
   "Ext.layout.container.boxOverflow.None": [
     "Ext.layout.boxOverflow.None"
   ],
-  "Ext.panel.Tool": [],
+  "Ext.grid.CellContext": [],
   "Ext.tree.View": [],
   "Ext.ElementLoader": [],
   "Ext.grid.ColumnComponentLayout": [],
@@ -21414,8 +21714,8 @@ Ext.ClassManager.addNameAlternateMappings({
     "Ext.Toolbar.Separator"
   ],
   "Ext.dd.DragZone": [],
-  "Ext.util.Renderable": [],
   "Ext.layout.component.FieldSet": [],
+  "Ext.util.Renderable": [],
   "Ext.util.Bindable": [],
   "Ext.data.SortTypes": [],
   "Ext.rtl.layout.container.HBox": [],
@@ -21429,8 +21729,9 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.chart.axis.Axis": [
     "Ext.chart.Axis"
   ],
-  "Ext.fx.target.CompositeSprite": [],
   "Ext.menu.DatePicker": [],
+  "Ext.fx.target.CompositeSprite": [],
+  "Ext.rtl.tip.QuickTipManager": [],
   "Ext.form.field.Picker": [
     "Ext.form.Picker"
   ],
@@ -21448,21 +21749,25 @@ Ext.ClassManager.addNameAlternateMappings({
     "Ext.data.BelongsToAssociation"
   ],
   "Ext.fx.target.Element": [],
-  "Ext.dd.DDProxy": [],
   "Ext.draw.Surface": [],
+  "Ext.dd.DDProxy": [],
   "Ext.data.AbstractStore": [],
+  "Ext.grid.plugin.BufferedRendererTreeView": [],
+  "Ext.grid.locking.View": [
+    "Ext.grid.LockingView"
+  ],
   "Ext.form.action.StandardSubmit": [],
-  "Ext.grid.Lockable": [],
   "Ext.dd.Registry": [],
   "Ext.picker.Month": [
     "Ext.MonthPicker"
   ],
-  "Ext.container.Container": [
-    "Ext.Container"
-  ],
   "Ext.menu.Manager": [
     "Ext.menu.MenuMgr"
   ],
+  "Ext.container.Container": [
+    "Ext.Container"
+  ],
+  "Ext.rtl.form.field.Spinner": [],
   "Ext.util.KeyMap": [
     "Ext.KeyMap"
   ],
@@ -21473,6 +21778,7 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.tab.Panel": [
     "Ext.TabPanel"
   ],
+  "Ext.rtl.grid.CellEditor": [],
   "Ext.layout.component.Body": [],
   "Ext.layout.Context": [],
   "Ext.layout.component.field.ComboBox": [],
@@ -21491,6 +21797,7 @@ Ext.ClassManager.addNameAlternateMappings({
     "Ext.QuickTips"
   ],
   "Ext.grid.plugin.Editing": [],
+  "Ext.Queryable": [],
   "Ext.state.LocalStorageProvider": [],
   "Ext.grid.RowEditor": [],
   "Ext.app.EventDomain": [],
@@ -21519,10 +21826,10 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.chart.Legend": [],
   "Ext.grid.plugin.HeaderReorderer": [],
   "Ext.rtl.view.Table": [],
-  "Ext.rtl.util.Floating": [],
   "Ext.layout.container.VBox": [
     "Ext.layout.VBoxLayout"
   ],
+  "Ext.rtl.util.Floating": [],
   "Ext.view.DropZone": [],
   "Ext.rtl.tree.Column": [],
   "Ext.layout.component.Button": [],
@@ -21538,10 +21845,10 @@ Ext.ClassManager.addNameAlternateMappings({
     "Ext.chart.CartesianSeries",
     "Ext.chart.CartesianChart"
   ],
+  "Ext.rtl.layout.component.Dock": [],
   "Ext.grid.column.Column": [
     "Ext.grid.Column"
   ],
-  "Ext.rtl.layout.component.Dock": [],
   "Ext.data.ResultSet": [],
   "Ext.data.association.HasMany": [
     "Ext.data.HasManyAssociation"
@@ -21576,17 +21883,17 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.app.domain.Direct": [],
   "Ext.panel.Header": [],
   "Ext.app.Controller": [],
-  "Ext.grid.plugin.CellEditing": [],
   "Ext.rtl.dom.Layer": [],
+  "Ext.grid.plugin.CellEditing": [],
   "Ext.form.field.Time": [
     "Ext.form.TimeField",
     "Ext.form.Time"
   ],
   "Ext.fx.CubicBezier": [],
-  "Ext.app.domain.Global": [],
   "Ext.button.Cycle": [
     "Ext.CycleButton"
   ],
+  "Ext.app.domain.Global": [],
   "Ext.data.Tree": [],
   "Ext.ModelManager": [
     "Ext.ModelMgr"
@@ -21602,13 +21909,15 @@ Ext.ClassManager.addNameAlternateMappings({
   ],
   "Ext.ComponentLoader": [],
   "Ext.form.FieldAncestor": [],
+  "Ext.rtl.layout.container.Border": [],
   "Ext.app.domain.Controller": [],
   "Ext.chart.axis.Gauge": [],
+  "Ext.layout.container.border.Region": [],
   "Ext.data.validations": [],
   "Ext.data.Connection": [],
-  "Ext.direct.ExceptionEvent": [],
-  "Ext.dd.DropZone": [],
   "Ext.resizer.Splitter": [],
+  "Ext.dd.DropZone": [],
+  "Ext.direct.ExceptionEvent": [],
   "Ext.form.RadioManager": [],
   "Ext.data.association.HasOne": [
     "Ext.data.HasOneAssociation"
@@ -21616,23 +21925,25 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.draw.Text": [],
   "Ext.window.MessageBox": [],
   "Ext.fx.target.CompositeElementCSS": [],
+  "Ext.rtl.selection.CellModel": [],
   "Ext.rtl.layout.ContextItem": [],
   "Ext.chart.series.Line": [
     "Ext.chart.LineSeries",
     "Ext.chart.LineChart"
   ],
   "Ext.view.Table": [],
+  "Ext.fx.target.CompositeElement": [],
+  "Ext.fx.Manager": [],
   "Ext.data.writer.Json": [
     "Ext.data.JsonWriter"
   ],
-  "Ext.fx.target.CompositeElement": [],
-  "Ext.fx.Manager": [],
   "Ext.chart.Label": [],
   "Ext.grid.View": [],
   "Ext.Action": [],
   "Ext.form.Basic": [
     "Ext.form.BasicForm"
   ],
+  "Ext.rtl.form.field.Checkbox": [],
   "Ext.container.Viewport": [
     "Ext.Viewport"
   ],
@@ -21650,6 +21961,8 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.chart.axis.Category": [
     "Ext.chart.CategoryAxis"
   ],
+  "Ext.rtl.layout.container.boxOverflow.Scroller": [],
+  "Ext.grid.plugin.BufferedRendererTableView": [],
   "Ext.layout.container.Absolute": [
     "Ext.layout.AbsoluteLayout"
   ],
@@ -21674,6 +21987,12 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.tip.Tip": [
     "Ext.Tip"
   ],
+  "Ext.grid.column.CheckColumn": [
+    "Ext.ux.CheckColumn"
+  ],
+  "Ext.grid.column.RowNumberer": [
+    "Ext.grid.RowNumberer"
+  ],
   "Ext.rtl.resizer.SplitterTracker": [],
   "Ext.grid.feature.RowWrap": [],
   "Ext.data.proxy.Client": [
@@ -21693,7 +22012,6 @@ Ext.ClassManager.addNameAlternateMappings({
     "Ext.data.Association"
   ],
   "Ext.tree.ViewDropZone": [],
-  "Ext.grid.LockingView": [],
   "Ext.toolbar.Toolbar": [
     "Ext.Toolbar"
   ],
@@ -21723,7 +22041,6 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.toolbar.Fill": [
     "Ext.Toolbar.Fill"
   ],
-  "Ext.grid.RowNumberer": [],
   "Ext.data.proxy.WebStorage": [
     "Ext.data.WebStorageProxy"
   ],
@@ -21733,8 +22050,8 @@ Ext.ClassManager.addNameAlternateMappings({
   ],
   "Ext.util.Cookies": [],
   "Ext.data.UuidGenerator": [],
-  "Ext.fx.target.Component": [],
   "Ext.util.Point": [],
+  "Ext.fx.target.Component": [],
   "Ext.form.CheckboxManager": [],
   "Ext.form.field.Field": [],
   "Ext.form.field.Display": [
@@ -21749,6 +22066,7 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.dom.Layer": [
     "Ext.Layer"
   ],
+  "Ext.grid.RowEditorButtons": [],
   "Ext.data.BufferStore": [],
   "Ext.grid.plugin.DivRenderer": [],
   "Ext.grid.ColumnLayout": [],
@@ -21771,6 +22089,7 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.container.ButtonGroup": [
     "Ext.ButtonGroup"
   ],
+  "Ext.data.PageMap": [],
   "Ext.grid.column.Action": [
     "Ext.grid.ActionColumn"
   ],
@@ -21780,6 +22099,7 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.panel.DD": [],
   "Ext.container.AbstractContainer": [],
   "Ext.data.ArrayStore": [],
+  "Ext.rtl.layout.container.CheckboxGroup": [],
   "Ext.window.Window": [
     "Ext.Window"
   ],
@@ -21794,6 +22114,7 @@ Ext.ClassManager.addNameAlternateMappings({
   ],
   "Ext.container.DockingContainer": [],
   "Ext.selection.DataViewModel": [],
+  "Ext.rtl.selection.TreeModel": [],
   "Ext.dd.DragTracker": [],
   "Ext.data.Group": [],
   "Ext.dd.DragDropManager": [
@@ -21801,10 +22122,10 @@ Ext.ClassManager.addNameAlternateMappings({
     "Ext.dd.DDM"
   ],
   "Ext.selection.CheckboxModel": [],
+  "Ext.menu.KeyNav": [],
   "Ext.layout.container.Column": [
     "Ext.layout.ColumnLayout"
   ],
-  "Ext.menu.KeyNav": [],
   "Ext.draw.Matrix": [],
   "Ext.form.field.Number": [
     "Ext.form.NumberField",
@@ -21830,25 +22151,25 @@ Ext.ClassManager.addNameAlternateMappings({
     "Ext.chart.PieChart"
   ],
   "Ext.tree.plugin.TreeViewDragDrop": [],
-  "Ext.data.TreeModel": [],
   "Ext.direct.Provider": [],
+  "Ext.data.TreeModel": [],
   "Ext.layout.Layout": [],
   "Ext.toolbar.TextItem": [
     "Ext.Toolbar.TextItem"
   ],
-  "Ext.util.AbstractMixedCollection": [],
   "Ext.rtl.button.Button": [],
+  "Ext.util.AbstractMixedCollection": [],
   "Ext.data.JsonStore": [],
   "Ext.button.Split": [
     "Ext.SplitButton"
   ],
-  "Ext.direct.RemotingEvent": [],
   "Ext.dd.DropTarget": [],
+  "Ext.direct.RemotingEvent": [],
   "Ext.draw.Sprite": [],
+  "Ext.fx.target.Sprite": [],
   "Ext.data.proxy.LocalStorage": [
     "Ext.data.LocalStorageProxy"
   ],
-  "Ext.fx.target.Sprite": [],
   "Ext.layout.component.Draw": [],
   "Ext.AbstractPlugin": [],
   "Ext.Editor": [],
@@ -21857,16 +22178,21 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.layout.container.Table": [
     "Ext.layout.TableLayout"
   ],
+  "Ext.chart.axis.Abstract": [],
   "Ext.data.proxy.Rest": [
     "Ext.data.RestProxy"
   ],
-  "Ext.chart.axis.Abstract": [],
+  "Ext.rtl.layout.container.Absolute": [],
   "Ext.util.Queue": [],
   "Ext.state.CookieProvider": [],
   "Ext.Img": [],
   "Ext.dd.DragSource": [],
   "Ext.grid.CellEditor": [],
   "Ext.layout.ClassList": [],
+  "Ext.button.Manager": [
+    "Ext.ButtonToggleManager"
+  ],
+  "Ext.rtl.form.field.File": [],
   "Ext.util.Sorter": [],
   "Ext.resizer.SplitterTracker": [],
   "Ext.panel.Table": [],
@@ -21884,8 +22210,8 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.chart.Callout": [],
   "Ext.data.Store": [],
   "Ext.grid.feature.Summary": [],
-  "Ext.layout.component.Component": [],
   "Ext.util.ProtoElement": [],
+  "Ext.layout.component.Component": [],
   "Ext.direct.Manager": [],
   "Ext.data.proxy.Proxy": [
     "Ext.data.DataProxy",
@@ -21900,6 +22226,8 @@ Ext.ClassManager.addNameAlternateMappings({
     "Ext.Toolbar.Item"
   ],
   "Ext.form.RadioGroup": [],
+  "Ext.rtl.tab.Bar": [],
+  "Ext.rtl.form.field.Trigger": [],
   "Ext.slider.Thumb": [],
   "Ext.grid.header.DragZone": [],
   "Ext.rtl.resizer.ResizeTracker": [],
@@ -21909,10 +22237,10 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.picker.Time": [],
   "Ext.grid.plugin.BufferedRenderer": [],
   "Ext.resizer.BorderSplitter": [],
+  "Ext.menu.ColorPicker": [],
   "Ext.ZIndexManager": [
     "Ext.WindowGroup"
   ],
-  "Ext.menu.ColorPicker": [],
   "Ext.menu.Menu": [],
   "Ext.chart.LegendItem": [],
   "Ext.toolbar.Spacer": [
@@ -21923,23 +22251,26 @@ Ext.ClassManager.addNameAlternateMappings({
     "Ext.Panel"
   ],
   "Ext.util.Memento": [],
+  "Ext.app.domain.Store": [],
   "Ext.data.proxy.Memory": [
     "Ext.data.MemoryProxy"
   ],
-  "Ext.app.domain.Store": [],
   "Ext.chart.axis.Time": [
     "Ext.chart.TimeAxis"
   ],
   "Ext.grid.plugin.DragDrop": [],
-  "Ext.layout.component.Tab": [],
   "Ext.ComponentQuery": [],
   "Ext.draw.engine.SvgExporter": [],
   "Ext.layout.container.Auto": [],
+  "Ext.grid.locking.Lockable": [
+    "Ext.grid.Lockable"
+  ],
   "Ext.view.AbstractView": [],
   "Ext.util.Region": [],
   "Ext.draw.Draw": [],
   "Ext.fx.target.ElementCSS": [],
   "Ext.rtl.panel.Panel": [],
+  "Ext.layout.component.field.HtmlEditor": [],
   "Ext.data.proxy.SessionStorage": [
     "Ext.data.SessionStorageProxy"
   ],
@@ -21959,7 +22290,11 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.rtl.dom.Element_scroll": [],
   "Ext.state.Provider": [],
   "Ext.layout.container.Editor": [],
+  "Ext.grid.ColumnManager": [
+    "Ext.grid.ColumnModel"
+  ],
   "Ext.data.Errors": [],
+  "Ext.grid.plugin.RowExpander": [],
   "Ext.selection.TreeModel": [],
   "Ext.form.Labelable": [],
   "Ext.grid.column.Number": [
@@ -21979,6 +22314,7 @@ Ext.ClassManager.addNameAlternateMappings({
     "Ext.PropGridProperty"
   ],
   "Ext.chart.TipSurface": [],
+  "Ext.layout.SizeModel": [],
   "Ext.grid.column.Boolean": [
     "Ext.grid.BooleanColumn"
   ],
@@ -22000,22 +22336,23 @@ Ext.ClassManager.addNameAlternateMappings({
     "Ext.layout.boxOverflow.Scroller"
   ],
   "Ext.data.Operation": [],
-  "Ext.layout.container.HBox": [
-    "Ext.layout.HBoxLayout"
-  ],
   "Ext.resizer.Resizer": [
     "Ext.Resizable"
+  ],
+  "Ext.layout.container.HBox": [
+    "Ext.layout.HBoxLayout"
   ],
   "Ext.selection.RowModel": [],
   "Ext.layout.ContextItem": [],
   "Ext.util.MixedCollection": []
-});Ext.ClassManager.addNameAliasMappings({
+});
+Ext.ClassManager.addNameAliasMappings({
+  "Ext.rtl.layout.container.boxOverflow.Menu": [],
   "Ext.draw.engine.ImageExporter": [],
   "Ext.layout.component.Auto": [
     "layout.autocomponent"
   ],
   "Ext.grid.property.Store": [],
-  "Ext.rtl.layout.container.Container": [],
   "Ext.layout.container.Box": [
     "layout.box"
   ],
@@ -22044,8 +22381,8 @@ Ext.ClassManager.addNameAlternateMappings({
     "widget.datecolumn"
   ],
   "Ext.form.field.Trigger": [
-    "widget.triggerfield",
-    "widget.trigger"
+    "widget.trigger",
+    "widget.triggerfield"
   ],
   "Ext.grid.plugin.RowEditing": [
     "plugin.rowediting"
@@ -22058,12 +22395,13 @@ Ext.ClassManager.addNameAlternateMappings({
     "formaction.load"
   ],
   "Ext.form.field.ComboBox": [
-    "widget.combobox",
-    "widget.combo"
+    "widget.combo",
+    "widget.combobox"
   ],
   "Ext.layout.container.Border": [
     "layout.border"
   ],
+  "Ext.rtl.layout.container.Column": [],
   "Ext.data.JsonPStore": [
     "store.jsonp"
   ],
@@ -22079,15 +22417,17 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.fx.Queue": [],
   "Ext.dd.StatusProxy": [],
   "Ext.form.field.Checkbox": [
-    "widget.checkboxfield",
-    "widget.checkbox"
+    "widget.checkbox",
+    "widget.checkboxfield"
   ],
   "Ext.direct.Transaction": [
     "direct.transaction"
   ],
   "Ext.util.Offset": [],
+  "Ext.container.Monitor": [],
   "Ext.view.DragZone": [],
   "Ext.util.KeyNav": [],
+  "Ext.rtl.dom.Element_static": [],
   "Ext.form.field.File": [
     "widget.filefield",
     "widget.fileuploadfield"
@@ -22110,15 +22450,17 @@ Ext.ClassManager.addNameAlternateMappings({
     "widget.tabbar"
   ],
   "Ext.app.Application": [],
-  "Ext.ShadowPool": [],
   "Ext.layout.container.Accordion": [
     "layout.accordion"
   ],
+  "Ext.ShadowPool": [],
+  "Ext.grid.locking.HeaderContainer": [],
   "Ext.resizer.ResizeTracker": [],
-  "Ext.layout.container.boxOverflow.None": [],
   "Ext.panel.Tool": [
     "widget.tool"
   ],
+  "Ext.layout.container.boxOverflow.None": [],
+  "Ext.grid.CellContext": [],
   "Ext.tree.View": [
     "widget.treeview"
   ],
@@ -22130,10 +22472,10 @@ Ext.ClassManager.addNameAlternateMappings({
     "widget.tbseparator"
   ],
   "Ext.dd.DragZone": [],
-  "Ext.util.Renderable": [],
   "Ext.layout.component.FieldSet": [
     "layout.fieldset"
   ],
+  "Ext.util.Renderable": [],
   "Ext.util.Bindable": [],
   "Ext.data.SortTypes": [],
   "Ext.rtl.layout.container.HBox": [],
@@ -22143,14 +22485,15 @@ Ext.ClassManager.addNameAlternateMappings({
     "widget.datefield"
   ],
   "Ext.Component": [
-    "widget.component",
-    "widget.box"
+    "widget.box",
+    "widget.component"
   ],
   "Ext.chart.axis.Axis": [],
-  "Ext.fx.target.CompositeSprite": [],
   "Ext.menu.DatePicker": [
     "widget.datemenu"
   ],
+  "Ext.fx.target.CompositeSprite": [],
+  "Ext.rtl.tip.QuickTipManager": [],
   "Ext.form.field.Picker": [
     "widget.pickerfield"
   ],
@@ -22168,21 +22511,23 @@ Ext.ClassManager.addNameAlternateMappings({
     "association.belongsto"
   ],
   "Ext.fx.target.Element": [],
-  "Ext.dd.DDProxy": [],
   "Ext.draw.Surface": [],
+  "Ext.dd.DDProxy": [],
   "Ext.data.AbstractStore": [],
+  "Ext.grid.plugin.BufferedRendererTreeView": [],
+  "Ext.grid.locking.View": [],
   "Ext.form.action.StandardSubmit": [
     "formaction.standardsubmit"
   ],
-  "Ext.grid.Lockable": [],
   "Ext.dd.Registry": [],
   "Ext.picker.Month": [
     "widget.monthpicker"
   ],
+  "Ext.menu.Manager": [],
   "Ext.container.Container": [
     "widget.container"
   ],
-  "Ext.menu.Manager": [],
+  "Ext.rtl.form.field.Spinner": [],
   "Ext.util.KeyMap": [],
   "Ext.data.Batch": [],
   "Ext.resizer.Handle": [],
@@ -22193,6 +22538,7 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.tab.Panel": [
     "widget.tabpanel"
   ],
+  "Ext.rtl.grid.CellEditor": [],
   "Ext.layout.component.Body": [
     "layout.body"
   ],
@@ -22219,6 +22565,7 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.grid.plugin.Editing": [
     "editing.editing"
   ],
+  "Ext.Queryable": [],
   "Ext.state.LocalStorageProvider": [
     "state.localstorage"
   ],
@@ -22256,18 +22603,18 @@ Ext.ClassManager.addNameAlternateMappings({
     "plugin.gridheaderreorderer"
   ],
   "Ext.rtl.view.Table": [],
-  "Ext.rtl.util.Floating": [],
   "Ext.layout.container.VBox": [
     "layout.vbox"
   ],
+  "Ext.rtl.util.Floating": [],
   "Ext.view.DropZone": [],
   "Ext.rtl.tree.Column": [],
   "Ext.layout.component.Button": [
     "layout.button"
   ],
   "Ext.form.field.Hidden": [
-    "widget.hiddenfield",
-    "widget.hidden"
+    "widget.hidden",
+    "widget.hiddenfield"
   ],
   "Ext.form.FieldContainer": [
     "widget.fieldcontainer"
@@ -22277,10 +22624,10 @@ Ext.ClassManager.addNameAlternateMappings({
     "proxy.server"
   ],
   "Ext.chart.series.Cartesian": [],
+  "Ext.rtl.layout.component.Dock": [],
   "Ext.grid.column.Column": [
     "widget.gridcolumn"
   ],
-  "Ext.rtl.layout.component.Dock": [],
   "Ext.data.ResultSet": [],
   "Ext.data.association.HasMany": [
     "association.hasmany"
@@ -22323,18 +22670,18 @@ Ext.ClassManager.addNameAlternateMappings({
     "widget.header"
   ],
   "Ext.app.Controller": [],
+  "Ext.rtl.dom.Layer": [],
   "Ext.grid.plugin.CellEditing": [
     "plugin.cellediting"
   ],
-  "Ext.rtl.dom.Layer": [],
   "Ext.form.field.Time": [
     "widget.timefield"
   ],
   "Ext.fx.CubicBezier": [],
-  "Ext.app.domain.Global": [],
   "Ext.button.Cycle": [
     "widget.cycle"
   ],
+  "Ext.app.domain.Global": [],
   "Ext.data.Tree": [
     "data.tree"
   ],
@@ -22352,18 +22699,20 @@ Ext.ClassManager.addNameAlternateMappings({
   ],
   "Ext.ComponentLoader": [],
   "Ext.form.FieldAncestor": [],
+  "Ext.rtl.layout.container.Border": [],
   "Ext.app.domain.Controller": [],
   "Ext.chart.axis.Gauge": [
     "axis.gauge"
   ],
+  "Ext.layout.container.border.Region": [],
   "Ext.data.validations": [],
   "Ext.data.Connection": [],
-  "Ext.direct.ExceptionEvent": [
-    "direct.exception"
-  ],
-  "Ext.dd.DropZone": [],
   "Ext.resizer.Splitter": [
     "widget.splitter"
+  ],
+  "Ext.dd.DropZone": [],
+  "Ext.direct.ExceptionEvent": [
+    "direct.exception"
   ],
   "Ext.form.RadioManager": [],
   "Ext.data.association.HasOne": [
@@ -22376,6 +22725,7 @@ Ext.ClassManager.addNameAlternateMappings({
     "widget.messagebox"
   ],
   "Ext.fx.target.CompositeElementCSS": [],
+  "Ext.rtl.selection.CellModel": [],
   "Ext.rtl.layout.ContextItem": [],
   "Ext.chart.series.Line": [
     "series.line"
@@ -22383,17 +22733,18 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.view.Table": [
     "widget.tableview"
   ],
+  "Ext.fx.target.CompositeElement": [],
+  "Ext.fx.Manager": [],
   "Ext.data.writer.Json": [
     "writer.json"
   ],
-  "Ext.fx.target.CompositeElement": [],
-  "Ext.fx.Manager": [],
   "Ext.chart.Label": [],
   "Ext.grid.View": [
     "widget.gridview"
   ],
   "Ext.Action": [],
   "Ext.form.Basic": [],
+  "Ext.rtl.form.field.Checkbox": [],
   "Ext.container.Viewport": [
     "widget.viewport"
   ],
@@ -22414,6 +22765,8 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.chart.axis.Category": [
     "axis.category"
   ],
+  "Ext.rtl.layout.container.boxOverflow.Scroller": [],
+  "Ext.grid.plugin.BufferedRendererTableView": [],
   "Ext.layout.container.Absolute": [
     "layout.absolute"
   ],
@@ -22438,6 +22791,12 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.resizer.BorderSplitterTracker": [],
   "Ext.util.LruCache": [],
   "Ext.tip.Tip": [],
+  "Ext.grid.column.CheckColumn": [
+    "widget.checkcolumn"
+  ],
+  "Ext.grid.column.RowNumberer": [
+    "widget.rownumberer"
+  ],
   "Ext.rtl.resizer.SplitterTracker": [],
   "Ext.grid.feature.RowWrap": [
     "feature.rowwrap"
@@ -22455,7 +22814,6 @@ Ext.ClassManager.addNameAlternateMappings({
   ],
   "Ext.data.association.Association": [],
   "Ext.tree.ViewDropZone": [],
-  "Ext.grid.LockingView": [],
   "Ext.toolbar.Toolbar": [
     "widget.toolbar"
   ],
@@ -22466,8 +22824,8 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.state.Manager": [],
   "Ext.util.Inflector": [],
   "Ext.grid.Panel": [
-    "widget.gridpanel",
-    "widget.grid"
+    "widget.grid",
+    "widget.gridpanel"
   ],
   "Ext.data.NodeStore": [
     "store.node"
@@ -22485,9 +22843,6 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.toolbar.Fill": [
     "widget.tbfill"
   ],
-  "Ext.grid.RowNumberer": [
-    "widget.rownumberer"
-  ],
   "Ext.data.proxy.WebStorage": [],
   "Ext.util.Floating": [],
   "Ext.form.action.DirectSubmit": [
@@ -22497,8 +22852,8 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.data.UuidGenerator": [
     "idgen.uuid"
   ],
-  "Ext.fx.target.Component": [],
   "Ext.util.Point": [],
+  "Ext.fx.target.Component": [],
   "Ext.form.CheckboxManager": [],
   "Ext.form.field.Field": [],
   "Ext.form.field.Display": [
@@ -22514,6 +22869,9 @@ Ext.ClassManager.addNameAlternateMappings({
     "store.direct"
   ],
   "Ext.dom.Layer": [],
+  "Ext.grid.RowEditorButtons": [
+    "widget.roweditorbuttons"
+  ],
   "Ext.data.BufferStore": [
     "store.buffer"
   ],
@@ -22543,6 +22901,7 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.container.ButtonGroup": [
     "widget.buttongroup"
   ],
+  "Ext.data.PageMap": [],
   "Ext.grid.column.Action": [
     "widget.actioncolumn"
   ],
@@ -22558,6 +22917,7 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.data.ArrayStore": [
     "store.array"
   ],
+  "Ext.rtl.layout.container.CheckboxGroup": [],
   "Ext.window.Window": [
     "widget.window"
   ],
@@ -22574,16 +22934,17 @@ Ext.ClassManager.addNameAlternateMappings({
   ],
   "Ext.container.DockingContainer": [],
   "Ext.selection.DataViewModel": [],
+  "Ext.rtl.selection.TreeModel": [],
   "Ext.dd.DragTracker": [],
   "Ext.data.Group": [],
   "Ext.dd.DragDropManager": [],
   "Ext.selection.CheckboxModel": [
     "selection.checkboxmodel"
   ],
+  "Ext.menu.KeyNav": [],
   "Ext.layout.container.Column": [
     "layout.column"
   ],
-  "Ext.menu.KeyNav": [],
   "Ext.draw.Matrix": [],
   "Ext.form.field.Number": [
     "widget.numberfield"
@@ -22598,13 +22959,13 @@ Ext.ClassManager.addNameAlternateMappings({
   ],
   "Ext.chart.theme.Base": [],
   "Ext.form.field.TextArea": [
-    "widget.textareafield",
-    "widget.textarea"
+    "widget.textarea",
+    "widget.textareafield"
   ],
   "Ext.rtl.layout.container.VBox": [],
   "Ext.form.field.Radio": [
-    "widget.radiofield",
-    "widget.radio"
+    "widget.radio",
+    "widget.radiofield"
   ],
   "Ext.layout.component.ProgressBar": [
     "layout.progressbar"
@@ -22615,31 +22976,31 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.tree.plugin.TreeViewDragDrop": [
     "plugin.treeviewdragdrop"
   ],
-  "Ext.data.TreeModel": [],
   "Ext.direct.Provider": [
     "direct.provider"
   ],
+  "Ext.data.TreeModel": [],
   "Ext.layout.Layout": [],
   "Ext.toolbar.TextItem": [
     "widget.tbtext"
   ],
-  "Ext.util.AbstractMixedCollection": [],
   "Ext.rtl.button.Button": [],
+  "Ext.util.AbstractMixedCollection": [],
   "Ext.data.JsonStore": [
     "store.json"
   ],
   "Ext.button.Split": [
     "widget.splitbutton"
   ],
+  "Ext.dd.DropTarget": [],
   "Ext.direct.RemotingEvent": [
     "direct.rpc"
   ],
-  "Ext.dd.DropTarget": [],
   "Ext.draw.Sprite": [],
+  "Ext.fx.target.Sprite": [],
   "Ext.data.proxy.LocalStorage": [
     "proxy.localstorage"
   ],
-  "Ext.fx.target.Sprite": [],
   "Ext.layout.component.Draw": [
     "layout.draw"
   ],
@@ -22654,10 +23015,11 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.layout.container.Table": [
     "layout.table"
   ],
+  "Ext.chart.axis.Abstract": [],
   "Ext.data.proxy.Rest": [
     "proxy.rest"
   ],
-  "Ext.chart.axis.Abstract": [],
+  "Ext.rtl.layout.container.Absolute": [],
   "Ext.util.Queue": [],
   "Ext.state.CookieProvider": [],
   "Ext.Img": [
@@ -22667,6 +23029,8 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.dd.DragSource": [],
   "Ext.grid.CellEditor": [],
   "Ext.layout.ClassList": [],
+  "Ext.button.Manager": [],
+  "Ext.rtl.form.field.File": [],
   "Ext.util.Sorter": [],
   "Ext.resizer.SplitterTracker": [],
   "Ext.panel.Table": [
@@ -22688,8 +23052,8 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.grid.feature.Summary": [
     "feature.summary"
   ],
-  "Ext.layout.component.Component": [],
   "Ext.util.ProtoElement": [],
+  "Ext.layout.component.Component": [],
   "Ext.direct.Manager": [],
   "Ext.data.proxy.Proxy": [
     "proxy.proxy"
@@ -22709,6 +23073,8 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.form.RadioGroup": [
     "widget.radiogroup"
   ],
+  "Ext.rtl.tab.Bar": [],
+  "Ext.rtl.form.field.Trigger": [],
   "Ext.slider.Thumb": [],
   "Ext.grid.header.DragZone": [],
   "Ext.rtl.resizer.ResizeTracker": [],
@@ -22724,10 +23090,10 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.resizer.BorderSplitter": [
     "widget.bordersplitter"
   ],
-  "Ext.ZIndexManager": [],
   "Ext.menu.ColorPicker": [
     "widget.colormenu"
   ],
+  "Ext.ZIndexManager": [],
   "Ext.menu.Menu": [
     "widget.menu"
   ],
@@ -22740,18 +23106,15 @@ Ext.ClassManager.addNameAlternateMappings({
     "widget.panel"
   ],
   "Ext.util.Memento": [],
+  "Ext.app.domain.Store": [],
   "Ext.data.proxy.Memory": [
     "proxy.memory"
   ],
-  "Ext.app.domain.Store": [],
   "Ext.chart.axis.Time": [
     "axis.time"
   ],
   "Ext.grid.plugin.DragDrop": [
     "plugin.gridviewdragdrop"
-  ],
-  "Ext.layout.component.Tab": [
-    "layout.tab"
   ],
   "Ext.ComponentQuery": [],
   "Ext.draw.engine.SvgExporter": [],
@@ -22759,11 +23122,15 @@ Ext.ClassManager.addNameAlternateMappings({
     "layout.auto",
     "layout.autocontainer"
   ],
+  "Ext.grid.locking.Lockable": [],
   "Ext.view.AbstractView": [],
   "Ext.util.Region": [],
   "Ext.draw.Draw": [],
   "Ext.fx.target.ElementCSS": [],
   "Ext.rtl.panel.Panel": [],
+  "Ext.layout.component.field.HtmlEditor": [
+    "layout.htmleditor"
+  ],
   "Ext.data.proxy.SessionStorage": [
     "proxy.sessionstorage"
   ],
@@ -22791,7 +23158,11 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.layout.container.Editor": [
     "layout.editor"
   ],
+  "Ext.grid.ColumnManager": [],
   "Ext.data.Errors": [],
+  "Ext.grid.plugin.RowExpander": [
+    "plugin.rowexpander"
+  ],
   "Ext.selection.TreeModel": [
     "selection.treemodel"
   ],
@@ -22811,6 +23182,7 @@ Ext.ClassManager.addNameAlternateMappings({
   "Ext.rtl.dom.Element_insertion": [],
   "Ext.grid.property.Property": [],
   "Ext.chart.TipSurface": [],
+  "Ext.layout.SizeModel": [],
   "Ext.grid.column.Boolean": [
     "widget.booleancolumn"
   ],
@@ -22838,10 +23210,10 @@ Ext.ClassManager.addNameAlternateMappings({
   ],
   "Ext.layout.container.boxOverflow.Scroller": [],
   "Ext.data.Operation": [],
+  "Ext.resizer.Resizer": [],
   "Ext.layout.container.HBox": [
     "layout.hbox"
   ],
-  "Ext.resizer.Resizer": [],
   "Ext.selection.RowModel": [
     "selection.rowmodel"
   ],

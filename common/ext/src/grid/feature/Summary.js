@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * This feature is used to place a summary row at the bottom of the grid. If using a grouping, 
  * see {@link Ext.grid.feature.GroupingSummary}. There are 2 aspects to calculating the summaries, 
@@ -98,8 +118,7 @@ Ext.define('Ext.grid.feature.Summary', {
 
     init: function(grid) {
         var me = this,
-            view = me.view,
-            tableTpl = view.tableTpl;
+            view = me.view;
 
         me.callParent(arguments);
 
@@ -108,11 +127,21 @@ Ext.define('Ext.grid.feature.Summary', {
                 afterlayout: me.onStoreUpdate,
                 scope: me
             });
-            me.grid.on({
+            grid.on({
                 beforerender: function() {
-                    me.summaryBar = me.grid.addDocked({
+                    var tableCls = [me.summaryTableCls];
+                    if (view.columnLines) {
+                        tableCls[tableCls.length] = view.ownerCt.colLinesCls;
+                    }
+                    me.summaryBar = grid.addDocked({
                         childEls: ['innerCt'],
-                        renderTpl: '<div id="{id}-innerCt"><table class="' + Ext.baseCSSPrefix + 'grid-table"><tr class="' + me.summaryRowCls + '"></tr></table></div>',
+                        renderTpl: [
+                            '<div id="{id}-innerCt">',
+                                '<table cellPadding="0" cellSpacing="0" class="' + tableCls.join(' ') + '">',
+                                    '<tr class="' + me.summaryRowCls + '"></tr>',
+                                '</table>',
+                            '</div>'
+                        ],
                         style: 'overflow:hidden',
                         itemId: 'summaryBar',
                         cls: [ me.dockedSummaryCls, me.dockedSummaryCls + '-' + me.dock ],
@@ -122,8 +151,8 @@ Ext.define('Ext.grid.feature.Summary', {
                     })[0];
                 },
                 afterrender: function() {
-                    me.grid.body.addCls(me.panelBodyCls + me.dock);
-                    me.view.mon(me.view.el, {
+                    grid.body.addCls(me.panelBodyCls + me.dock);
+                    view.mon(view.el, {
                         scroll: me.onViewScroll,
                         scope: me
                     });
@@ -133,25 +162,20 @@ Ext.define('Ext.grid.feature.Summary', {
             });
 
             // Stretch the innerCt of the summary bar upon headerCt layout
-            me.grid.headerCt.afterComponentLayout = Ext.Function.createSequence(me.grid.headerCt.afterComponentLayout, function() {
+            grid.headerCt.afterComponentLayout = Ext.Function.createSequence(grid.headerCt.afterComponentLayout, function() {
                 me.summaryBar.innerCt.setWidth(this.getFullWidth() + Ext.getScrollbarSize().width);
             });
         } else {
-            // Undocked summary is in the TFoot.
-            // Override the renderTFoot implementation in the last tableTpl
-            while (tableTpl.nextTpl) {
-                tableTpl = tableTpl.nextTpl;
-            }
-            tableTpl.renderTFoot = me.renderTFoot;
+            me.view.addFooterFn(me.renderTFoot);
         }
 
-        me.grid.on({
+        grid.on({
             columnmove: me.onStoreUpdate,
             scope: me
         });
 
         // On change of data, we have to update the docked summary.
-        me.view.mon(me.view.store, {
+        view.mon(view.store, {
             update: me.onStoreUpdate,
             datachanged: me.onStoreUpdate,
             scope: me
@@ -251,7 +275,7 @@ Ext.define('Ext.grid.feature.Summary', {
     // Synchronize column widths in the docked summary Component
     onColumnHeaderLayout: function() {
         var view = this.view,
-            columns = view.headerCt.getGridColumns(),
+            columns = view.headerCt.getVisibleGridColumns(),
             column,
             len = columns.length, i,
             summaryEl = this.summaryBar.el,

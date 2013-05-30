@@ -1,9 +1,29 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * A selection model that renders a column of checkboxes that can be toggled to
  * select or deselect rows. The default mode for this selection model is MULTI.
  *
  * The selection model will inject a header for the checkboxes in the first view
- * and according to the 'injectCheckbox' configuration.
+ * and according to the {@link #injectCheckbox} configuration.
  */
 Ext.define('Ext.selection.CheckboxModel', {
     alias: 'selection.checkboxmodel',
@@ -32,8 +52,17 @@ Ext.define('Ext.selection.CheckboxModel', {
     /**
      * @cfg {Boolean} showHeaderCheckbox
      * Configure as `false` to not display the header checkbox at the top of the column.
+     * When {@link Ext.data.Store#buffered} is set to `true`, this configuration will
+     * not be available because the buffered data set does not always contain all data. 
      */
     showHeaderCheckbox: undefined,
+    
+    /**
+     * @cfg {String} [checkSelector="x-grid-row-checker"]
+     * The selector for determining whether the checkbox element is clicked. This may be changed to
+     * allow for a wider area to be clicked, for example, the whole cell for the selector.
+     */
+    checkSelector: '.' + Ext.baseCSSPrefix + 'grid-row-checker',
 
     headerWidth: 24,
 
@@ -53,14 +82,9 @@ Ext.define('Ext.selection.CheckboxModel', {
 
     beforeViewRender: function(view) {
         var me = this,
-            views = me.views,
             owner;
             
         me.callParent(arguments);
-        
-        if (Ext.Array.indexOf(views, view) === -1) {
-            views.push(view);
-        }
 
         // if we have a locked header, only hook up to the first
         if (!me.hasLockedHeader() || view.headerCt.lockedCt) {
@@ -114,6 +138,9 @@ Ext.define('Ext.selection.CheckboxModel', {
                 checkbox = headerCt.getColumnCount();
             }
             Ext.suspendLayouts();
+            if (view.getStore().buffered) {
+                me.showHeaderCheckbox = false;
+            }
             headerCt.add(checkbox,  me.getHeaderConfig());
             Ext.resumeLayouts();
         }
@@ -183,11 +210,12 @@ Ext.define('Ext.selection.CheckboxModel', {
      */
     getHeaderConfig: function() {
         var me = this,
-            showCheck = me.showHeaderCheckbox !== false;
+            showCheck = me.showHeaderCheckbox !== false;     
 
         return {
             isCheckerHd: showCheck,
             text : '&#160;',
+            clickTargetName: 'el',
             width: me.headerWidth,
             sortable: false,
             draggable: false,
@@ -222,18 +250,12 @@ Ext.define('Ext.selection.CheckboxModel', {
         metaData.tdCls = baseCSSPrefix + 'grid-cell-special ' + baseCSSPrefix + 'grid-cell-row-checker';
         return '<div class="' + baseCSSPrefix + 'grid-row-checker">&#160;</div>';
     },
-
-    // override
-    onRowMouseDown: function(view, record, item, index, e) {
-        view.el.focus();
+    
+    processSelection: function(view, record, item, index, e){
         var me = this,
-            checker = e.getTarget('.' + Ext.baseCSSPrefix + 'grid-row-checker'),
+            checker = e.getTarget(me.checkSelector),
             mode;
-
-        if (!me.allowRightMouseSelection(e)) {
-            return;
-        }
-
+            
         // checkOnly set, but we didn't click on a checker.
         if (me.checkOnly && !checker) {
             return;
@@ -259,7 +281,9 @@ Ext.define('Ext.selection.CheckboxModel', {
      */
     onSelectChange: function() {
         this.callParent(arguments);
-        this.updateHeaderState();
+        if (!this.suspendChange) {
+            this.updateHeaderState();
+        }
     },
 
     /**
@@ -279,6 +303,25 @@ Ext.define('Ext.selection.CheckboxModel', {
         this.callParent(arguments);
         this.updateHeaderState();
     },
+    
+    onStoreRefresh: function(){
+        this.callParent(arguments);    
+        this.updateHeaderState();
+    },
+    
+    maybeFireSelectionChange: function(fireEvent) {
+        if (fireEvent && !this.suspendChange) {
+            this.updateHeaderState();
+        }
+        this.callParent(arguments);
+    },
+    
+    resumeChanges: function(){
+        this.callParent();
+        if (!this.suspendChange) {
+            this.updateHeaderState();
+        }
+    },
 
     /**
      * @private
@@ -286,10 +329,26 @@ Ext.define('Ext.selection.CheckboxModel', {
     updateHeaderState: function() {
         // check to see if all records are selected
         var me = this,
-            storeCount = me.store.getCount(),
-            hdSelectStatus = storeCount > 0 && me.selected.getCount() === storeCount;
+            store = me.store,
+            storeCount = store.getCount(),
+            views = me.views,
+            hdSelectStatus = false,
+            selectedCount = 0,
+            selected, len, i;
             
-        if (me.views && me.views.length) {
+        if (!store.buffered && storeCount > 0) {
+            selected = me.selected;
+            hdSelectStatus = true;
+            for (i = 0, len = selected.getCount(); i < len; ++i) {
+                if (!me.storeHasSelected(selected.getAt(i))) {
+                    break;
+                }
+                ++selectedCount;
+            }
+            hdSelectStatus = storeCount === selectedCount;
+        }
+            
+        if (views && views.length) {
             me.toggleUiHeader(hdSelectStatus);
         }
     }

@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * @docauthor Jason Johnston <jason@sencha.com>
  *
@@ -104,7 +124,7 @@ Ext.define('Ext.form.field.Base', {
             '<tpl if="disabled"> disabled="disabled"</tpl>',
             '<tpl if="tabIdx"> tabIndex="{tabIdx}"</tpl>',
             '<tpl if="fieldStyle"> style="{fieldStyle}"</tpl>',
-        ' class="{fieldCls} {typeCls} {editableCls}" autocomplete="off"/>',
+        ' class="{fieldCls} {typeCls} {editableCls} {inputCls}" autocomplete="off"/>',
         {
             disableFormats: true
         }
@@ -318,6 +338,8 @@ Ext.define('Ext.form.field.Base', {
         if (me.readOnly) {
             me.addCls(me.readOnlyCls);
         }
+        
+        me.addCls(Ext.baseCSSPrefix + 'form-type-' + me.inputType);
     },
 
     /**
@@ -350,6 +372,7 @@ Ext.define('Ext.form.field.Base', {
             fieldCls   : me.fieldCls,
             fieldStyle : me.getFieldStyle(),
             tabIdx     : me.tabIndex,
+            inputCls   : me.inputCls,
             typeCls    : Ext.baseCSSPrefix + 'form-' + (type === 'password' ? 'text' : type)
         }, me.subTplData);
 
@@ -362,6 +385,10 @@ Ext.define('Ext.form.field.Base', {
         var me = this;
 
         me.callParent();
+
+        // This is added here rather than defined in Ext.form.Labelable since inputEl isn't related to Labelable.
+        // It's important to add inputEl to the childEls so it can be properly destroyed.
+        me.addChildEls('inputEl');
 
         /**
          * @property {Ext.Element} inputEl
@@ -640,11 +667,6 @@ Ext.define('Ext.form.field.Base', {
             eLen   = events.length,
             event;
 
-        // standardise buffer across all browsers + OS-es for consistent event order.
-        // (the 10ms buffer for Editors fixes a weird FF/Win editor issue when changing OS window focus)
-        if (me.inEditor) {
-            me.onBlur = Ext.Function.createBuffered(me.onBlur, 10);
-        }
         if (inputEl) {
             me.mon(inputEl, Ext.EventManager.getKeyEvent(), me.fireKey,  me);
 

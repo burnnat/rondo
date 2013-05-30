@@ -42,7 +42,7 @@ Ext.define('Ext.io.Developer', {
                     if(devService){
                         devService.authenticate(function(result) {
                             if (result.status == "success") {
-                                var developer = Ext.create('Ext.io.Developer', {id:result.value._key, data:result.value.data});                            
+                                var developer = self.createObject(result.value);                            
                                 Ext.io.Io.getIdStore().setSid('developer', result.session.sid);
                                 Ext.io.Io.getIdStore().setId('developer', result.value._key);
                                 callback.call(scope,developer);
@@ -272,8 +272,11 @@ Ext.define('Ext.io.Developer', {
                     if (err) {
                         Ext.cf.util.Logger.warn("Team Manager logoutDeveloper failed" , err);
                     }
-                    self._clearDeveloper(callback,scope);
+                    if(callback){
+                        callback.call(scope);
+                    }
                 });
+                self._clearDeveloper();
             } else {
                 Ext.cf.util.Logger.warn("Unable to get TeamManager service" , err);
                 self._clearDeveloper(callback,scope);
@@ -281,10 +284,10 @@ Ext.define('Ext.io.Developer', {
         }, this);
     },
 
-    _clearDeveloper: function(callback,scope) {
+    _clearDeveloper: function() {
         Ext.io.Io.getIdStore().remove('developer','sid');
         Ext.io.Io.getIdStore().remove('developer','id');
-        if (callback) callback.call(scope);
+        return;
     },
 
     /**

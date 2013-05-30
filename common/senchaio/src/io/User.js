@@ -544,8 +544,11 @@ Ext.define('Ext.io.User', {
                             if (err) {
                                 Ext.cf.util.Logger.warn("Group Manager logoutUser failed" , err);
                             }
-                            self._clearUser(callback,scope);
+                            if(callback){
+                                callback.call(scope);
+                            }
                         }, {groupId:group.getId()});
+                        self._clearUser();
                     } else {
                         Ext.cf.util.Logger.warn("Unable to get group for user" , err);
                         self._clearUser(callback,scope);
@@ -558,12 +561,12 @@ Ext.define('Ext.io.User', {
         }, this);
     },
 
-    _clearUser: function(callback,scope) {
+    _clearUser: function() {
         Ext.io.User.currentUser = undefined;
         this.removeCached();
         Ext.io.Io.getIdStore().remove('user','sid');
         Ext.io.Io.getIdStore().remove('user','id');
-        if (callback) callback.call(scope);
+        return;
     },
 
     /**
@@ -640,7 +643,7 @@ Ext.define('Ext.io.User', {
                     if(namingRpc){
                         namingRpc.getStore(function(result) {
                             if(result.status == "success") {
-                                var store = Ext.create('Ext.io.Store', {id:result.value._key, data:result.value.data});
+                                var store = this.createObject(result.value, 'Ext.io.Store');
                                 callback.call(scope,store);
                             } else {
                                 callback.call(scope,undefined,result.error);

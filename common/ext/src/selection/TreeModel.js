@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * Adds custom behavior for left/right keyboard navigation for use with a tree.
  * Depends on the view having an expand and collapse method which accepts a
@@ -45,6 +65,10 @@ Ext.define('Ext.selection.TreeModel', {
     },
 
     onKeyRight: function(e, t) {
+        this.navExpand(e, t);
+    },
+    
+    navExpand: function(e, t) {
         var focused = this.getLastFocused(),
             view    = this.view;
 
@@ -67,6 +91,10 @@ Ext.define('Ext.selection.TreeModel', {
     },
 
     onKeyLeft: function(e, t) {
+        this.navCollapse(e, t);
+    },
+    
+    navCollapse: function(e, t) {
         var me = this,
             focused = this.getLastFocused(),
             view    = this.view,
@@ -99,15 +127,23 @@ Ext.define('Ext.selection.TreeModel', {
             }
         }
     },
-    
+
     onKeySpace: function(e, t) {
-        this.toggleCheck(e);
+        if (e.record.data.checked != null) {
+            this.toggleCheck(e);
+        } else {
+            this.callParent(arguments);
+        }
     },
-    
+
     onKeyEnter: function(e, t) {
-        this.toggleCheck(e);
+        if (e.record.data.checked != null) {
+            this.toggleCheck(e);
+        } else {
+            this.callParent(arguments);
+        }
     },
-    
+
     toggleCheck: function(e) {
         var view = this.view,
             selected = this.getLastSelected();

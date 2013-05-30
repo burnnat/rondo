@@ -1,4 +1,24 @@
-//@tag dom,core
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
+// @tag dom,core
 /**
  * @class Ext.dom.Element
  * @alternateClassName Ext.Element
@@ -145,25 +165,14 @@ Ext.define('Ext.dom.Element', function(Element) {
          * @return {Ext.dom.Element} this
          */
         focus: function(defer, /* private */ dom) {
-            var me = this,
-                scrollTop,
-                body;
+            var me = this;
 
             dom = dom || me.dom;
-            body = (dom.ownerDocument || DOC).body || DOC.body;
             try {
                 if (Number(defer)) {
                     Ext.defer(me.focus, defer, me, [null, dom]);
                 } else {
-                    // Focusing a large element, the browser attempts to scroll as much of it into view
-                    // as possible. We need to override this behaviour.
-                    if (dom.offsetHeight > Ext.dom.Element.getViewHeight()) {
-                        scrollTop = body.scrollTop;
-                    }
                     dom.focus();
-                    if (scrollTop !== undefined) {
-                        body.scrollTop = scrollTop;
-                    }
                 }
             } catch(e) {
             }
@@ -175,11 +184,19 @@ Ext.define('Ext.dom.Element', function(Element) {
         * @return {Ext.dom.Element} this
         */
         blur: function() {
-            try {
-                this.dom.blur();
-            } catch(e) {
+            var me = this,
+                dom = me.dom;
+            // In IE, blurring the body can cause the browser window to hide.
+            // Blurring the body is redundant, so instead we just focus it
+            if (dom !== document.body) {
+                try {
+                    dom.blur();
+                } catch(e) {
+                }
+                return me;
+            } else {
+                return me.focus(undefined, dom);
             }
-            return this;
         },
 
         /**
@@ -1033,7 +1050,7 @@ Ext.define('Ext.dom.Element', function(Element) {
         EC              = Ext.cache,
         Element         = this,
         AbstractElement = Ext.dom.AbstractElement,
-        focusRe         = /a|button|embed|iframe|img|input|object|select|textarea/i,
+        focusRe         = /^a|button|embed|iframe|input|object|select|textarea$/i,
         nonSpaceRe      = /\S/,
         scriptTagRe     = /(?:<script([^>]*)?>)((\n|\r|.)*?)(?:<\/script>)/ig,
         replaceScriptTagRe = /(?:<script.*?>)((\n|\r|.)*?)(?:<\/script>)/ig,
@@ -1097,8 +1114,8 @@ Ext.define('Ext.dom.Element', function(Element) {
                 // directly, but somewhere up the line they have an orphan
                 // parent.
                 // -------------------------------------------------------
-                if (!d.parentNode || (!d.offsetParent && !Ext.getElementById(eid))) {
-                    if (d && Ext.enableListenerCollection) {
+                if (d && (!d.parentNode || (!d.offsetParent && !Ext.getElementById(eid)))) {
+                    if (Ext.enableListenerCollection) {
                         Ext.EventManager.removeAll(d);
                     }
                     delete EC[eid];
@@ -1289,7 +1306,10 @@ Ext.define('Ext.dom.Element', function(Element) {
                 nodeType, newAttrs, attLen, attName;
 
             // Copy top node's attributes across. Use IE-specific method if possible.
-            if (dest.mergeAttributes) {
+            // In IE10, there is a problem where the className will not get updated
+            // in the view, even though the className on the dom element is correct.
+            // See EXTJSIV-9462
+            if (Ext.isIE9m && dest.mergeAttributes) {
                 dest.mergeAttributes(source, true);
 
                 // EXTJSIV-6803. IE's mergeAttributes appears not to make the source's "src" value available until after the image is ready.
@@ -1439,25 +1459,6 @@ Ext.define('Ext.dom.Element', function(Element) {
         },
         
         /**
-         * Gets the parent node of the current element taking into account Ext.scopeResetCSS
-         * @protected
-         * @return {HTMLElement} The parent element
-         */
-        getScopeParent: function() {
-            var parent = this.dom.parentNode;
-            if (Ext.scopeResetCSS) {
-                // If it's a normal reset, we will be wrapped in a single x-reset element, so grab the parent
-                parent = parent.parentNode;
-                if (!Ext.supports.CSS3LinearGradient || !Ext.supports.CSS3BorderRadius) {
-                    // In the cases where we have nbr or nlg, it will be wrapped in a second element,
-                    // so we need to go and get the parent again.
-                    parent = parent.parentNode;
-                }
-            }
-            return parent;
-        },
-
-        /**
          * Returns true if this element needs an explicit tabIndex to make it focusable. Input fields, text areas, buttons
          * anchors elements **with an href** etc do not need a tabIndex, but structural elements do.
          */
@@ -1476,14 +1477,28 @@ Ext.define('Ext.dom.Element', function(Element) {
          */
         isFocusable: function (/* private - assume it's the focusEl of a Component */ asFocusEl) {
             var dom = this.dom,
-                tabIndex = dom.tabIndex,
+                tabIndexAttr = dom.getAttributeNode('tabIndex'),
+                tabIndex,
                 nodeName = dom.nodeName,
                 canFocus = false;
 
+            // Certain browsers always report zero in the absence of the tabIndex attribute.
+            // Testing the specified property (Standards: http://www.w3.org/TR/DOM-Level-2-Core/core.html#ID-862529273)
+            // Should filter out these cases.
+            // The exceptions are IE6 to IE8. In these browsers all elements will yield a tabIndex
+            // and therefore all elements will appear to be focusable.
+            // This adversely affects modal Floating components.
+            // These listen for the TAB key, and then test whether the event target === last focusable
+            // or first focusable element, and forcibly to a circular navigation.
+            // We cannot know the true first or last focusable element, so this problem still exists for IE6,7,8
+            // See Ext.util.Floating
+            if (tabIndexAttr && tabIndexAttr.specified) {
+                tabIndex = tabIndexAttr.value;
+            }
             if (dom && !dom.disabled) {
                 // A tabIndex of -1 means it has to be programatically focused, so that needs FocusManager,
                 // and it has to be the focus holding el of a Component within the Component tree.
-                if (tabIndex === -1) {
+                if (tabIndex == -1) { // note that the value is a string
                     canFocus = Ext.FocusManager && Ext.FocusManager.enabled && asFocusEl;
                 }
                 else {
@@ -1495,7 +1510,7 @@ Ext.define('Ext.dom.Element', function(Element) {
                     }
                     // A non naturally focusable element is in the navigation flow if it has a positive numeric tab index.
                     else {
-                        canFocus = tabIndex >= 0;
+                        canFocus = tabIndex != null && tabIndex >= 0;
                     }
                 }
                 canFocus = canFocus && this.isVisible(true);

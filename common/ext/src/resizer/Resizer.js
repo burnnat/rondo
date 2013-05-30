@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * Applies drag handles to an element or component to make it resizable. The drag handles are inserted into the element
  * (or component's element) and positioned absolute.
@@ -171,7 +191,7 @@ Ext.define('Ext.resizer.Resizer', {
             pos, 
             handleEls = [],
             eastWestStyle, style,
-            box,
+            box, targetBaseCls,
             unselectableCls = Ext.dom.Element.unselectableCls;
 
         me.addEvents(
@@ -217,6 +237,12 @@ Ext.define('Ext.resizer.Resizer', {
         target = me.target;
         if (target) {
             if (target.isComponent) {
+
+                // Resizable Components get a new UI class on them which makes them overflow:visible
+                // if the border width is non-zero and therefore the SASS has embedded the handles 
+                // in the borders using -ve position.
+                target.addClsWithUI('resizable');
+
                 me.el = target.getEl();
                 if (target.minWidth) {
                     me.minWidth = target.minWidth;
@@ -315,7 +341,15 @@ Ext.define('Ext.resizer.Resizer', {
         handles = me.handles = me.handles.split(me.delimiterRe);
         possibles = me.possiblePositions;
         len = handles.length;
-        handleCls = me.handleCls + ' ' + (me.target.isComponent ? (me.target.baseCls + '-handle ') : '') + me.handleCls + '-';
+
+        handleCls = me.handleCls + ' ' + me.handleCls + '-{0}';
+        if (me.target.isComponent) {
+            targetBaseCls = me.target.baseCls
+            handleCls += ' ' + targetBaseCls + '-handle ' + targetBaseCls + '-handle-{0}';
+            if (Ext.supports.CSS3BorderRadius) {
+                handleCls += ' ' + targetBaseCls + '-handle-{0}-br';
+            }
+        }
 
         // Needs heighting on IE6!
         eastWestStyle = Ext.isIE6 ? ' style="height:' + me.el.getHeight() + 'px"' : '';
@@ -332,7 +366,7 @@ Ext.define('Ext.resizer.Resizer', {
 
                 handleEls.push(
                     '<div id="', me.el.id, '-', pos, '-handle"',
-                        ' class="', handleCls, pos, ' ', unselectableCls, '"',
+                        ' class="', Ext.String.format(handleCls, pos), ' ', unselectableCls, '"',
                         ' unselectable="on"',
                         style,
                     '></div>'
@@ -454,14 +488,16 @@ Ext.define('Ext.resizer.Resizer', {
     },
 
     destroy: function() {
-        var i,
-            handles = this.handles,
+        var me = this,
+            i,
+            handles = me.handles,
             len = handles.length,
-            positions = this.possiblePositions,
+            positions = me.possiblePositions,
             handle;
 
+        me.resizeTracker.destroy();
         for (i = 0; i < len; i++) {
-            if (handle = this[positions[handles[i]]]) {
+            if (handle = me[positions[handles[i]]]) {
                 handle.remove();
             }
         }

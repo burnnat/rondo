@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * This is the base class for {@link Ext.tip.QuickTip} and {@link Ext.tip.ToolTip} that provides the basic layout and
  * positioning that all tip-based classes require. This class can be used directly for simple, statically-positioned
@@ -17,8 +37,7 @@ Ext.define('Ext.tip.Tip', {
     /**
      * @cfg {Number} [width='auto']
      * Width in pixels of the tip.  Width will be ignored if it
-     * exceeds the bounds of {@link #minWidth} or {@link #maxWidth}.  The maximum
-     * supported value is 500.
+     * exceeds the bounds of {@link #minWidth} or {@link #maxWidth}.
      */
     
     /**
@@ -30,7 +49,7 @@ Ext.define('Ext.tip.Tip', {
      * @cfg {Number} maxWidth
      * The maximum width of the tip in pixels.  The maximum supported value is 500.
      */
-    maxWidth : 300,
+    maxWidth : 500,
     /**
      * @cfg {Boolean/String} shadow
      * `true` or "sides" for the default effect, "frame" for 4-way shadow, and "drop"
@@ -120,27 +139,6 @@ Ext.define('Ext.tip.Tip', {
     },
 
     /**
-     * **Experimental**. Shows this tip at a position relative to another element using
-     * a standard {@link Ext.util.Positionable#alignTo} anchor position value.  Example usage:
-     *
-     *     // Show the tip at the default position ('tl-br?')
-     *     tip.showBy('my-el');
-     *
-     *     // Show the tip's top-left corner anchored to the element's top-right corner
-     *     tip.showBy('my-el', 'tl-tr');
-     *
-     * @param {String/HTMLElement/Ext.Element} el An HTMLElement, {@link Ext.Element} or string
-     * id of the target element to align to.
-     *
-     * @param {String} [position] A valid {@link Ext.util.Positionable#alignTo} anchor position.
-     * 
-     * Defaults to 'tl-br?' or {@link #defaultAlign} if specified.
-     */
-    showBy : function(el, pos) {
-        this.showAt(this.getAlignToXY(el, pos || this.defaultAlign));
-    },
-
-    /**
      * @private
      * Set Tip draggable using base Component's draggability.
      */
@@ -150,7 +148,7 @@ Ext.define('Ext.tip.Tip', {
             el: me.getDragEl(),
             delegate: me.header.el,
             constrain: me,
-            constrainTo: me.el.getScopeParent()
+            constrainTo: me.el.dom.parentNode
         };
         // Important: Bypass Panel's initDraggable. Call direct to Component's implementation.
         Ext.Component.prototype.initDraggable.call(me);

@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * Represents a 2D point with x and y properties, useful for comparison and instantiation
  * from an event:
@@ -47,7 +67,7 @@ Ext.define('Ext.util.Point', {
 
     /**
      * Compare this point and another point
-     * @param {Ext.util.Point/Object} The point to compare with, either an instance
+     * @param {Ext.util.Point/Object} p The point to compare with, either an instance
      * of Ext.util.Point or an object with left and top properties
      * @return {Boolean} Returns whether they are equivalent
      */
@@ -76,8 +96,8 @@ Ext.define('Ext.util.Point', {
 
     /**
      * Determins whether this Point contained by the passed Region, Component or element.
-     * @param {Ext.util.Region/Ext.Component/Ext.dom.Element/HTMLElement} region The rectangle to checkthat this Point is within.
-     * @param {Object/Number} threshold Can be either an object with x and y properties or a number
+     * @param {Ext.util.Region/Ext.Component/Ext.dom.Element/HTMLElement} region
+     * The rectangle to check that this Point is within.
      * @return {Boolean}
      */
     isContainedBy: function(region) {

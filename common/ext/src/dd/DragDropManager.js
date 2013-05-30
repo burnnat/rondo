@@ -1,4 +1,24 @@
 /*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
+/*
  * This is a derivative of the similarly named class in the YUI Library.
  * The original license:
  * Copyright (c) 2006, Yahoo! Inc. All rights reserved.
@@ -452,7 +472,7 @@ Ext.define('Ext.dd.DragDropManager', {
         // if the mouseup event happens outside of the browser window. When the 
         // mouse comes back, any drag will still be active
         // http://msdn.microsoft.com/en-us/library/ms537630(VS.85).aspx
-        if (Ext.isIE && el.setCapture) {
+        if (Ext.isIE9m && el.setCapture) {
             el.setCapture();
         }
 
@@ -581,7 +601,7 @@ Ext.define('Ext.dd.DragDropManager', {
      * Internal function to handle the mousemove event.  Will be invoked
      * from the context of the html element.
      *
-     * @TODO figure out what we can do about mouse events lost when the
+     * TODO: figure out what we can do about mouse events lost when the
      * user drags objects beyond the window boundary.  Currently we can
      * detect this in internet explorer by verifying that the mouse is
      * down during the mousemove event.  Firefox doesn't give us the
@@ -658,7 +678,9 @@ Ext.define('Ext.dd.DragDropManager', {
         // but pointer-events is not supported, AND the delta position does not place the mouse outside of the dragEl,
         // temporarily move the dragEl away, and fake the mousemove target by using document.elementFromPoint
         // while it's out of the way.
-        if (!me.notifyOccluded && !Ext.supports.PointerEvents && !(dragCurrent.deltaX < 0 || dragCurrent.deltaY < 0)) {
+        // The pointer events implementation is bugged in IE9/10 and opera, so fallback even if they report that they support it.
+        // IE8m do not support it so they will auto fall back
+        if (!me.notifyOccluded && (!Ext.supports.PointerEvents || Ext.isIE10m || Ext.isOpera) && !(dragCurrent.deltaX < 0 || dragCurrent.deltaY < 0)) {
             dragEl = dragCurrent.getDragEl();
             oldDragElTop = dragEl.style.top;
             dragEl.style.top = '-10000px';
@@ -920,7 +942,7 @@ Ext.define('Ext.dd.DragDropManager', {
      *
      *     Ext.dd.DragDropManager.refreshCache({group1:true, group2:true});
      *
-     * @TODO this really should be an indexed array.  Alternatively this
+     * TODO: this really should be an indexed array.  Alternatively this
      * method could accept both.
      *
      * @param {Object} groups an associative array of groups to refresh

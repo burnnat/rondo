@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * A class that manages a group of {@link Ext.Component#floating} Components and provides z-order management,
  * and Component activation behavior, including masking below the active (topmost) Component.
@@ -70,7 +90,8 @@ Ext.define('Ext.ZIndexManager', {
             len = a.length,
             i = 0,
             zIndex = this.zseed,
-            comp;
+            comp,
+            topModal;
 
         for (; i < len; i++) {
             comp = a[i];
@@ -84,7 +105,15 @@ Ext.define('Ext.ZIndexManager', {
                 // floating children, starting from that new base, and returns a value 10000 above
                 // the highest zIndex which it allocates.
                 zIndex = comp.setZIndex(zIndex);
+                if (comp.modal) {
+                    topModal = comp;
+                }
             }
+        }
+        
+        // If we encountered a modal in our reassigment, ensure our modal mask is just below it.
+        if (topModal) {
+            this._showModalMask(topModal)
         }
         return zIndex;
     },
@@ -103,9 +132,11 @@ Ext.define('Ext.ZIndexManager', {
             if (comp && comp != oldFront) {
 
                 // If the previously active comp did not take focus, then do not disturb focus state by focusing the new front
-                comp.preventFocusOnActivate = oldFront && (oldFront.preventFocusOnActivate || !oldFront.focusOnToFront);
+                comp.preventFocusOnActivate = comp.preventFocusOnActivate || oldFront && (oldFront.preventFocusOnActivate || !oldFront.focusOnToFront);
 
                 comp.setActive(true);
+                
+                // If the modal mask was utilized by the outgoing front component, reposition it.
                 if (comp.modal) {
                     this._showModalMask(comp);
                 }
@@ -144,7 +175,7 @@ Ext.define('Ext.ZIndexManager', {
             if (me.front && !me.front.destroying) {
                 me.front.setActive(false);
             }
-            me.front = undefined;
+            me.front = null;
         }
 
         // If the new top one was not modal, keep going down to find the next visible
@@ -180,8 +211,10 @@ Ext.define('Ext.ZIndexManager', {
                 shim.setVisibilityMode(Ext.Element.DISPLAY);
             }
 
+            // Create the mask at zero size so that it does not affect upcoming target measurements.
             mask = me.mask = Ext.getBody().createChild({
-                cls: Ext.baseCSSPrefix + 'mask'
+                cls: Ext.baseCSSPrefix + 'mask',
+                style: 'height:0;width:0'
             });
             mask.setVisibilityMode(Ext.Element.DISPLAY);
             mask.on('click', me._onMaskClick, me);
@@ -240,7 +273,6 @@ Ext.define('Ext.ZIndexManager', {
         var me = this,
             mask = me.mask,
             maskShim = me.maskShim,
-            maskTarget,
             viewSize;
 
         if (mask && mask.isVisible()) {
@@ -251,7 +283,6 @@ Ext.define('Ext.ZIndexManager', {
             if (maskShim) {
                 maskShim.hide();
             }
-            maskTarget = mask.maskTarget;
 
             viewSize = me.getMaskBox();
             if (maskShim) {
@@ -354,13 +385,15 @@ Ext.define('Ext.ZIndexManager', {
 
             // Activate new topmost
             if (!preventFocus) {
-                this._activateLast();
+                me._activateLast();
             }
             result = true;
-            this.front = comp;
-        }
-        if (result && comp.modal) {
-            me._showModalMask(comp);
+            me.front = comp;
+            
+            // If new topmost is modal, ensure the mask is there
+            if (comp.modal) {
+                me._showModalMask(comp);
+            }
         }
         return result;
     },

@@ -1,4 +1,4 @@
-Ext.setVersion('sio', '0.7.10');
+Ext.setVersion('sio', '0.7.15');
 
 //Figure out where IO is located and add CF to the loader
 //so that the developer doesn't have to manually include something 
@@ -193,7 +193,7 @@ Ext.define('Ext.io.Io', {
         var appId = this.initApp();
         var device = this.initDevice();
         if(appId && device.deviceId && device.deviceSid) {
-            Ext.cf.util.Logger.debug("App has app id, and device id checking chache for objects.", appId, device.deviceId, device.deviceSid);
+            Ext.cf.util.Logger.debug("App has app id, and device id checking cache for objects.", appId, device.deviceId, device.deviceSid);
             this.restoreConfig(appId,device);   
         } else {
             Ext.cf.util.Logger.debug("device id, or device session id missing, can't start offline, must complete online bootup", appId, device.deviceId, device.deviceSid);
@@ -253,6 +253,9 @@ Ext.define('Ext.io.Io', {
             this.initMessaging(function(){
                self.onInitComplete();
             });
+        } else {
+            Ext.cf.util.Logger.debug("appConfig not found in cache, must complete online bootup");
+            this.bootup();
         }
     },
     
@@ -360,7 +363,7 @@ Ext.define('Ext.io.Io', {
 
         if(!this.verifyAppId(appId,config,cookie)){
             Ext.cf.util.Logger.warn('AppId has changed from saved app Id');
-            this.nukeStoredIds();            
+            this.nukeLocalData();
         }
         
         appId = idstore.stash('app','id',config);
@@ -376,7 +379,7 @@ Ext.define('Ext.io.Io', {
     * @private
     * in the event of an auth error we need to wipe the stored ids and start over.
     */
-    nukeStoredIds: function(){
+    nukeLocalData: function(){
         var idstore = Ext.io.Io.getIdStore();
    
      // device is linked to the group. if the app id has changed we need a new device id.
@@ -386,11 +389,35 @@ Ext.define('Ext.io.Io', {
         idstore.remove('group', 'id');
         //Users are linked to apps/groups so rest them too.
         idstore.remove('user', 'sid');
+        idstore.remove('user', 'id');
         //TODO What else needs to be dropped?  All sio local storage data?
 
         //delete all keys from config cache... 
         //config cache needs an index so everything can be deleted...
 
+        Ext.io.Io.getConfigStore().nukeCache();
+        
+        this.nukeSyncStores();
+
+    },
+
+    /**
+    * @private
+    * loops through all of the loaded stores and clears the locally stored data.
+    */
+    nukeSyncStores: function(){
+        if(Ext.StoreManager && Ext.StoreManager.all) {
+            Ext.StoreManager.all.forEach(function(store){
+                if(store && store.getProxy){
+                    var proxy = store.getProxy();
+                    if(proxy.$className == "Ext.io.data.Proxy") {
+                        Ext.cf.util.Logger.debug("Clearing sync store: " + store.getId());
+                        proxy.clear();
+                        store.load();
+                    }
+                }
+            });
+        }
     },
 
     /**
@@ -456,9 +483,8 @@ Ext.define('Ext.io.Io', {
 
         if(!Ext.io.Io.messaging){
             this.fireEvent("connecting");
-     
             var idstore = Ext.io.Io.getIdStore();
-            /* 
+            /*
              * Instantiate the messaging service proxies.
              */
             this.config.deviceId= idstore.getId('device');
@@ -468,14 +494,19 @@ Ext.define('Ext.io.Io', {
             Ext.io.Io.messaging.transport.on("invalidsession", function(err){
                 Ext.cf.util.Logger.error("Invalid Session, will attempt to re-authorize", err);
                 //If we have an invalid session, call bootup to get new device session.
+                self.nukeLocalData();
+                self.fireEvent("invalidsession", err);
                 self.bootupComplete = false;
                 self.bootup();
             });
 
             Ext.io.Io.messaging.transport.on("connected", function(type){
-                self.fireEvent("online", type);
+                self.fireEvent("connected", type);
             });
 
+
+            this.relayEvents(Ext.io.Io.messaging.transport, ["connecting", "offline"]);
+            
         } else {
             Ext.io.Io.messaging.transport.start();
         }

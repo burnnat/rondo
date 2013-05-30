@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * A layout that arranges items horizontally across a Container. This layout optionally divides available horizontal
  * space between child items containing a numeric `flex` configuration.
@@ -50,6 +70,11 @@ Ext.define('Ext.layout.container.HBox', {
      * - **stretchmax** : child items are stretched vertically to the height of the largest item.
      */
     align: 'top', // top, middle, stretch, strechmax
+
+    /**
+     * @cfg {"round"/"floor"/"ceil"} [alignRoundingMethod='round'] The Math method to use
+     * for rounding fractional pixels when `{@link #align}:middle` is used.
+     */
     
     /**
      * @cfg {Boolean} constrainAlign
@@ -68,6 +93,9 @@ Ext.define('Ext.layout.container.HBox', {
     names: {
         // parallel
         beforeX: 'left',
+        beforeScrollX: 'left',
+        beforeScrollerSuffix: '-before-scroller',
+        afterScrollerSuffix: '-after-scroller',
         leftCap: 'Left',
         afterX: 'right',
         width: 'width',
@@ -96,7 +124,6 @@ Ext.define('Ext.layout.container.HBox', {
         heightModel: 'heightModel',
         heightIndex: 1,
         y: 'y',
-        scrollTop: 'scrollTop',
         overflowY: 'overflowY',
         hasOverflowY: 'hasOverflowY',
         invalidateScrollY: 'invalidateScrollY',
@@ -112,14 +139,17 @@ Ext.define('Ext.layout.container.HBox', {
         setContentWidth: 'setContentWidth',
         setContentHeight: 'setContentHeight',
         setWidthInDom: 'setWidthInDom',
-        setHeightInDom: 'setHeightInDom'
+        setHeightInDom: 'setHeightInDom',
+        getScrollLeft: 'getScrollLeft',
+        setScrollLeft: 'setScrollLeft',
+        scrollTo: 'scrollTo'
     },
 
     sizePolicy: {
         flex: {
             '': {
                 readsWidth : 0,
-                readsHeight: 0,
+                readsHeight: 1,
                 setsWidth  : 1,
                 setsHeight : 0
             },
@@ -137,19 +167,19 @@ Ext.define('Ext.layout.container.HBox', {
             }
         },
         '': {
-            readsWidth : 0,
-            readsHeight: 0,
+            readsWidth : 1,
+            readsHeight: 1,
             setsWidth  : 0,
             setsHeight : 0
         },
         stretch: {
-            readsWidth : 0,
+            readsWidth : 1,
             readsHeight: 0,
             setsWidth  : 0,
             setsHeight : 1
         },
         stretchmax: {
-            readsWidth : 0,
+            readsWidth : 1,
             readsHeight: 1,
             setsWidth  : 0,
             setsHeight : 1

@@ -220,6 +220,9 @@ Ext.define('Ext.cf.ds.ECO', {
                     case 'array':
                         new_value= [[]];
                         break;
+                    case 'date':
+                        new_value = new_data.getTime();
+                        break;
                     default:
                         new_value= new_data;
                 }
@@ -617,6 +620,8 @@ Ext.define('Ext.cf.ds.ECO', {
         var t= typeof value;
         if (t==='object' && (value instanceof Array)) {
             t= 'array';
+        } else if(Ext.isDate(value)){
+            t='date';
         }
         return t;
     },
@@ -632,7 +637,7 @@ Ext.define('Ext.cf.ds.ECO', {
      *
      */
     isComplexValueType: function(value) {
-        return (value!==null && typeof value==='object');
+        return (value!==null && typeof value==='object' && !Ext.isDate(value));
     },
 
     /** 

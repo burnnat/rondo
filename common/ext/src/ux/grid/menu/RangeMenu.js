@@ -103,8 +103,8 @@ menuItemCfgs : {
      * </pre>
      */
     menuItems : ['lt', 'gt', '-', 'eq'],
-    
-    showSeparator: false,
+
+    plain: true,
 
     constructor : function (config) {
         var me = this,

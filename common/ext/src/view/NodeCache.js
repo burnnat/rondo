@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * @private
  * A cache of View elements keyed using the index of the associated record in the store.
@@ -215,6 +235,8 @@ Ext.define('Ext.view.NodeCache', {
     */
     removeElement: function(keys, removeDom) {
         var me = this,
+            inKeys,
+            key,
             elements = me.elements,
             el,
             deleteCount,
@@ -224,14 +246,27 @@ Ext.define('Ext.view.NodeCache', {
         // Sort the keys into ascending order so that we can iterate through the elements
         // collection, and delete items encountered in the keys array as we encounter them.
         if (Ext.isArray(keys)) {
-            deleteCount = keys.length;
+            inKeys = keys;
+            keys = [];
+            deleteCount = inKeys.length;
             for (keyIndex = 0; keyIndex < deleteCount; keyIndex++) {
-                if (typeof keys[keyIndex] !== 'number') {
-                    keys[keyIndex] = me.indexOf(keys[keyIndex]);
+                key = inKeys[keyIndex];
+                if (typeof key !== 'number') {
+                    key = me.indexOf(key);
+                }
+                // Could be asked to remove data above the start, or below the end of rendered zone in a buffer rendered view
+                // So only collect keys which are within our range
+                if (key >= me.startIndex && key <= me.endIndex) {
+                    keys[keys.length] = key;
                 }
             }
             Ext.Array.sort(keys);
+            deleteCount = keys.length;
         } else {
+            // Could be asked to remove data above the start, or below the end of rendered zone in a buffer rendered view
+            if (keys < me.startIndex || keys > me.endIndex) {
+                return;
+            }
             deleteCount = 1;
             keys = [keys];
         }
@@ -252,7 +287,7 @@ Ext.define('Ext.view.NodeCache', {
             }
 
             // Shuffle entries forward of the delete range back into contiguity.
-            if (fromIndex <= me.endIndex) {
+            if (fromIndex <= me.endIndex && fromIndex >= me.startIndex) {
                 el = elements[index] = elements[fromIndex];
                 el.setAttribute('data-recordIndex', index);
             } else {
@@ -274,9 +309,10 @@ Ext.define('Ext.view.NodeCache', {
         var me = this,
             elements = me.elements,
             recCount = newRecords.length,
-            i, el, removeEnd, beforeNode,
+            i, el, removeEnd,
             newNodes,
-            nodeContainer = me.view.getNodeContainer();
+            nodeContainer = me.view.getNodeContainer(),
+            frag = document.createDocumentFragment();
 
         // Scrolling up (content moved down - new content needed at top, remove from bottom)
         if (direction == -1) {
@@ -287,14 +323,13 @@ Ext.define('Ext.view.NodeCache', {
             }
             me.endIndex -= removeCount;
 
-            beforeNode = nodeContainer.firstChild;
-
             // grab all nodes rendered, not just the data rows
-            newNodes = me.view.bufferRender(newRecords, me.startIndex -= recCount, true);
+            newNodes = me.view.bufferRender(newRecords, me.startIndex -= recCount);
             for (i = 0; i < recCount; i++) {
                 elements[me.startIndex + i] = newNodes[i];
-                nodeContainer.insertBefore(newNodes[i], beforeNode);
+                frag.appendChild(newNodes[i]);
             }
+            nodeContainer.insertBefore(frag, nodeContainer.firstChild);
         }
 
         // Scrolling down (content moved up - new content needed at bottom, remove from top)
@@ -308,11 +343,14 @@ Ext.define('Ext.view.NodeCache', {
             me.startIndex = i;
 
             // grab all nodes rendered, not just the data rows
-            newNodes = me.view.bufferRender(newRecords, me.endIndex + 1, true);
+            newNodes = me.view.bufferRender(newRecords, me.endIndex + 1);
             for (i = 0; i < recCount; i++) {
                 elements[me.endIndex += 1] = newNodes[i];
-                nodeContainer.appendChild(newNodes[i]);
+                frag.appendChild(newNodes[i]);
             }
+            nodeContainer.appendChild(frag);
         }
+        // Keep count consistent.
+        me.count = me.endIndex - me.startIndex + 1;
     }
 });

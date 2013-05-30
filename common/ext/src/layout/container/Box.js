@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * Base Class for HBoxLayout and VBoxLayout Classes. Generally it should not need to be used directly.
  */
@@ -96,10 +116,13 @@ Ext.define('Ext.layout.container.Box', {
      */
     stretchMaxPartner: undefined,
 
+    alignRoundingMethod: 'round',
+
     type: 'box',
     scrollOffset: 0,
     itemCls: Ext.baseCSSPrefix + 'box-item',
     targetCls: Ext.baseCSSPrefix + 'box-layout-ct',
+    targetElCls: Ext.baseCSSPrefix + 'box-target',
     innerCls: Ext.baseCSSPrefix + 'box-inner',
 
     // availableSpaceOffset is used to adjust the availableWidth, typically used
@@ -124,23 +147,7 @@ Ext.define('Ext.layout.container.Box', {
             'if(oc=oh.getPrefixConfig())dh.generateMarkup(oc, out)',
         '}%}',
         '<div id="{ownerId}-innerCt" class="{[l.innerCls]} {[oh.getOverflowCls()]}" role="presentation">',
-            '<div id="{ownerId}-targetEl" style="position:absolute;',
-                    // This width for the "CSS container box" of the box child items gives
-                    // them the room they need to avoid being "crushed" (aka, "wrapped").
-                    // On Opera, elements cannot be wider than 32767px or else they break
-                    // the scrollWidth (it becomes == offsetWidth) and you cannot scroll
-                    // the content.
-                    'width:20000px;',
-                    // On IE quirks and IE6/7 strict, a text-align:center style trickles
-                    // down to this el at times and will cause it to move off the left edge.
-                    // The easy fix is to just always set left:0px here (right:0px in rtl
-                    // mode). The top:0px part is just being paranoid. The requirement for
-                    // targetEl is that its origin align with innerCt... this ensures that
-                    // it does!
-                    '{[values.$layout.names.beforeX]}:0px;{[values.$layout.names.beforeY]}:0px;',
-                    // If we don't give the element a height, it does not always participate
-                    // in the scrollWidth.
-                    'height:1px"<tpl if="targetCls"> class="{targetCls}"</tpl>>',
+            '<div id="{ownerId}-targetEl" class="{targetElCls}">',
                 '{%this.renderBody(out, values)%}',
             '</div>',
         '</div>',
@@ -172,8 +179,8 @@ Ext.define('Ext.layout.container.Box', {
         }
     },
 
-    // Matches: <spaces>digits[.digits]<spaces>%<spaces>
-    // Captures: digits[.digits]
+    // Matches: `<spaces>digits[.digits]<spaces>%<spaces>`
+    // Captures: `digits[.digits]`
     _percentageRe: /^\s*(\d+(?:\.\d*)?)\s*[%]\s*$/,
 
     getItemSizePolicy: function (item, ownerSizeModel) {
@@ -404,14 +411,13 @@ Ext.define('Ext.layout.container.Box', {
 
         me.cacheFlexes(ownerContext);
 
-        // In Webkit and IE we set the width of the target el equal to the width of the innerCt
-        // when the layout cycle is finished, so we need to set it back to 20000px here
+        // We set the width of the target el equal to the width of the innerCt
+        // when the layout cycle is finished, so we need to clear the width here
         // to prevent the children from being crushed.
         // IE needs it because of its scrollIntoView bug: https://sencha.jira.com/browse/EXTJSIV-6520
         // Webkit needs it because of its mouse drag bug: https://sencha.jira.com/browse/EXTJSIV-5962
-        if (Ext.isWebKit || Ext.isIE) {
-            me.targetEl.setWidth(20000);
-        }
+        // FF needs it because of a vertical tab bug: https://sencha.jira.com/browse/EXTJSIV-8614
+        me.targetEl.setWidth(20000);
     },
 
     /**
@@ -485,7 +491,8 @@ Ext.define('Ext.layout.container.Box', {
             targetSize = me.getContainerSize(ownerContext),
             names = ownerContext.boxNames,
             state = ownerContext.state,
-            plan = state.boxPlan || (state.boxPlan = {});
+            plan = state.boxPlan || (state.boxPlan = {}),
+            targetContext = ownerContext.targetContext;
 
         plan.targetSize = targetSize;
 
@@ -511,12 +518,18 @@ Ext.define('Ext.layout.container.Box', {
             if (me.owner.dock && (Ext.isIE7m || Ext.isIEQuirks) && !me.owner.width && !me.horizontal) {
                 plan.isIEVerticalDock = true;
                 plan.calculatedWidth = plan.maxSize + ownerContext.getPaddingInfo().width + ownerContext.getFrameInfo().width;
+                if (targetContext !== ownerContext) {
+                    // targetContext can have additional padding, e.g. vertically
+                    // oriented toolbar body element has a few px of left or right padding
+                    // to make room for the tab strip.
+                    plan.calculatedWidth += targetContext.getPaddingInfo().width;
+                }
             }
 
             me.publishInnerCtSize(ownerContext, me.reserveOffset ? me.availableSpaceOffset : 0);
 
-            // Calculate stretchmax only if there is >1 child item
-            if (me.done && ownerContext.childItems.length > 1 && ownerContext.boxOptions.align.stretchmax && !state.stretchMaxDone) {
+            // Calculate stretchmax only if there is >1 child item, or there is a stretchMaxPartner wanting the info
+            if (me.done && (ownerContext.childItems.length > 1 || ownerContext.stretchMaxPartner) && ownerContext.boxOptions.align.stretchmax && !state.stretchMaxDone) {
                 me.calculateStretchMax(ownerContext, names, plan);
                 state.stretchMaxDone = true;
             }
@@ -867,7 +880,7 @@ Ext.define('Ext.layout.container.Box', {
                 if (isCenter) {
                     diff = height - childContext.props[heightName];
                     if (diff > 0) {
-                        childTop = top + Math.round(diff / 2);
+                        childTop = top + Math[me.alignRoundingMethod](diff / 2);
                     }
                 } else if (isBottom) {
                     childTop = mmax(0, height - childTop - childContext.props[heightName]);
@@ -1051,9 +1064,8 @@ Ext.define('Ext.layout.container.Box', {
         // that the targetEl's width is the same as the innerCt.
         // IE needs it because of its scrollIntoView bug: https://sencha.jira.com/browse/EXTJSIV-6520
         // Webkit needs it because of its mouse drag bug: https://sencha.jira.com/browse/EXTJSIV-5962
-        if (Ext.isWebKit || Ext.isIE) {
-            this.targetEl.setWidth(ownerContext.innerCtContext.props.width);
-        }
+        // FF needs it because of a vertical tab bug: https://sencha.jira.com/browse/EXTJSIV-8614
+        this.targetEl.setWidth(ownerContext.innerCtContext.props.width);
     },
 
     publishInnerCtSize: function(ownerContext, reservedSpace) {
@@ -1166,5 +1178,13 @@ Ext.define('Ext.layout.container.Box', {
     destroy: function() {
         Ext.destroy(this.innerCt, this.overflowHandler);
         this.callParent(arguments);
+    },
+
+    getRenderData: function() {
+        var data = this.callParent();
+
+        data.targetElCls = this.targetElCls;
+
+        return data;
     }
 });

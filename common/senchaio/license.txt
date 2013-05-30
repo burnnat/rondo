@@ -1,5 +1,5 @@
 Sencha.io
-Copyright (c) 2011, 2012, Sencha Inc.
+Copyright (c) 2011, 2012, 2013, Sencha Inc.
 All rights reserved.
 licensing@sencha.com
 

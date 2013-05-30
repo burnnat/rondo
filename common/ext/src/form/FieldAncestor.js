@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * A mixin for {@link Ext.container.Container} components that are likely to have form fields in their
  * items subtree. Adds the following capabilities:
@@ -10,9 +30,15 @@
  *   container, to facilitate uniform configuration of all fields.
  *
  * This mixin is primarily for internal use by {@link Ext.form.Panel} and {@link Ext.form.FieldContainer},
- * and should not normally need to be used directly. @docauthor Jason Johnston <jason@sencha.com>
+ * and should not normally need to be used directly.
+ *
+ * @docauthor Jason Johnston <jason@sencha.com>
  */
 Ext.define('Ext.form.FieldAncestor', {
+    
+    requires: [
+        'Ext.container.Monitor'
+    ],
 
     /**
      * @cfg {Object} fieldDefaults
@@ -98,11 +124,32 @@ Ext.define('Ext.form.FieldAncestor', {
             'fielderrorchange'
         );
 
-        // Catch bubbled change of error display status and change of validity status from descendants
-        me.on('errorchange', me.handleFieldErrorChange, me);
-        me.on('validitychange', me.handleFieldValidityChange, me);
-
+        // We use the monitor here as opposed to event bubbling. The problem with bubbling is it doesn't
+        // let us react to items being added/remove at different places in the hierarchy which may have an
+        // impact on the error/valid state.
+        me.monitor = new Ext.container.Monitor({
+            scope: me,
+            selector: '[isFormField]',
+            addHandler: me.onChildFieldAdd,
+            removeHandler: me.onChildFieldRemove
+        });
         me.initFieldDefaults();
+    },
+    
+    initMonitor: function() {
+        this.monitor.bind(this);    
+    },
+    
+    onChildFieldAdd: function(field) {
+        var me = this;
+        me.mon(field, 'errorchange', me.handleFieldErrorChange, me);
+        me.mon(field, 'validitychange', me.handleFieldValidityChange, me);
+    },
+    
+    onChildFieldRemove: function(field) {
+        var me = this;
+        me.mun(field, 'errorchange', me.handleFieldErrorChange, me);
+        me.mun(field, 'validitychange', me.handleFieldValidityChange, me);
     },
 
     /**
@@ -150,6 +197,11 @@ Ext.define('Ext.form.FieldAncestor', {
      * @param {String} error The new active error message
      * @protected
      */
-    onFieldErrorChange: Ext.emptyFn
+    onFieldErrorChange: Ext.emptyFn,
+    
+    beforeDestroy: function(){
+        this.monitor.unbind();
+        this.callParent();
+    }
 
 });

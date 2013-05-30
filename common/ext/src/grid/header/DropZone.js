@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * @private
  */
@@ -22,17 +42,18 @@ Ext.define('Ext.grid.header.DropZone', {
 
     getTopIndicator: function() {
         if (!this.topIndicator) {
-            this.topIndicator = Ext.DomHelper.append(Ext.getBody(), {
+            this.self.prototype.topIndicator = Ext.DomHelper.append(Ext.getBody(), {
                 cls: "col-move-top",
                 html: "&#160;"
             }, true);
+            this.self.prototype.indicatorXOffset = Math.floor((this.topIndicator.dom.offsetWidth + 1) / 2);
         }
         return this.topIndicator;
     },
 
     getBottomIndicator: function() {
         if (!this.bottomIndicator) {
-            this.bottomIndicator = Ext.DomHelper.append(Ext.getBody(), {
+            this.self.prototype.bottomIndicator = Ext.DomHelper.append(Ext.getBody(), {
                 cls: "col-move-bottom",
                 html: "&#160;"
             }, true);
@@ -58,34 +79,28 @@ Ext.define('Ext.grid.header.DropZone', {
     },
 
     positionIndicator: function(data, node, e){
-        var dragHeader   = data.header,
-            dropLocation = this.getLocation(e, node),
+        var me = this,
+            dragHeader   = data.header,
+            dropLocation = me.getLocation(e, node),
             targetHeader = dropLocation.header,
             pos          = dropLocation.pos,
-            fromHeader   = dragHeader.up('headercontainer:not(gridcolumn)'),
-            toHeader     = targetHeader.up('headercontainer:not(gridcolumn)'),
-            nextHd       = dragHeader.nextSibling('gridcolumn:not([hidden])'),
-            prevHd       = dragHeader.previousSibling('gridcolumn:not([hidden])'),
+            nextHd,
+            prevHd,
             topIndicator, bottomIndicator, topAnchor, bottomAnchor,
             topXY, bottomXY, headerCtEl, minX, maxX,
             allDropZones, ln, i, dropZone;
 
+        // Avoid expensive CQ lookups and DOM calculations if dropPosition has not changed
+        if (targetHeader === me.lastTargetHeader && pos === me.lastDropPos) {
+            return;
+        }
+        nextHd       = dragHeader.nextSibling('gridcolumn:not([hidden])');
+        prevHd       = dragHeader.previousSibling('gridcolumn:not([hidden])');
+        me.lastTargetHeader = targetHeader;
+        me.lastDropPos = pos;
+
         // Cannot drag to before non-draggable start column
         if (!targetHeader.draggable && pos === 'before' && targetHeader.getIndex() === 0) {
-            return false;
-        }
-
-        // Cross-container drag between locked/unnlocked sides of a locking grid.
-        data.isLock = data.isUnlock = false;
-        if (fromHeader !== toHeader && fromHeader.lockableInjected && toHeader.lockableInjected && toHeader.lockedCt) {
-            data.isLock = true;
-        } else if (fromHeader !== toHeader && fromHeader.lockableInjected && toHeader.lockableInjected && fromHeader.lockedCt) {
-            data.isUnlock = true;
-        }
-        // Check whether lock/unlock is allowed.
-        // Unlock is allowed if the column is configured as lockable (which really means togglable between locked and unlocked)
-        // Lock is only allowed if there will still be at least one other colum left in the unlocked side.
-        if ((data.isUnlock && dragHeader.lockable === false) || (data.isLock && !dragHeader.isLockable())) {
             return false;
         }
 
@@ -99,53 +114,49 @@ Ext.define('Ext.grid.header.DropZone', {
             // As we move in between different DropZones that are in the same
             // group (such as the case when in a locked grid), invalidateDrop
             // on the other dropZones.
-            allDropZones = Ext.dd.DragDropManager.getRelated(this);
+            allDropZones = Ext.dd.DragDropManager.getRelated(me);
             ln = allDropZones.length;
             i  = 0;
 
             for (; i < ln; i++) {
                 dropZone = allDropZones[i];
-                if (dropZone !== this && dropZone.invalidateDrop) {
+                if (dropZone !== me && dropZone.invalidateDrop) {
                     dropZone.invalidateDrop();
                 }
             }
 
-
-            this.valid = true;
-            topIndicator = this.getTopIndicator();
-            bottomIndicator = this.getBottomIndicator();
+            me.valid = true;
+            topIndicator = me.getTopIndicator();
+            bottomIndicator = me.getBottomIndicator();
             if (pos === 'before') {
-                topAnchor = 'tl';
-                bottomAnchor = 'bl';
+                topAnchor = 'bc-tl';
+                bottomAnchor = 'tc-bl';
             } else {
-                topAnchor = 'tr';
-                bottomAnchor = 'br';
+                topAnchor = 'bc-tr';
+                bottomAnchor = 'tc-br';
             }
-            topXY = targetHeader.el.getAnchorXY(topAnchor);
-            bottomXY = targetHeader.el.getAnchorXY(bottomAnchor);
+            
+            // Calculate arrow positions. Offset them to align exactly with column border line
+            topXY = topIndicator.getAlignToXY(targetHeader.el, topAnchor);
+            bottomXY = bottomIndicator.getAlignToXY(targetHeader.el, bottomAnchor);
 
             // constrain the indicators to the viewable section
-            headerCtEl = this.headerCt.el;
-            minX = headerCtEl.getX();
+            headerCtEl = me.headerCt.el;
+            minX = headerCtEl.getX() - me.indicatorXOffset;
             maxX = headerCtEl.getX() + headerCtEl.getWidth();
 
             topXY[0] = Ext.Number.constrain(topXY[0], minX, maxX);
             bottomXY[0] = Ext.Number.constrain(bottomXY[0], minX, maxX);
-
-            // adjust by offsets, this is to center the arrows so that they point
-            // at the split point
-            topXY[0] -= 4;
-            topXY[1] -= 9;
-            bottomXY[0] -= 4;
 
             // position and show indicators
             topIndicator.setXY(topXY);
             bottomIndicator.setXY(bottomXY);
             topIndicator.show();
             bottomIndicator.show();
+
         // invalidate drop operation and hide indicators
         } else {
-            this.invalidateDrop();
+            me.invalidateDrop();
         }
     },
 
@@ -156,17 +167,37 @@ Ext.define('Ext.grid.header.DropZone', {
 
     onNodeOver: function(node, dragZone, e, data) {
         var me = this,
-            doPosition = true,
             from = data.header,
-            to;
-            
+            doPosition,
+            to,
+            fromPanel,
+            toPanel;
+
         if (data.header.el.dom === node) {
             doPosition = false;
         } else {
+            data.isLock = data.isUnlock = false;
             to = me.getLocation(e, node).header;
-            doPosition = (from.ownerCt === to.ownerCt) || (!from.ownerCt.sealed && !to.ownerCt.sealed);
+            
+            // Dragging within the same container - always valid
+            doPosition = (from.ownerCt === to.ownerCt);
+
+            // If from different containers, and they are not sealed, then continue checking
+            if (!doPosition && (!from.ownerCt.sealed && !to.ownerCt.sealed)) {
+
+                doPosition = true;
+                fromPanel = from.up('tablepanel');
+                toPanel = to.up('tablepanel');
+
+                // If it's a lock operation, check that it's allowable.
+                data.isLock   = toPanel.isLocked && !fromPanel.isLocked;
+                data.isUnlock = !toPanel.isLocked && fromPanel.isLocked;
+                if ((data.isUnlock && from.lockable === false) || (data.isLock && !from.isLockable())) {
+                    doPosition = false;
+                }
+            }
         }
-        
+
         if (doPosition) {
             me.positionIndicator(data, node, e);
         } else {
@@ -176,8 +207,12 @@ Ext.define('Ext.grid.header.DropZone', {
     },
 
     hideIndicators: function() {
-        this.getTopIndicator().hide();
-        this.getBottomIndicator().hide();
+        var me = this;
+        
+        me.getTopIndicator().hide();
+        me.getBottomIndicator().hide();
+        me.lastTargetHeader = me.lastDropPos = null;
+
     },
 
     onNodeOut: function() {
@@ -194,11 +229,12 @@ Ext.define('Ext.grid.header.DropZone', {
                 toCt         = targetHeader.ownerCt,
                 localToIdx   = toCt.items.indexOf(targetHeader),
                 headerCt     = this.headerCt,
-                fromIdx      = headerCt.getHeaderIndex(dragHeader),
+                columnManager= headerCt.columnManager,
+                fromIdx      = columnManager.getHeaderIndex(dragHeader),
+                toIdx        = columnManager.getHeaderIndex(targetHeader),
                 colsToMove   = dragHeader.isGroupHeader ? dragHeader.query(':not([isGroupHeader])').length : 1,
-                toIdx        = headerCt.getHeaderIndex(targetHeader),
-                groupCt,
-                scrollerOwner;
+                sameCt       = fromCt === toCt,
+                scrollerOwner, savedWidth;
 
             // Drop position is to the right of the targetHeader, increment the toIdx correctly
             if (dropLocation.pos === 'after') {
@@ -228,9 +264,11 @@ Ext.define('Ext.grid.header.DropZone', {
             // This is a drop within the same HeaderContainer.
             else {
                 this.invalidateDrop();
-
+                // Cache the width here, we need to get it before we removed it from the DOM
+                savedWidth = dragHeader.getWidth();
+                
                 // Dragging within the same container.
-                if ((fromCt === toCt)) {
+                if (sameCt) {
                     // A no-op. This can happen when cross lockable drag operations recurse (see above).
                     // If a drop was a lock/unlock, and the lock/unlock call placed the column in the
                     // desired position (lock places at end, unlock places at beginning) then we're done.
@@ -248,15 +286,10 @@ Ext.define('Ext.grid.header.DropZone', {
                 // Suspend layouts while we sort all this out.
                 Ext.suspendLayouts();
 
-                // Remove dragged header from where it was.
-                if (fromCt !== toCt) {
-                    fromCt.remove(dragHeader, false);
-                }
-
-                // Move dragged header into its drop position
-                if (fromCt === toCt) {
+                if (sameCt) {
                     toCt.move(localFromIdx, localToIdx);
                 } else {
+                    fromCt.remove(dragHeader, false);
                     toCt.insert(localToIdx, dragHeader);
                 }
 
@@ -265,10 +298,10 @@ Ext.define('Ext.grid.header.DropZone', {
                 // But we restore the flex value when moving back into the main header container
                 if (toCt.isGroupHeader) {
                     // Adjust the width of the "to" group header only if we dragged in from somewhere else.
-                    if (toCt !== fromCt) {
+                    if (!sameCt) {
                         dragHeader.savedFlex = dragHeader.flex;
                         delete dragHeader.flex;
-                        dragHeader.width = dragHeader.getWidth();
+                        dragHeader.width = savedWidth;
                     }
                 } else {
                     if (dragHeader.savedFlex) {
@@ -282,10 +315,7 @@ Ext.define('Ext.grid.header.DropZone', {
                 Ext.resumeLayouts(true);
                 headerCt.onHeaderMoved(dragHeader, colsToMove, fromIdx, toIdx);
 
-                // Emptied group header can only be destroyed after the header and grid have been refreshed
-                if (!fromCt.items.getCount()) {
-                    fromCt.destroy();
-                }
+                // Ext.grid.header.Container will handle the removal of empty groups, don't handle it here
             }
         }
     }

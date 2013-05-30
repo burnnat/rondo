@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * Slider which supports vertical or horizontal orientation, keyboard adjustments, configurable snapping, axis clicking
  * and animation. Can be added as an item to any container.
@@ -37,7 +57,9 @@ Ext.define('Ext.slider.Multi', {
 
     // note: {id} here is really {inputId}, but {cmpId} is available
     fieldSubTpl: [
-        '<div id="{id}" class="' + Ext.baseCSSPrefix + 'slider {fieldCls} {vertical}" aria-valuemin="{minValue}" aria-valuemax="{maxValue}" aria-valuenow="{value}" aria-valuetext="{value}">',
+        '<div id="{id}" class="' + Ext.baseCSSPrefix + 'slider {fieldCls} {vertical}',
+        '{childElCls}',
+        '" aria-valuemin="{minValue}" aria-valuemax="{maxValue}" aria-valuenow="{value}" aria-valuetext="{value}">',
             '<div id="{cmpId}-endEl" class="' + Ext.baseCSSPrefix + 'slider-end" role="presentation">',
                 '<div id="{cmpId}-innerEl" class="' + Ext.baseCSSPrefix + 'slider-inner" role="presentation">',
                     '{%this.renderThumbs(out, values)%}',
@@ -63,6 +85,8 @@ Ext.define('Ext.slider.Multi', {
             disableFormats: true
         }
     ],
+    
+    horizontalProp: 'left',
 
     /**
      * @cfg {Number} value
@@ -266,12 +290,6 @@ Ext.define('Ext.slider.Multi', {
             'dragend'
         );
 
-        // Ensure that the maxValue is a snap point, and that the initial value is snapped.
-        if (me.increment) {
-            me.maxValue = Ext.Number.snapInRange(me.maxValue, me.increment, me.minValue);
-            me.value = me.normalizeValue(me.value);
-        }
-
         me.callParent();
 
         // only can use it if it exists.
@@ -358,7 +376,8 @@ Ext.define('Ext.slider.Multi', {
             vertical: me.vertical ? Ext.baseCSSPrefix + 'slider-vert' : Ext.baseCSSPrefix + 'slider-horz',
             minValue: me.minValue,
             maxValue: me.maxValue,
-            value: me.value
+            value: me.value,
+            childElCls: ''
         });
     },
 
@@ -390,6 +409,9 @@ Ext.define('Ext.slider.Multi', {
             keydown  : me.onKeyDown
         });
     },
+    
+    onDragStart: Ext.emptyFn,
+    onDragEnd: Ext.emptyFn,
 
     /**
      * @private
@@ -401,21 +423,24 @@ Ext.define('Ext.slider.Multi', {
      */
     getTrackpoint : function(xy) {
         var me = this,
-            result,
-            positionProperty,
+            vertical = me.vertical,
             sliderTrack = me.innerEl,
-            trackLength;
+            trackLength, result,
+            positionProperty;
 
-        if (me.vertical) {
+        if (vertical) {
             positionProperty = 'top';
             trackLength = sliderTrack.getHeight();
         } else {
-            positionProperty = 'left';
+            positionProperty = me.horizontalProp;
             trackLength = sliderTrack.getWidth();
         }
-        result = Ext.Number.constrain(sliderTrack.translatePoints(xy)[positionProperty], 0, trackLength);
-        return me.vertical ? trackLength - result : result;
+        xy = me.transformTrackPoints(sliderTrack.translatePoints(xy));
+        result = Ext.Number.constrain(xy[positionProperty], 0, trackLength);
+        return vertical ? trackLength - result : result;
     },
+    
+    transformTrackPoints: Ext.identityFn,
 
     /**
      * @private
@@ -549,10 +574,9 @@ Ext.define('Ext.slider.Multi', {
      */
     normalizeValue : function(v) {
         var me = this,
-            Num = Ext.Number,
-            snapFn = Num[me.zeroBasedSnapping ? 'snap' : 'snapInRange'];
+            snapFn = me.zeroBasedSnapping ? 'snap' : 'snapInRange';
 
-        v = snapFn.call(Num, v, me.increment, me.minValue, me.maxValue);
+        v = Ext.Number[snapFn](v, me.increment, me.minValue, me.maxValue);
         v = Ext.util.Format.round(v, me.decimalPrecision);
         v = Ext.Number.constrain(v, me.minValue, me.maxValue);
         return v;
@@ -565,19 +589,20 @@ Ext.define('Ext.slider.Multi', {
      */
     setMinValue : function(val) {
         var me = this,
-            i = 0,
             thumbs = me.thumbs,
             len = thumbs.length,
-            t;
+            thumb, i;
 
         me.minValue = val;
         if (me.rendered) {
             me.inputEl.dom.setAttribute('aria-valuemin', val);
         }
 
-        for (; i < len; ++i) {
-            t = thumbs[i];
-            t.value = t.value < val ? val : t.value;
+        for (i = 0; i < len; ++i) {
+            thumb = thumbs[i];
+            if (thumb.value < val) {
+                me.setValue(i, val, false);    
+            }
         }
         me.syncThumbs();
     },
@@ -589,19 +614,20 @@ Ext.define('Ext.slider.Multi', {
      */
     setMaxValue : function(val) {
         var me = this,
-            i = 0,
             thumbs = me.thumbs,
             len = thumbs.length,
-            t;
+            thumb, i;
 
         me.maxValue = val;
         if (me.rendered) {
             me.inputEl.dom.setAttribute('aria-valuemax', val);
         }
 
-        for (; i < len; ++i) {
-            t = thumbs[i];
-            t.value = t.value > val ? val : t.value;
+        for (i = 0; i < len; ++i) {
+            thumb = thumbs[i];
+            if (thumb.value > val) {
+                me.setValue(i, val, false);
+            }
         }
         me.syncThumbs();
     },

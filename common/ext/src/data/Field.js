@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * @author Ed Spencer
  *
@@ -288,6 +308,25 @@ Ext.define('Ext.data.Field', {
      * Used to provide a custom format when serializing dates with a {@link Ext.data.writer.Writer}.
      * If this is not specified, the {@link #dateFormat} will be used. See the {@link Ext.data.writer.Writer} 
      * docs for more information on writing dates. 
+     *
+     * **Note that to use a {@link Ext.data.JsonWriter JsonWriter} to send Microsoft format "JSON" dates, which are in fact
+     * invalid JSON, it is not possible to use the standard date serialization pathway or
+     * {@link Ext#USE_NATIVE_JSON native browser JSON production}.**
+     *
+     * To use a {@link Ext.data.JsonWriter JsonWriter} to write dates in a JSON packet in the form `"\/Date(1357372800000)\/"`
+     * configure the field like this:
+     *
+     *    {
+     *        type: 'date',
+     *        dateFormat: 'MS',             // To parse incoming dates from server correctly
+     *        serialize: Ext.identityFn     // An ExtJS-supplied function which returns the arg unchanged
+     *    }
+     *
+     * Then override ExtJS's JSON date serialize function:
+     *
+     *    Ext.JSON.encodeDate = function (d) {
+     *        return '"' + Ext.Date.format(d, 'MS') + '"';
+     *    };
      */
     dateWriteFormat: null,
     

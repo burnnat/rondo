@@ -1,28 +1,69 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
- * @class Ext.chart.Label
- *
  * Labels is a mixin to the Series class. Labels methods are implemented
  * in each of the Series (Pie, Bar, etc) for label creation and placement.
  *
- * The methods implemented by the Series are:
+ * The 2 methods that must be implemented by the Series are:
  *
- * - **`onCreateLabel(storeItem, item, i, display)`** Called each time a new label is created.
- *   The arguments of the method are:
- *   - *`storeItem`* The element of the store that is related to the label sprite.
- *   - *`item`* The item related to the label sprite. An item is an object containing the position of the shape
- *     used to describe the visualization and also pointing to the actual shape (circle, rectangle, path, etc).
- *   - *`i`* The index of the element created (i.e the first created label, second created label, etc)
- *   - *`display`* The display type. May be <b>false</b> if the label is hidden
+ * - {@link #onCreateLabel}
+ * - {@link #onPlaceLabel}
  *
- *  - **`onPlaceLabel(label, storeItem, item, i, display, animate)`** Called for updating the position of the label.
- *    The arguments of the method are:
- *    - *`label`* The sprite label.</li>
- *    - *`storeItem`* The element of the store that is related to the label sprite</li>
- *    - *`item`* The item related to the label sprite. An item is an object containing the position of the shape
- *      used to describe the visualization and also pointing to the actual shape (circle, rectangle, path, etc).
- *    - *`i`* The index of the element to be updated (i.e. whether it is the first, second, third from the labelGroup)
- *    - *`display`* The display type. May be <b>false</b> if the label is hidden.
- *    - *`animate`* A boolean value to set or unset animations for the labels.
+ * The application can override these methods to control the style and
+ * location of the labels. For instance, to display the labels in green and
+ * add a '+' symbol when the value of a Line series exceeds 50:
+ *
+ *      Ext.define('Ext.chart.series.MyLine', {
+ *          extend: 'Ext.chart.series.Line',
+ *          alias: ['series.myline', 'Ext.chart.series.MyLine'],
+ *          type: 'MYLINE',
+ *     
+ *          onPlaceLabel: function(label, storeItem, item, i, display, animate){
+ *              if (storeItem.data.y >= 50) {
+ *                  label.setAttributes({
+ *                      fill: '#080',
+ *                      text: "+" + storeItem.data.y
+ *                  }, true);
+ *              }
+ *              return this.callParent(arguments);
+ *          }
+ *      });
+ *
+ * Note that for simple effects, like the example above, it is simpler
+ * for the application to provide a label.renderer function in the config:
+ *
+ *       label: {
+ *           renderer: function(value, label, storeItem, item, i, display, animate, index) {
+ *               if (value >= 50) {
+ *                   label.setAttributes({fill:'#080'});
+ *                   value = "+" + value;
+ *               }
+ *               return value;
+ *           }
+ *       }
+ *
+ * The rule of thumb is that to customize the value and modify simple visual attributes, it
+ * is simpler to use a renderer function, while overridding `onCreateLabel` and `onPlaceLabel`
+ * allows the application to take entire control over the labels.
+ * 
  */
 Ext.define('Ext.chart.Label', {
 
@@ -33,59 +74,135 @@ Ext.define('Ext.chart.Label', {
     /* End Definitions */
 
     /**
+     * @method onCreateLabel
+     * @template
+     * 
+     * Called each time a new label is created.
+     * 
+     * **Note:** This method must be implemented in Series that mixes
+     * in this Label mixin.
+     * 
+     * @param {Ext.data.Model} storeItem The element of the store that is
+     * related to the sprite.
+     * @param {Object} item The item related to the sprite.
+     * An item is an object containing the position of the shape
+     * used to describe the visualization and also pointing to the
+     * actual shape (circle, rectangle, path, etc).
+     * @param {Number} i The index of the element created
+     * (i.e the first created label, second created label, etc).
+     * @param {String} display The label.display type.
+     * May be `false` if the label is hidden
+     * @return {Ext.draw.Sprite} The created sprite that will draw the label.
+     */
+    
+    /**
+     * @method onPlaceLabel
+     * @template
+     * 
+     * Called for updating the position of the label.
+     * 
+     * **Note:** This method must be implemented in Series that mixes
+     * in this Label mixin.
+     * 
+     * @param {Ext.draw.Sprite} label The sprite that draws the label.
+     * @param {Ext.data.Model} storeItem The element of the store
+     * that is related to the sprite.
+     * @param {Object} item The item related to the
+     * sprite. An item is an object containing the position of
+     * the shape used to describe the visualization and also
+     * pointing to the actual shape (circle, rectangle, path, etc).
+     * @param {Number} i The index of the element to be updated
+     * (i.e. whether it is the first, second, third from the
+     * labelGroup)
+     * @param {String} display The label.display type.
+     * May be `false` if the label is hidden
+     * @param {Boolean} animate A boolean value to set or unset
+     * animations for the labels.
+     * @param {Number} index The series index.
+     */
+    
+    /**
      * @cfg {Object} label
      * Object with the following properties:
      *
-     * - **display** : String
+     * @cfg {String} label.display
      *
-     *   Specifies the presence and position of labels for each pie slice.
-     *   Either "insideStart", "insideEnd", "outside", "middle" (reserved for future use), or "none".
-     *   On stacked charts, "over" or "under" can be passed to onCreateLabel() and onPlaceLabel() if 'stackedDisplay' is used. 
-     *   Default value: 'none'.
+     * Specifies the presence and position of the labels. The possible values depend on the chart type. 
+     * For Line and Scatter charts: "under" | "over" | "rotate".
+     * For Bar and Column charts: "insideStart" | "insideEnd" | "outside".
+     * For Pie charts: "outside" | "rotate".
+     * For all charts: "none" hides the labels and "middle" is reserved for future use.
+     * On stacked Bar and stacked Column charts, if 'stackedDisplay' is set, the values
+     * "over" or "under" can be passed internally to {@link #onCreateLabel} and {@link #onPlaceLabel}
+     * (however they cannot be used by the application as config values for label.display).
      *
-     * - **stackedDisplay* : String
+     * Default value: 'none'.
      *
-     *   The type of label we want to display as a summary on a stacked bar or a stacked column.
-     *   If set to 'total', the total amount of all the stacked values is displayed on top of the column.
-     *   If set to 'balances', the total amount of the positive values is displayed on top of the column
-     *   and the total amount of the negative values is displayed at the bottom.
-     *   Default value: 'none'.
+     * @cfg {String} label.stackedDisplay
      *
-     * - **color** : String
+     * The type of label we want to display as a summary on a stacked
+     * bar or a stacked column.  If set to 'total', the total amount
+     * of all the stacked values is displayed on top of the column.
+     * If set to 'balances', the total amount of the positive values
+     * is displayed on top of the column and the total amount of the
+     * negative values is displayed at the bottom.
      *
-     *   The color of the label text.
-     *   Default value: '#000' (black).
+     * Default value: 'none'.
      *
-     * - **contrast** : Boolean
+     * @cfg {String} label.color
      *
-     *   True to render the label in contrasting color with the backround.
-     *   Default value: false.
+     * The color of the label text.
      *
-     * - **field** : String
+     * Default value: '#000' (black).
      *
-     *   The name of the field to be displayed in the label.
-     *   Default value: 'name'.
+     * @cfg {Boolean} label.contrast
      *
-     * - **minMargin** : Number
+     * True to render the label in contrasting color with the backround of a column
+     * in a Bar chart or of a slice in a Pie chart. The label color should be specified
+     * in hex values (eg. '#f00' or '#ff0000'), not as a CSS color name (eg. 'red').
      *
-     *   Specifies the minimum distance from a label to the origin of the visualization.
-     *   This parameter is useful when using PieSeries width variable pie slice lengths.
-     *   Default value: 50.
+     * Default value: false.
      *
-     * - **font** : String
+     * @cfg {String|String[]} label.field
      *
-     *   The font used for the labels.
-     *   Default value: "11px Helvetica, sans-serif".
+     * The name(s) of the field(s) to be displayed in the labels. If your chart has 3 series
+     * that correspond to the fields 'a', 'b', and 'c' of your model and you only want to
+     * display labels for the series 'c', you must still provide an array `[null, null, 'c']`.
      *
-     * - **orientation** : String
+     * Default value: 'name'.
      *
-     *   Either "horizontal" or "vertical".
-     *   Dafault value: "horizontal".
+     * @cfg {Number} label.minMargin
      *
-     * - **renderer** : Function
+     * Specifies the minimum distance from a label to the origin of
+     * the visualization.  This parameter is useful when using
+     * PieSeries width variable pie slice lengths.
      *
-     *   Optional function for formatting the label into a displayable value.
-     *   Default value: function(v) { return v; }
+     * Default value: 50.
+     *
+     * @cfg {String} label.font
+     *
+     * The font used for the labels.
+     *
+     * Default value: `"11px Helvetica, sans-serif"`.
+     *
+     * @cfg {String} label.orientation
+     *
+     * Either "horizontal" or "vertical".
+     *
+     * Default value: `"horizontal"`.
+     *
+     * @cfg {Function} label.renderer
+     *
+     * Optional function for formatting the label into a displayable value.
+     *
+     * The arguments to the method are:
+     *
+     *   - *`value`* The value
+     *   - *`label`*, *`storeItem`*, *`item`*, *`i`*, *`display`*, *`animate`*, *`index`*
+     *
+     *     Same arguments as {@link #onPlaceLabel}.
+     *
+     *     Default value: `function(v) { return v; }`
      */
 
     // @private a regex to parse url type colors.
@@ -137,7 +254,7 @@ Ext.define('Ext.chart.Label', {
             storeItem, sprite, spriteColor, spriteBrightness, labelColor, colorString,
             total, totalPositive, totalNegative, topText, bottomText;
 
-        if (display == 'none') {
+        if (display == 'none' || !group) {
             return;
         }
         // no items displayed, hide all labels
@@ -164,12 +281,22 @@ Ext.define('Ext.chart.Label', {
 
                     if (item && field[j]) {
                         if (!label) {
-                            label = me.onCreateLabel(storeItem, item, i, display, j, index);
+                            label = me.onCreateLabel(storeItem, item, i, display);
+                            if (!label) {
+                                break;
+                            }
                         }
-                        me.onPlaceLabel(label, storeItem, item, i, display, animate, j, index);
+
+                        // set color (the app can override it in onPlaceLabel)
+                        label.setAttributes({
+                            fill: String(color)
+                        }, true);
+
+                        // position the label
+                        me.onPlaceLabel(label, storeItem, item, i, display, animate, index);
                         groupIndex++;
 
-                        //set contrast
+                        // set contrast
                         if (config.contrast && item.sprite) {
                             sprite = item.sprite;
                             //set the color string to the color to be set, only read the
@@ -207,7 +334,7 @@ Ext.define('Ext.chart.Label', {
                             if (label.isOutside) {
                                 spriteBrightness = 1;
                             }
-                            labelColor = Color.fromString(label.attr.color || label.attr.fill).getHSL();
+                            labelColor = Color.fromString(label.attr.fill || label.attr.color).getHSL();
                             labelColor[2] = spriteBrightness > 0.5 ? 0.2 : 0.8;
                             label.setAttributes({
                                 fill: String(Color.fromHSL.apply({}, labelColor))
@@ -234,31 +361,31 @@ Ext.define('Ext.chart.Label', {
                             if (topText) {
                                 label = group.getAt(groupIndex);
                                 if (!label) {
-                                    label = me.onCreateLabel(storeItem, item, i, 'over', j, index);
+                                    label = me.onCreateLabel(storeItem, item, i, 'over');
                                 }
-                                label.setAttributes({text: topText});
-                                me.onPlaceLabel(label, storeItem, item, i, 'over', animate, j, index);
-                                groupIndex ++;
-
                                 labelColor = Color.fromString(label.attr.color || label.attr.fill).getHSL();
                                 label.setAttributes({
+                                    text: topText,
+                                    style: config.font,
                                     fill: String(Color.fromHSL.apply({}, labelColor))
                                 }, true);
+                                me.onPlaceLabel(label, storeItem, item, i, 'over', animate, index);
+                                groupIndex ++;
                             }
 
                             if (bottomText) {
                                 label = group.getAt(groupIndex);
                                 if (!label) {
-                                    label = me.onCreateLabel(storeItem, item, i, 'under', j, index);
+                                    label = me.onCreateLabel(storeItem, item, i, 'under');
                                 }
-                                label.setAttributes({text: bottomText});
-                                me.onPlaceLabel(label, storeItem, item, i, 'under', animate, j, index);
-                                groupIndex ++;
-
                                 labelColor = Color.fromString(label.attr.color || label.attr.fill).getHSL();
                                 label.setAttributes({
+                                    text: bottomText,
+                                    style: config.font,
                                     fill: String(Color.fromHSL.apply({}, labelColor))
                                 }, true);
+                                me.onPlaceLabel(label, storeItem, item, i, 'under', animate, index);
+                                groupIndex ++;
                             }
                         }
                     }

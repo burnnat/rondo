@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * @docauthor Jason Johnston <jason@sencha.com>
  *
@@ -130,8 +150,6 @@ Ext.define('Ext.form.FieldSet', {
      */
     layout: 'anchor',
 
-    border: 1,
-
     componentLayout: 'fieldset',
 
     autoEl: 'fieldset',
@@ -167,6 +185,8 @@ Ext.define('Ext.form.FieldSet', {
     initComponent: function() {
         var me = this,
             baseCls = me.baseCls;
+                
+        me.initFieldAncestor();
 
         me.callParent();
 
@@ -221,11 +241,11 @@ Ext.define('Ext.form.FieldSet', {
             me.addTitleClasses();
             me.legend = Ext.widget(me.createLegendCt());
         }
+        me.initMonitor();
     },
 
     initPadding: function(targetEl) {
         var me = this,
-            Element = Ext.Element,
             body = me.getProtoBody(),
             padding = me.padding,
             bodyPadding;
@@ -234,14 +254,14 @@ Ext.define('Ext.form.FieldSet', {
             if (Ext.isIEQuirks || Ext.isIE8m) {
                 // IE8 and below display fieldset top padding outside the border
                 // so we transfer the top padding to the body element.
-                padding = Element.parseBox(padding);
-                bodyPadding = Element.parseBox(0);
+                padding = me.parseBox(padding);
+                bodyPadding = Ext.Element.parseBox(0);
                 bodyPadding.top = padding.top;
                 padding.top = 0;
-                body.setStyle('padding', Element.unitizeBox(bodyPadding));
+                body.setStyle('padding', me.unitizeBox(bodyPadding));
             }
 
-            targetEl.setStyle('padding', Element.unitizeBox(padding));
+            targetEl.setStyle('padding', me.unitizeBox(padding));
         }
     },
 
@@ -537,6 +557,11 @@ Ext.define('Ext.form.FieldSet', {
                 me.addCls(me.baseCls + '-collapsed');
             }
             me.collapsed = !expanded;
+            if (expanded) {
+                delete me.getHierarchyState().collapsed;
+            } else {
+                me.getHierarchyState().collapsed = true;
+            }
             if (me.rendered) {
                 // say explicitly we are not root because when we have a fixed/configured height
                 // our ownerLayout would say we are root and so would not have it's height

@@ -48,5 +48,25 @@ Ext.define('Ext.cf.naming.LocalStore', {
         if (store) {
             store.removeItem(key);
         }
+    },
+
+    listKeys: function(prefix){
+        var keys = [];
+        for(var i =0, l = localStorage.length; i < l; i++) {
+            var key = localStorage.key(i);
+            if(key.indexOf(prefix) === 0) {
+                keys.push(key);
+            }
+        }
+        return keys;
+    },
+    
+    removeAllKeyPrefixes: function(prefix){
+        var keys = this.listKeys(prefix);
+        var store= window.localStorage;
+        for(var i =0, l = keys.length; i < l; i++) {
+            store.removeItem(keys[i]);
+        }
+        return keys;
     }
 });

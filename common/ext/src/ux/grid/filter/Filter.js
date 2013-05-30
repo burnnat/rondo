@@ -99,6 +99,7 @@ Ext.define('Ext.ux.grid.filter.Filter', {
      * @return {Ext.menu.Menu}
      */
     createMenu: function(config) {
+        config.plain = true;
         return Ext.create('Ext.menu.Menu', config);
     },
 

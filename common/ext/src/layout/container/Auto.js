@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * @class Ext.layout.container.Auto
  *
@@ -222,7 +242,7 @@ Ext.define('Ext.layout.container.Auto', {
                 // height:100% is required on the innerCt in order for percentage-height
                 // children to work in IE, firefox, and opera
                 '<div id="{ownerId}-innerCt" style="display:table-cell;height:100%;',
-                'vertical-align:top;{%this.renderPadding(out, values)%}">',
+                'vertical-align:top;{%this.renderPadding(out, values)%}" class="{innerCtCls}">',
                     '{%this.renderBody(out,values)%}',
                 '</div>',
             '</span>',
@@ -230,10 +250,10 @@ Ext.define('Ext.layout.container.Auto', {
             // If the containers width is shrink wrapped a table-based outerCt/innerCt
             // is required in old IE.  See getRenderData() for more details on the criteria
             // used to determine if the container has shrink wrapped width.
-            '<table id="{ownerId}-outerCt" style="font-size:1em;">',
+            '<table id="{ownerId}-outerCt" class="' + Ext.plainTableCls + '">',
                 '<tr>',
-                    '<td id="{ownerId}-innerCt" style="vertical-align:top;',
-                        '{%this.renderPadding(out, values)%}">',
+                    '<td id="{ownerId}-innerCt" style="vertical-align:top;padding:0;',
+                        '{%this.renderPadding(out, values)%}" class="{innerCtCls}">',
                         '{%this.renderBody(out,values)%}',
                          // clear element to contain the bottom margin of floated last child item
                         '<div id="{ownerId}-clearEl" class="', Ext.baseCSSPrefix,  'clear"',
@@ -249,7 +269,7 @@ Ext.define('Ext.layout.container.Auto', {
             // margin of the first child item would collapse into the top padding of
             // the innerCt.
             '<div id="{ownerId}-outerCt" style="zoom:1;{%this.renderPadding(out, values)%}">',
-                '<div id="{ownerId}-innerCt" style="zoom:1;height:100%;">',
+                '<div id="{ownerId}-innerCt" style="zoom:1;height:100%;" class="{innerCtCls}">',
                     '{%this.renderBody(out,values)%}',
                      // clear element to contain the bottom margin of floated last child item
                     '<div id="{ownerId}-clearEl" class="', Ext.baseCSSPrefix,  'clear"',
@@ -266,10 +286,10 @@ Ext.define('Ext.layout.container.Auto', {
     // does not have renderBody or clearEl.  It is an empty shell so that the contents
     // of an already existing innerCt can be moved into it.
     tableTpl: [
-        '<table id="{ownerId}-outerCt" style="font-size:1em;">',
+        '<table id="{ownerId}-outerCt" class="' + Ext.plainTableCls + '">',
             '<tr>',
-                '<td id="{ownerId}-innerCt" style="vertical-align:top;',
-                    '{%this.renderPadding(out, values)%}">',
+                '<td id="{ownerId}-innerCt" style="vertical-align:top;padding:0;',
+                    '{%this.renderPadding(out, values)%}" class="{innerCtCls}">',
                 '</td>',
             '</tr>',
         '</table>'
@@ -321,10 +341,22 @@ Ext.define('Ext.layout.container.Auto', {
                  me.clearElHasPadding = true;
              }
         }
+    },
+    
+    beforeLayoutCycle: function(ownerContext){
+        var comp = this.owner,
+            hierarchyState = comp.hierarchyState,
+            hierarchyStateInner = comp.hierarchyStateInner;
 
-        // Begin with the scrollbar adjustment that we used last time - this is more likely
-        // to be correct than beginning with no adjustment at all
-        ownerContext.state.overflowAdjust = me.lastOverflowAdjust;
+        if (!hierarchyState || hierarchyState.invalid) {
+            hierarchyState = comp.getHierarchyState(); // fixes both
+            hierarchyStateInner = comp.hierarchyStateInner;
+        }
+        if (ownerContext.widthModel.shrinkWrap && this.isShrinkWrapTpl) {
+            hierarchyStateInner.inShrinkWrapTable = true;
+        } else {
+            delete hierarchyStateInner.inShrinkWrapTable;
+        }
     },
 
     beginLayoutCycle: function(ownerContext) {
@@ -333,8 +365,9 @@ Ext.define('Ext.layout.container.Auto', {
             lastOuterCtWidth = me.lastOuterCtWidth || '',
             lastOuterCtHeight = me.lastOuterCtHeight || '',
             lastOuterCtTableLayout = me.lastOuterCtTableLayout || '',
+            state = ownerContext.state,
             overflowXStyle, overflowYStyle, outerCtWidth, outerCtHeight, outerCtTableLayout,
-            deferWidth;
+            deferWidth, hierarchyStateInner;
 
         me.callParent(arguments);
 
@@ -359,12 +392,14 @@ Ext.define('Ext.layout.container.Auto', {
                 // fill the available width within the container
                 outerCtWidth = '100%';
             }
+            hierarchyStateInner = me.owner.hierarchyStateInner;
             // expand no further than the available width, even if contents are wider
             // unless there is a potential for horizontal overflow, then allow
             // the outerCt to expand to the width of the contents
             overflowXStyle = me.getOverflowXStyle(ownerContext);
-            outerCtTableLayout = 
-                (overflowXStyle === 'auto' || overflowXStyle === 'scroll') ? '' : 'fixed';
+            outerCtTableLayout = (hierarchyStateInner.inShrinkWrapTable ||
+                                  overflowXStyle === 'auto' || 
+                                  overflowXStyle === 'scroll') ? '' : 'fixed';
         }
 
         if (!ownerContext.heightModel.shrinkWrap && 
@@ -405,6 +440,11 @@ Ext.define('Ext.layout.container.Auto', {
             me.innerCt.setStyle('height', '');
             me.hasInnerCtPxHeight = false;
         }
+
+        // Begin with the scrollbar adjustment that we used last time - this is more likely
+        // to be correct than beginning with no adjustment at all, but only if it is not
+        // already defined - it may have already been set by invalidate()
+        state.overflowAdjust = state.overflowAdjust || me.lastOverflowAdjust;
     },
 
     calculate: function(ownerContext) {
@@ -492,7 +532,7 @@ Ext.define('Ext.layout.container.Auto', {
 
         if (xauto || yauto) {
             scrollbarSize = Ext.getScrollbarSize();
-            targetEl = ownerContext.targetContext.el.dom;
+            targetEl = ownerContext.overflowContext.el.dom;
             scrollbars = 0;
 
             if (targetEl.scrollWidth > targetEl.clientWidth) {
@@ -540,7 +580,7 @@ Ext.define('Ext.layout.container.Auto', {
             padding = owner[owner.contentPaddingProperty];
 
         if (me.managePadding && padding) {
-            out.push('padding:', Ext.Element.unitizeBox(padding));
+            out.push('padding:', owner.unitizeBox(padding));
         }
     },
 
@@ -654,7 +694,7 @@ Ext.define('Ext.layout.container.Auto', {
      */
     getOverflowXStyle: function(ownerContext) {
         return ownerContext.overflowXStyle ||
-            (ownerContext.overflowXStyle = this.owner.scrollFlags.overflowX || ownerContext.targetContext.getStyle('overflow-x'));
+            (ownerContext.overflowXStyle = this.owner.scrollFlags.overflowX || ownerContext.overflowContext.getStyle('overflow-x'));
     },
 
     /**
@@ -669,15 +709,23 @@ Ext.define('Ext.layout.container.Auto', {
      */
     getOverflowYStyle: function(ownerContext) {
         return ownerContext.overflowYStyle || 
-            (ownerContext.overflowYStyle = this.owner.scrollFlags.overflowY || ownerContext.targetContext.getStyle('overflow-y'));
+            (ownerContext.overflowYStyle = this.owner.scrollFlags.overflowY || ownerContext.overflowContext.getStyle('overflow-y'));
     },
 
     initContextItems: function(ownerContext) {
         var me = this,
-            target = ownerContext.target;
+            target = ownerContext.target,
+            customOverflowEl = me.owner.customOverflowEl;
 
         ownerContext.outerCtContext = ownerContext.getEl('outerCt', me);
         ownerContext.innerCtContext = ownerContext.getEl('innerCt', me);
+        
+        if (customOverflowEl) {
+            ownerContext.overflowContext = ownerContext.getEl(customOverflowEl);    
+        } else {
+            ownerContext.overflowContext = ownerContext.targetContext;
+        }
+        
         if (target[target.contentPaddingProperty] !== undefined) {
             // If padding was defined using the contentPaddingProperty, we render the
             // the padding to the innerCt or outerCt (depending on the template that is
@@ -779,9 +827,26 @@ Ext.define('Ext.layout.container.Auto', {
     },
 
     measureContentWidth: function (ownerContext) {
+        var dom, style, old, contentWidth, target;
+            
+        // In the newer Chrome versions, it won't measure the
+        // width correctly without repainting the inner
+        // cell in some circumstances.
+        if (this.chromeCellMeasureBug) {
+            dom = this.innerCt.dom;
+            style = dom.style;
+            old = style.display;
+            
+            if (old == 'table-cell') {
+                style.display = '';
+                dom.offsetWidth;
+                style.display = old;
+            }    
+        }
+        
         // contentWidth includes padding, but not border, framing or margins
-        var contentWidth = this.outerCt.getWidth(),
-            target = ownerContext.target;
+        contentWidth = this.outerCt.getWidth();
+        target = ownerContext.target;
 
         if (this.managePadding && (target[target.contentPaddingProperty] === undefined)) {
             // if padding was not configured using the appropriate contentPaddingProperty
@@ -898,7 +963,8 @@ Ext.define('Ext.layout.container.Auto', {
                 (targetEl.dom.scrollWidth > targetEl.dom.clientWidth)) {
                 // adjust the height for scrollbar size since it's not accounted for
                 // in the containerSize.
-                height -= scrollbarSize.height;
+                // IE8 in what passes for "standards" mode does not tolerate -ve sizes
+                height = Math.max(height - scrollbarSize.height, 0);
             }
 
             if (needsOuterHeight) {
@@ -939,4 +1005,6 @@ Ext.define('Ext.layout.container.Auto', {
         return this.innerCt;
     }
 
+}, function(){
+    this.prototype.chromeCellMeasureBug = Ext.isChrome && Ext.chromeVersion >= 26;
 });

@@ -90,8 +90,16 @@ Ext.define('Ext.cf.data.SyncProxy', {
                         eco.setCS(t,path,t.generateChangeStamp());
                     }
                 },eco);
-                // the user id is the oid.
-                record.data[this.idProperty]= record.getOid(); // warning: don't call record.set, it'll cause an update after the add
+                //Update the record Id with the oid.
+                // This will replace the auto generated id with 
+                // change stamp in the store so that internal store references
+                // are correct. calling begin edit will suppress event notifications.
+                record.beginEdit();
+                record.setId(record.getOid());
+                 // We call endEdit with silent: true because the commit below already makes
+                // sure any store is notified of the record being updated.
+                //currentRecord.endEdit(true);
+
             },this);
             t.create(records);
             t.commit(function(){
@@ -537,12 +545,26 @@ Ext.define('Ext.cf.data.SyncProxy', {
      */
     applyUpdateToRecord: function(t,record,update) {
         if (record.putUpdate(t,update)) {
+            this.fixFieldTypes(record, update);
             t.update([record]);
             Ext.cf.util.Logger.info('SyncProxy.applyUpdateToRecord:',Ext.cf.data.Update.asString(update),'accepted');
             return true;
         } else {
             Ext.cf.util.Logger.info('SyncProxy.applyUpdateToRecord:',Ext.cf.data.Update.asString(update),'rejected');
             return false;
+        }
+    },
+
+    fixFieldTypes: function(record, update) {
+        var fields = record.getFields();
+        if(fields) {
+            var field = fields.get(update.p);
+            if(field){
+                var type = field.getType().type;
+                if(type == "date") {
+                    record.data[update.p] = new Date(update.v);
+                }
+            }
         }
     },
 

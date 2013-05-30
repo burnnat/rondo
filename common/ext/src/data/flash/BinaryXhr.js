@@ -1,9 +1,33 @@
-//@require @flash
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  *
  * Simulates an XMLHttpRequest object's methods and properties as returned
  * form the flash polyfill plugin. Used in submitting binary data in browsers that do 
  * not support doing so from JavaScript.
+ * NOTE: By default this will look for the flash object in the ext directory. When packaging and deploying the app, copy the <tt>ext/plugins</tt> directory and its contents to your root directory. For custom deployments where just the <tt>FlashPlugin.swf</tt> file gets copied (e.g. to <tt>/resources/FlashPlugin.swf</tt>), make sure to notify the framework of the location of the plugin before making the first attempt to post binary data, e.g. in the <tt>launch</tt> method of your app do:
+ * <pre><code>
+Ext.flashPluginPath="/resources/FlashPlugin.swf";
+ </code></pre>
+ *
  * @private
  */
 Ext.define('Ext.data.flash.BinaryXhr', {
@@ -95,7 +119,7 @@ Ext.define('Ext.data.flash.BinaryXhr', {
                 flashLoaderPath, flashObjectPath;
                 // Generate the following HTML set of tags:
                // + '<div id="ext-flash-polyfill">'
-               // + '<p>To view this page ensure that Adobe Flash Player version 11.1.0 or greater is installed.</p>'
+               // + '<p>To view this page ensure that Adobe Flash Player version 11.1.0 or greater is installed, and that the FlashPlugin.swf file was correctly placed in the /resources directory.</p>'
                 //+ '<a href="http://www.adobe.com/go/getflashplayer"><img src="' + window.location.protocol + '//www.adobe.com/images/shared/download_buttons/get_flash_player.gif" alt="Get Adobe Flash player" /></a>'
                 //+ '</div>'
             
@@ -121,8 +145,15 @@ Ext.define('Ext.data.flash.BinaryXhr', {
             
             // Now load the flash-loading script
             
-            flashLoaderPath = [Ext.Loader.getPath('Ext.data.Connection'), '../../plugins/flash/swfobject.js'].join('/');
+            flashLoaderPath = [Ext.Loader.getPath('Ext.data.Connection'), '../../../plugins/flash/swfobject.js'].join('/');
+            flashObjectPath = "/plugins/flash/FlashPlugin.swf";
+            //<debug>
             flashObjectPath = [Ext.Loader.getPath('Ext.data.Connection'), '../../plugins/flash/FlashPlugin.swf'].join('/');
+            //</debug>
+            if (Ext.flashPluginPath) {
+                flashObjectPath = Ext.flashPluginPath;
+            }
+            //console.log('LOADING Flash plugin from: ' + flashObjectPath);
             Ext.Loader.loadScript({
                 url:flashLoaderPath,
                 onLoad: function() {

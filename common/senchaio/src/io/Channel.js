@@ -168,6 +168,10 @@ Ext.define('Ext.io.Channel', {
                 if(this.getSubscribeOnStart()){
                     this.subscribe();
                 }
+
+                if(channelConf.allowedActions) {
+                    this.setAllowedActions(channelConf.allowedActions);
+                }
                 
                 var storesToBind = this.getBoundStores();
                 var store;
@@ -209,7 +213,6 @@ Ext.define('Ext.io.Channel', {
         var channel = this.getData();
 
         var configStore = Ext.io.Io.getConfigStore();
-
         if(!channelName && channel.name) {
             //we came from getRelatedObject() query and we don't need call AppService again.
             channelName = channel.name;

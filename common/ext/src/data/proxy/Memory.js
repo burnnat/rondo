@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * @author Ed Spencer
  *
@@ -58,7 +78,7 @@ Ext.define('Ext.data.proxy.Memory', {
      * @cfg {Boolean} [enablePaging=false]
      * Configure as `true` to enable this MemoryProxy to honour a read operation's `start` and `limit` options.
      *
-     * When `true`, read operations will be ablew to read *pages* of records from the data object.
+     * When `true`, read operations will be able to read *pages* of records from the data object.
      */
 
     /**
@@ -150,6 +170,7 @@ Ext.define('Ext.data.proxy.Memory', {
             resultSet = operation.resultSet = me.getReader().read(me.data),
             records = resultSet.records,
             sorters = operation.sorters,
+            groupers = operation.groupers,
             filters = operation.filters;
 
         operation.setCompleted();
@@ -162,6 +183,13 @@ Ext.define('Ext.data.proxy.Memory', {
                 records = resultSet.records = Ext.Array.filter(records, Ext.util.Filter.createFilterFn(filters));
             }
 
+            // Remotely, groupers just mean top priority sorters
+            if (groupers && groupers.length) {
+                // Must concat so as not to mutate passed sorters array which could be the items property of the sorters collection
+                sorters = sorters ? sorters.concat(groupers) : sorters;
+            }
+
+            // Sort by the specified groupers and sorters
             if (sorters && sorters.length) {
                 resultSet.records = Ext.Array.sort(records, Ext.util.Sortable.createComparator(sorters));
             }

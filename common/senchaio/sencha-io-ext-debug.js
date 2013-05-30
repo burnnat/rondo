@@ -15,9 +15,9 @@ NON-INFRINGEMENT OF THIRD-PARTY INTELLECTUAL PROPERTY RIGHTS.
 
 */
 Ext.define('Ext.cf.Overrides', {
-    requires: [
-        'Ext.data.Store'
-    ]
+               
+                        
+     
 }, function() {
     var patch_st2= function(){
         Ext.data.Store.prototype.storeSync= Ext.data.Store.prototype.sync;
@@ -130,6 +130,167 @@ Ext.define('Ext.cf.Overrides', {
         }
     }
 });
+
+/**
+ *
+ * @private
+ *
+ * Model Wrapper
+ *
+ */
+Ext.define("Ext.cf.data.ModelWrapper", {
+    override: "Ext.data.Model",
+    /**
+     * Get Object Identifier
+     */
+    getOid: function() {
+        return this.eco.getOid();
+    },
+
+    /**
+     * Get Change Stamp for the path
+     *
+     * @param {String/Array} path
+     *
+     * @return {Ext.cf.ds.CS}
+     *
+     */
+    getCS: function(path) {
+        return this.eco.getCS(path);
+    },
+
+    /**
+     * Get the Change Stamp Vector of the Object
+     *
+     * @return {Ext.cf.ds.CSV}
+     */
+    getCSV: function(){
+        return this.eco.getCSV();
+    },
+
+    /**
+     * Set the Value and Change Stamp
+     *
+     * @param {Ext.cf.data.Transaction} t
+     * @param {String/Array} path
+     * @param {Array} values
+     * @param {Ext.cf.ds.CS} new_cs
+     *
+     */
+    setValueCS: function(t,path,values,new_cs){
+        return this.eco.setValueCS(t,path,values,new_cs);
+    },
+
+    /**
+     * Change Replica id
+     *
+     * @param {String} old_replica_id Old Id
+     * @param {String} new_replica_id New Id
+     *
+     */
+    changeReplicaId: function(old_replica_id,new_replica_id) {
+        return this.eco.changeReplicaId(this.getIdProperty(),old_replica_id,new_replica_id);
+    },
+
+    /**
+     * Set update state
+     *
+     * @param {Ext.cf.data.Transaction} t Transaction
+     *
+     */
+    setUpdateState: function(t) {
+        var changes= this.getChanges();
+        for (var name in changes) {
+            this.setUpdateStateValue(t,[name],this.modified[name],changes[name]);
+        }
+    },
+    
+    /**
+     * Set update state value
+     *
+     * @param {Ext.cf.data.Transaction} t
+     * @param {String/Array} path
+     * @param {Object} old value
+     * @param {Object} new value
+     *
+     */
+    setUpdateStateValue: function(t,path,before_value,after_value) {
+        //console.log('setUpdateStateValue',path,before_value,after_value)
+        if (this.eco.isComplexValueType(after_value)) {
+            var added, name2;
+            if (before_value) {
+                added= {};
+                if (this.eco.isComplexValueType(before_value)) {
+                    if (this.eco.valueType(before_value)===this.eco.valueType(after_value)) {
+                        added= Ext.Array.difference(after_value,before_value);
+                        var changed= Ext.Array.intersect(after_value,before_value);
+                        for(name2 in changed) {
+                            if (changed.hasOwnProperty(name2)) {
+                                if (before_value[name2]!==after_value[name2]) {
+                                    added[name2]= after_value[name2];
+                                }
+                            }
+                        }
+                    } else {
+                        added= after_value;
+                        this.eco.setCS(t,path,t.generateChangeStamp()); // value had a different type before, a complex type
+                    }
+                } else {
+                    added= after_value;
+                    this.eco.setCS(t,path,t.generateChangeStamp()); // value had a different type before, a primitive type
+                }
+            } else {
+                added= after_value;
+                this.eco.setCS(t,path,t.generateChangeStamp()); // value didn't exist before
+            }
+            for(name2 in added) {
+                if (added.hasOwnProperty(name2)) {
+                    var next_before_value= before_value ? before_value[name2] : undefined;
+                    this.setUpdateStateValue(t,path.concat(name2),next_before_value,after_value[name2]);
+                }
+            }
+        } else {
+            this.eco.setCS(t,path,t.generateChangeStamp()); // value has a primitive type
+        }
+    },
+
+    /**
+     * Set destroy state
+     *
+     * @param {Ext.cf.data.Transaction} t
+     *
+     */
+    setDestroyState: function(t) {
+        var cs= t.generateChangeStamp();
+        this.eco.setValueCS(t,'_ts',cs.asString(),cs);
+    },
+    
+    /**
+     * Get updates
+     *
+     * @param {Ext.cf.ds.CSV} csv
+     *
+     * @return {Ext.io.data.Updates}
+     *
+     */
+    getUpdates: function(csv) {
+        return this.eco.getUpdates(csv);
+    },
+    
+    /**
+     * Put update
+     *
+     * @param {Ext.cf.data.Transaction} t
+     * @param {Object} update
+     *
+     */
+    putUpdate: function(t,update) {
+        return this.eco.setValueCS(t,update.p,update.v,update.c);
+    }
+    
+});
+
+
 
 // THIS IS AN AUTO GENERATED FILE (sio-server gendefs)
 // DO NOT MODIFY MANUALLY
@@ -329,7 +490,7 @@ Ext.define('Ext.cf.util.Logger', {
  *
  */
 Ext.define('Ext.cf.Utilities', {
-    requires: ['Ext.cf.util.Logger'],
+                                     
 
     statics: {
 
@@ -443,7 +604,7 @@ Ext.define('Ext.cf.Utilities', {
  *
  */
 Ext.define('Ext.cf.data.DatabaseDefinition', {
-   requires: ['Ext.cf.Utilities'],
+                                  
 
     config: {
         /**
@@ -511,167 +672,6 @@ Ext.define('Ext.cf.data.DatabaseDefinition', {
     }
 
 });
-
-/**
- *
- * @private
- *
- * Model Wrapper
- *
- */
-Ext.define("Ext.cf.data.ModelWrapper", {
-    override: "Ext.data.Model",
-    /**
-     * Get Object Identifier
-     */
-    getOid: function() {
-        return this.eco.getOid();
-    },
-
-    /**
-     * Get Change Stamp for the path
-     *
-     * @param {String/Array} path
-     *
-     * @return {Ext.cf.ds.CS}
-     *
-     */
-    getCS: function(path) {
-        return this.eco.getCS(path);
-    },
-
-    /**
-     * Get the Change Stamp Vector of the Object
-     *
-     * @return {Ext.cf.ds.CSV}
-     */
-    getCSV: function(){
-        return this.eco.getCSV();
-    },
-
-    /**
-     * Set the Value and Change Stamp
-     *
-     * @param {Ext.cf.data.Transaction} t
-     * @param {String/Array} path
-     * @param {Array} values
-     * @param {Ext.cf.ds.CS} new_cs
-     *
-     */
-    setValueCS: function(t,path,values,new_cs){
-        return this.eco.setValueCS(t,path,values,new_cs);
-    },
-
-    /**
-     * Change Replica id
-     *
-     * @param {String} old_replica_id Old Id
-     * @param {String} new_replica_id New Id
-     *
-     */
-    changeReplicaId: function(old_replica_id,new_replica_id) {
-        return this.eco.changeReplicaId(this.getIdProperty(),old_replica_id,new_replica_id);
-    },
-
-    /**
-     * Set update state
-     *
-     * @param {Ext.cf.data.Transaction} t Transaction
-     *
-     */
-    setUpdateState: function(t) {
-        var changes= this.getChanges();
-        for (var name in changes) {
-            this.setUpdateStateValue(t,[name],this.modified[name],changes[name]);
-        }
-    },
-    
-    /**
-     * Set update state value
-     *
-     * @param {Ext.cf.data.Transaction} t
-     * @param {String/Array} path
-     * @param {Object} old value
-     * @param {Object} new value
-     *
-     */
-    setUpdateStateValue: function(t,path,before_value,after_value) {
-        //console.log('setUpdateStateValue',path,before_value,after_value)
-        if (this.eco.isComplexValueType(after_value)) {
-            var added, name2;
-            if (before_value) {
-                added= {};
-                if (this.eco.isComplexValueType(before_value)) {
-                    if (this.eco.valueType(before_value)===this.eco.valueType(after_value)) {
-                        added= Ext.Array.difference(after_value,before_value);
-                        var changed= Ext.Array.intersect(after_value,before_value);
-                        for(name2 in changed) {
-                            if (changed.hasOwnProperty(name2)) {
-                                if (before_value[name2]!==after_value[name2]) {
-                                    added[name2]= after_value[name2];
-                                }
-                            }
-                        }
-                    } else {
-                        added= after_value;
-                        this.eco.setCS(t,path,t.generateChangeStamp()); // value had a different type before, a complex type
-                    }
-                } else {
-                    added= after_value;
-                    this.eco.setCS(t,path,t.generateChangeStamp()); // value had a different type before, a primitive type
-                }
-            } else {
-                added= after_value;
-                this.eco.setCS(t,path,t.generateChangeStamp()); // value didn't exist before
-            }
-            for(name2 in added) {
-                if (added.hasOwnProperty(name2)) {
-                    var next_before_value= before_value ? before_value[name2] : undefined;
-                    this.setUpdateStateValue(t,path.concat(name2),next_before_value,after_value[name2]);
-                }
-            }
-        } else {
-            this.eco.setCS(t,path,t.generateChangeStamp()); // value has a primitive type
-        }
-    },
-
-    /**
-     * Set destroy state
-     *
-     * @param {Ext.cf.data.Transaction} t
-     *
-     */
-    setDestroyState: function(t) {
-        var cs= t.generateChangeStamp();
-        this.eco.setValueCS(t,'_ts',cs.asString(),cs);
-    },
-    
-    /**
-     * Get updates
-     *
-     * @param {Ext.cf.ds.CSV} csv
-     *
-     * @return {Ext.io.data.Updates}
-     *
-     */
-    getUpdates: function(csv) {
-        return this.eco.getUpdates(csv);
-    },
-    
-    /**
-     * Put update
-     *
-     * @param {Ext.cf.data.Transaction} t
-     * @param {Object} update
-     *
-     */
-    putUpdate: function(t,update) {
-        return this.eco.setValueCS(t,update.p,update.v,update.c);
-    }
-    
-});
-
-
 
 /** 
  * @private
@@ -816,7 +816,7 @@ Ext.define('Ext.cf.ds.CS', {
  * Stamp.
  */
 Ext.define('Ext.cf.data.Updates', {
-    requires: ['Ext.cf.ds.CS'], 
+                                
 
     updates: undefined,
     
@@ -1008,10 +1008,10 @@ Ext.define('Ext.cf.ds.RealClock', {
  *
  */
 Ext.define('Ext.cf.ds.LogicalClock', {
-    requires: [
-        'Ext.cf.ds.RealClock',
-        'Ext.cf.ds.CS'
-    ],
+               
+                              
+                      
+      
 
     r: undefined, // replica_id
     t: undefined, // time, in seconds since epoch
@@ -1215,7 +1215,7 @@ Ext.define('Ext.cf.ds.LogicalClock', {
  * Represents a global point in 'time'.
  */
 Ext.define('Ext.cf.ds.CSV', {
-    requires: ['Ext.cf.ds.CS'],
+                               
 
     v: undefined, // change stamps, replica id => change stamp
 
@@ -1612,11 +1612,11 @@ Ext.define('Ext.cf.ds.CSV', {
  * providing for caching of reads, and group commit of writes.
  */ 
 Ext.define('Ext.cf.data.Transaction', { 
-    requires: [
-        'Ext.cf.ds.LogicalClock',
-        'Ext.cf.ds.CSV',
-        'Ext.cf.util.Logger'
-    ],
+               
+                                 
+                        
+                            
+      
 
     /** 
      * Constructor
@@ -2219,7 +2219,7 @@ Ext.define('Ext.io.Errors', {
  * @private
  */
 Ext.define('Ext.cf.util.ErrorHelper', {
-    requires: ['Ext.cf.util.Logger', 'Ext.io.Errors'],
+                                                      
 
     statics: {
         /**
@@ -2312,7 +2312,7 @@ Ext.define('Ext.cf.util.ErrorHelper', {
  * @private
  */
 Ext.define('Ext.cf.util.ParamValidator', {
-    requires: ['Ext.cf.util.ErrorHelper', 'Ext.cf.util.Logger'],
+                                                                
 
     statics: {        
         /**
@@ -2571,7 +2571,7 @@ Ext.define('Ext.cf.util.ParamValidator', {
  * The callback function to the RPC method is passed the result of the RPC call.
  */
 Ext.define('Ext.io.Proxy', {
-    requires: ['Ext.cf.util.ParamValidator', 'Ext.cf.util.ErrorHelper'],
+                                                                        
 
     config: {
         /**
@@ -2749,13 +2749,13 @@ Ext.define('Ext.io.Proxy', {
  *
  */
 Ext.define('Ext.cf.data.Protocol', {
-    requires: [
-        'Ext.cf.data.Updates', 
-        'Ext.cf.data.Transaction',
-        'Ext.cf.ds.CSV',
-        'Ext.cf.data.Updates',
-        'Ext.io.Proxy'
-    ],
+               
+                               
+                                  
+                        
+                              
+                      
+      
 
     config: {
         proxy: undefined,
@@ -3043,7 +3043,7 @@ Ext.define('Ext.cf.data.Protocol', {
  *
  */
 Ext.define('Ext.cf.data.ReplicaDefinition', { 
-    requires: ['Ext.cf.Utilities'],
+                                   
 
     config: {
         /**
@@ -3157,10 +3157,10 @@ Ext.define('Ext.cf.data.SyncModel', {
  * Complex types are either an Object or an Array
  */
 Ext.define('Ext.cf.ds.ECO', {
-    requires: [
-        'Ext.cf.ds.CSV',
-        'Ext.cf.ds.CS'
-    ],
+               
+                        
+                      
+      
 
     /** 
      * Constructor
@@ -3367,6 +3367,9 @@ Ext.define('Ext.cf.ds.ECO', {
                         break;
                     case 'array':
                         new_value= [[]];
+                        break;
+                    case 'date':
+                        new_value = new_data.getTime();
                         break;
                     default:
                         new_value= new_data;
@@ -3765,6 +3768,8 @@ Ext.define('Ext.cf.ds.ECO', {
         var t= typeof value;
         if (t==='object' && (value instanceof Array)) {
             t= 'array';
+        } else if(Ext.isDate(value)){
+            t='date';
         }
         return t;
     },
@@ -3780,7 +3785,7 @@ Ext.define('Ext.cf.ds.ECO', {
      *
      */
     isComplexValueType: function(value) {
-        return (value!==null && typeof value==='object');
+        return (value!==null && typeof value==='object' && !Ext.isDate(value));
     },
 
     /** 
@@ -3865,22 +3870,22 @@ Ext.define('Ext.cf.data.Update', {
  *
  */ 
 Ext.define('Ext.cf.data.SyncProxy', {
-    extend: 'Ext.data.proxy.Proxy',
-    requires: [
-        'Ext.data.proxy.Proxy',
-        'Ext.cf.data.Transaction',
-        'Ext.cf.data.Updates',
-        'Ext.cf.data.DatabaseDefinition',
-        'Ext.cf.data.ReplicaDefinition',
-        'Ext.cf.ds.CS',
-        'Ext.cf.ds.CSV',
-        'Ext.cf.ds.ECO',
-        'Ext.cf.Utilities',
-        'Ext.cf.data.SyncModel',
-        'Ext.cf.data.Update',
-        'Ext.cf.data.ModelWrapper',
-        'Ext.cf.util.Logger'
-    ],
+    extend:  Ext.data.proxy.Proxy ,
+               
+                               
+                                  
+                              
+                                         
+                                        
+                       
+                        
+                        
+                           
+                                
+                             
+                                   
+                            
+      
 
     config: {
         store: undefined,
@@ -3952,8 +3957,16 @@ Ext.define('Ext.cf.data.SyncProxy', {
                         eco.setCS(t,path,t.generateChangeStamp());
                     }
                 },eco);
-                // the user id is the oid.
-                record.data[this.idProperty]= record.getOid(); // warning: don't call record.set, it'll cause an update after the add
+                //Update the record Id with the oid.
+                // This will replace the auto generated id with 
+                // change stamp in the store so that internal store references
+                // are correct. calling begin edit will suppress event notifications.
+                record.beginEdit();
+                record.setId(record.getOid());
+                 // We call endEdit with silent: true because the commit below already makes
+                // sure any store is notified of the record being updated.
+                //currentRecord.endEdit(true);
+
             },this);
             t.create(records);
             t.commit(function(){
@@ -4399,12 +4412,26 @@ Ext.define('Ext.cf.data.SyncProxy', {
      */
     applyUpdateToRecord: function(t,record,update) {
         if (record.putUpdate(t,update)) {
+            this.fixFieldTypes(record, update);
             t.update([record]);
             Ext.cf.util.Logger.info('SyncProxy.applyUpdateToRecord:',Ext.cf.data.Update.asString(update),'accepted');
             return true;
         } else {
             Ext.cf.util.Logger.info('SyncProxy.applyUpdateToRecord:',Ext.cf.data.Update.asString(update),'rejected');
             return false;
+        }
+    },
+
+    fixFieldTypes: function(record, update) {
+        var fields = record.getFields();
+        if(fields) {
+            var field = fields.get(update.p);
+            if(field){
+                var type = field.getType().type;
+                if(type == "date") {
+                    record.data[update.p] = new Date(update.v);
+                }
+            }
         }
     },
 
@@ -4837,7 +4864,7 @@ Ext.define('Ext.cf.ds.CSI', {
  * In index for a set of Object Identifiers for all replicas, by Change Stamp.
  */
 Ext.define('Ext.cf.ds.CSIV', {
-    requires: ['Ext.cf.ds.CSI'],
+                                
 
     v: {}, // r => Change Stamp Index
     
@@ -4991,10 +5018,10 @@ Ext.define('Ext.cf.ds.CSIV', {
  *
  */
 Ext.define('Ext.cf.data.SyncStore', {
-    requires: [
-        'Ext.cf.Utilities',
-        'Ext.cf.ds.CSIV'
-    ],
+               
+                           
+                        
+      
     
 
     /** 
@@ -5407,7 +5434,6 @@ Ext.define('Ext.cf.data.SyncStore', {
      */
     setRecord: function(record) {
         //console.log('set',JSON.stringify(record))
-
         var raw = record.eco.data,
             data    = {},
             fields  = this.model.getFields().items,
@@ -5422,7 +5448,7 @@ Ext.define('Ext.cf.data.SyncStore', {
             if (typeof field.getEncode() == 'function') {
                 data[name] = field.getEncode()(raw[name], record);
             } else {
-                if (field.getType().type == 'date') {
+                if (field.getType().type == 'date' && Ext.isDate(raw[name])) {
                     data[name] = raw[name].getTime();
                 } else {
                     data[name] = raw[name];
@@ -5455,7 +5481,7 @@ Ext.define('Ext.cf.data.SyncStore', {
  */
 Ext.define('Ext.cf.fs.FilesClient', {
 
-    requires: ['Ext.cf.util.ErrorHelper'],
+                                          
     
     statics: {
         /*
@@ -5885,20 +5911,51 @@ Ext.define('Ext.cf.util.Md5', {
  *
  */
 Ext.define('Ext.cf.messaging.AuthStrategies', {
-    requires: [
-        'Ext.cf.util.UuidGenerator',
-        'Ext.cf.util.Md5'
-    ],
+               
+                                    
+                         
+      
 
     statics: {
-        nc: 0, // request counter used in Digest auth
 
         /**
-         * Get request counter
+         * @private
+         * common oauth2 strategy
+         *
+         * @param {Object} provider
+         * @param {Object} group
+         * @param {Object} params
+         * @param {Function} callback
+         * @param {Object} scope
          *
          */
-        getRequestCounter: function () {
-            return ++Ext.cf.messaging.AuthStrategies.nc;
+        oauth2: function (provider, group, params, callback, scope) {
+
+            var fn = function (result) {
+                if (result.status == "success" && result.value._bucket && result.value._bucket == "Users") {
+                    callback.call(scope, result.value, result.sid);
+                } else {
+                    callback.call(scope, null, null, result.error);
+                }
+            };
+
+
+            params.groupId = group.getId();
+            params.provider = provider;
+
+            Ext.io.Io.getMessagingProxy(function (messaging) {
+                messaging.getService(
+                    { name: "GroupManager" },
+                    function (groupManager, err) {
+                        if (groupManager) {
+                            groupManager.loginUser(fn, params);
+                        } else {
+                            callback.call(scope, null, null, err);
+                        }
+                    },
+                    this
+                );
+            }, this);
         },
 
         strategies: {
@@ -5951,34 +6008,44 @@ Ext.define('Ext.cf.messaging.AuthStrategies', {
              *
              */
             facebook: function (group, params, callback, scope) {
-
-                var fn = function (result) {
-                    if (result.status == "success" && result.value._bucket && result.value._bucket == "Users") {
-                        callback.call(scope, result.value, result.sid);
-                    } else {
-                        callback.call(scope, null, null, result.error);
-                    }
-                };
-
-
-                params.groupId = group.getId();
-                params.provider = "facebook";
-
-                Ext.io.Io.getMessagingProxy(function (messaging) {
-                    messaging.getService(
-                        { name: "GroupManager" },
-                        function (groupManager, err) {
-                            if (groupManager) {
-                                groupManager.loginUser(fn, params);
-                            } else {
-                                callback.call(scope, null, null, err);
-                            }
-                        },
-                        this
-                    );
-                }, this);
+                Ext.cf.messaging.AuthStrategies.oauth2("facebook", group, params, callback, scope);
             },
 
+            /**
+             * Github
+             *
+             * @param {Object} group
+             * @param {Object} params
+             * @param {Function} callback
+             * @param {Object} scope
+             *
+             */
+            github: function (group, params, callback, scope) {
+                Ext.cf.messaging.AuthStrategies.oauth2("github", group, params, callback, scope);
+            },
+
+            /**
+             * Google
+             *
+             * @param {Object} group
+             * @param {Object} params
+             * @param {Function} callback
+             * @param {Object} scope
+             *
+             */
+            google: function (group, params, callback, scope) {
+                Ext.cf.messaging.AuthStrategies.oauth2("google", group, params, callback, scope);
+            },
+
+            /**
+             * Twitter
+             *
+             * @param {Object} group
+             * @param {Object} params
+             * @param {Function} callback
+             * @param {Object} scope
+             *
+             */
             twitter: function (group, params, callback, scope) {
 
                 var fn = function (result) {
@@ -6021,7 +6088,7 @@ Ext.define('Ext.cf.messaging.AuthStrategies', {
  */
 Ext.define('Ext.cf.messaging.DeviceAllocator', {
     
-    requires: ['Ext.cf.util.Logger', 'Ext.cf.util.ErrorHelper'],
+                                                                
 
     statics: {
         bootup: function(params, callback) {
@@ -6126,7 +6193,7 @@ Ext.define('Ext.cf.messaging.DeviceAllocator', {
  *
  */
 Ext.define('Ext.cf.messaging.EnvelopeWrapper', {
-    extend: 'Ext.data.Model',
+    extend:  Ext.data.Model ,
     config: {
         identifier: 'uuid',
         fields: [
@@ -6140,7 +6207,7 @@ Ext.define('Ext.cf.messaging.EnvelopeWrapper', {
  * @private
  */
 Ext.define('Ext.cf.util.ServiceVersionHelper', {
-    requires: ['Ext.cf.ServiceDefinitions', 'Ext.cf.util.Logger'],
+                                                                  
 
     statics: {
         get: function(serviceName, callback) {
@@ -6177,7 +6244,7 @@ Ext.define('Ext.cf.util.ServiceVersionHelper', {
  *
  */
 Ext.define('Ext.cf.messaging.Registry', {
-    requires: ['Ext.cf.util.ServiceVersionHelper'],
+                                                   
 
     alternateClassName: 'Ext.io.Registry',
 
@@ -6238,10 +6305,10 @@ Ext.define('Ext.cf.messaging.Registry', {
  *
  */
 Ext.define('Ext.cf.messaging.transports.PollingTransport', {
-    requires: ['Ext.cf.util.Logger', 'Ext.cf.util.ErrorHelper'],
+                                                                
 
     mixins: {
-        observable: "Ext.util.Observable"
+        observable:  Ext.util.Observable 
     },
 
     statics: {
@@ -6498,12 +6565,12 @@ Ext.define('Ext.cf.messaging.transports.PollingTransport', {
  *
  */
 Ext.define('Ext.cf.messaging.transports.WebSocketTransport', {
-    requires: [
-        'Ext.cf.util.Logger', 
-        'Ext.cf.util.ErrorHelper'],
+               
+                              
+                                   
 
     mixins: {
-        observable: "Ext.util.Observable"
+        observable:  Ext.util.Observable 
     },
 
     statics: {
@@ -6840,15 +6907,15 @@ Ext.define('Ext.cf.messaging.transports.WebSocketTransport', {
  *
  */
 Ext.define('Ext.cf.messaging.transports.AutoTransport', {
-    requires: [
-        'Ext.cf.util.Logger', 
-        'Ext.cf.util.ErrorHelper',
-        'Ext.cf.messaging.transports.PollingTransport',
-        'Ext.cf.messaging.transports.WebSocketTransport'
-    ],
+               
+                              
+                                  
+                                                       
+                                                        
+      
 
     mixins: {
-        observable: "Ext.util.Observable"
+        observable:  Ext.util.Observable 
     },
 
     statics: {
@@ -6988,19 +7055,19 @@ Ext.define('Ext.cf.messaging.transports.AutoTransport', {
  *
  */
 Ext.define('Ext.cf.messaging.Transport', {
-    requires: [
-        'Ext.data.proxy.LocalStorage',
-        'Ext.cf.messaging.EnvelopeWrapper',
-        'Ext.cf.messaging.transports.PollingTransport',
-        'Ext.cf.messaging.transports.WebSocketTransport',
-        'Ext.cf.messaging.transports.AutoTransport',
-        'Ext.cf.util.ErrorHelper',
-        'Ext.cf.ServiceDefinitions',
-        'Ext.cf.util.ServiceVersionHelper'
-    ],
+               
+                                      
+                                           
+                                                       
+                                                         
+                                                    
+                                  
+                                    
+                                          
+      
     
     mixins: {
-        observable: "Ext.util.Observable"
+        observable:  Ext.util.Observable 
     },
 
     transport: null,
@@ -7106,6 +7173,7 @@ Ext.define('Ext.cf.messaging.Transport', {
 
     start: function(){
         if(this.transport){
+            this.fireEvent("connecting");
             this.transport.start();
         } else {
             Ext.cf.util.Logger.error("Transport: attempted to start without a valid transport class."); 
@@ -7139,7 +7207,7 @@ Ext.define('Ext.cf.messaging.Transport', {
             //wait a few seconds because network requests can fail
             //if you start right away.
             setTimeout(function(){
-                self.transport.start();
+                self.start();
             }, self.getWaitAfterBrowserOnline());
         }, false);
 
@@ -7586,7 +7654,7 @@ Ext.define('Ext.cf.messaging.Transport', {
  */
 Ext.define('Ext.cf.messaging.Rpc', {
     
-    requires: ['Ext.cf.util.Logger', 'Ext.cf.util.ErrorHelper'],
+                                                                
 
     config: {
         /**
@@ -8154,14 +8222,14 @@ Ext.define('Ext.io.MessagingProxy', {
  *
  */
 Ext.define('Ext.cf.messaging.Messaging', {
-    requires: [
-        'Ext.cf.messaging.Registry',
-        'Ext.cf.messaging.Transport',
-        'Ext.cf.messaging.Rpc',
-        'Ext.cf.messaging.PubSub',
-        'Ext.io.Proxy', 
-        'Ext.io.MessagingProxy',
-        'Ext.cf.util.ErrorHelper'],
+               
+                                    
+                                     
+                               
+                                  
+                        
+                                
+                                   
 
 
     /**
@@ -8357,6 +8425,26 @@ Ext.define('Ext.cf.naming.LocalStore', {
         if (store) {
             store.removeItem(key);
         }
+    },
+
+    listKeys: function(prefix){
+        var keys = [];
+        for(var i =0, l = localStorage.length; i < l; i++) {
+            var key = localStorage.key(i);
+            if(key.indexOf(prefix) === 0) {
+                keys.push(key);
+            }
+        }
+        return keys;
+    },
+    
+    removeAllKeyPrefixes: function(prefix){
+        var keys = this.listKeys(prefix);
+        var store= window.localStorage;
+        for(var i =0, l = keys.length; i < l; i++) {
+            store.removeItem(keys[i]);
+        }
+        return keys;
     }
 });
 
@@ -8370,9 +8458,9 @@ Ext.define('Ext.cf.naming.LocalStore', {
  *
  */
  Ext.define('Ext.cf.naming.ConfigStore', {
-    requires: [
-        'Ext.cf.naming.LocalStore'
-    ],
+               
+                                  
+      
 
     config: {
         localStore: null
@@ -8385,6 +8473,8 @@ Ext.define('Ext.cf.naming.LocalStore', {
      */
     constructor: function(){
         this.setLocalStore(Ext.create('Ext.cf.naming.LocalStore'));
+        this.memCache  = {};
+        this.keyPrefix = 'sencha-io-config-';
     },
     
     
@@ -8392,7 +8482,7 @@ Ext.define('Ext.cf.naming.LocalStore', {
         if(key.join){
             key = key.join("-");
         }
-        return 'sencha-io-config-'+key;
+        return this.keyPrefix+key;
     },
     
     /**
@@ -8407,7 +8497,7 @@ Ext.define('Ext.cf.naming.LocalStore', {
         if(!config){
             config = this.getLocalStore().getItem(key);
             if(config) {
-                config = JSON.parse(config);    
+                config = JSON.parse(config);
             }
             this.memCache[key] = config;
         }
@@ -8431,6 +8521,14 @@ Ext.define('Ext.cf.naming.LocalStore', {
         key = this.getStoreKey(key);
         delete this.memCache[key];
         this.getLocalStore().removeItem(key);
+    },
+
+    /**
+    * Removes all cached values from persistent and memory storage.
+    */
+    nukeCache: function() {
+        this.memCache = {};
+        this.getLocalStore().removeAllKeyPrefixes(this.keyPrefix);
     }
     
 });
@@ -8603,11 +8701,11 @@ Ext.define('Ext.cf.naming.SessionStore', {
  *
  */
  Ext.define('Ext.cf.naming.IDStore', {
-    requires: [
-        'Ext.cf.naming.CookieStore',
-        'Ext.cf.naming.LocalStore',
-        'Ext.cf.naming.SessionStore'
-    ],
+               
+                                    
+                                   
+                                    
+      
 
     config: {
         cookieStore: null,
@@ -8766,17 +8864,61 @@ Ext.define('Ext.cf.naming.SessionStore', {
 
 
 
+/*@private
+* Test class to emit fake browser offline events.
+* for internal testing only. 
+*/
+Ext.define('Ext.cf.util.FakeOffline', {
+    
+    statics: {
+
+		offline: function() {
+			var evt = document.createEvent("Events");
+			evt.initEvent("offline");
+			window.dispatchEvent(evt);
+		},
+
+		online: function() {
+			var evt = document.createEvent("Events");
+			evt.initEvent("online");
+			window.dispatchEvent(evt);	
+		}
+    }
+});
+
 /**
  * @private
  *
- * An Object... but a special one.
+ * This is a base class for all the naming service objects.
+ *
+ * Each object is an instance of a class, which here in the Javascript SDK,
+ * is created with Ext.define. So, for example a User object would be an
+ * instance of the Ext.io.User class.
+ *
+ * Each object is identified by an id, which is provided by the server when
+ * the object is first created.
+ *
+ * Each object contains a set of attribute values, which we call its data.
+ * Note that one of its attributes is its id.
+ *
+ * Each class of naming service object has relationships with other classes,
+ * so all objects have references to other objects in the system. The objects
+ * exist in a fully connected graph. Within the object are a set of related
+ * ids which can be navigated through to get to its related objects.
+ *
+ * When an object is fetched from the server it is always done so in a context.
+ * The context includes the identify of the requestor, which is always a 
+ * specific Device, but could also be a User, or a Developer. The system
+ * maintains access control lists which define who can perform which actions
+ * against which objects. So when an object is returned from the server it
+ * will include a set of actions that the requestor can perform.
  * 
  */
 
 Ext.define('Ext.io.Object', {
 
     mixins: {
-        observable: "Ext.util.Observable" //using util instead of mixin for EXT 4 compatibility. 
+        observable:  Ext.util.Observable  //using util instead of mixin for EXT 4 compatibility. 
     },
 
     /**
@@ -8818,7 +8960,7 @@ Ext.define('Ext.io.Object', {
                             var self= this;
                             namingRpc.get(function(result) {
                                 if(result.status == "success") {
-                                    callback.call(scope, self.objectFactory(result.value),undefined, result.value);
+                                    callback.call(scope, self.createObject(result.value), undefined, result.value);
                                 } else {
                                     callback.call(scope, undefined, result.error);
                                 }
@@ -8843,7 +8985,7 @@ Ext.define('Ext.io.Object', {
             var cacheKey = [this.$className, key];
             var objConf = configStore.getObjectConfig(cacheKey);
             if(objConf){
-                callback.call(scope,this.objectFactory(objConf));
+                callback.call(scope,this.createObject(objConf));
             } else {
                 var cb = function(obj, err, conf) {
                     if(obj){
@@ -8861,14 +9003,12 @@ Ext.define('Ext.io.Object', {
             configStore.setObjectConfig(cacheKey,conf);
         },
         
-        
-        
         /**
          *@private
-         * returns an instance of an object of type this.$className for given conf.
+         * returns an instance of an object of type klass or this.$className for given config.
          */
-        objectFactory: function(conf){
-           return Ext.create(this.$className, {id:conf._key, data:conf.data});
+        createObject: function(config,klass){
+            return Ext.create(klass||this.$className, {id:config._key, data:config.data, allowedActions:config.allowedActions});
         }, 
         
         /**
@@ -8876,9 +9016,9 @@ Ext.define('Ext.io.Object', {
         * Removes the cached object form the store.
         */
         removeCachedObject: function(key){
-                var configStore = Ext.io.Io.getConfigStore();
-                var cacheKey = [this.$className, key];
-                var objConf = configStore.remove(cacheKey);
+            var configStore = Ext.io.Io.getConfigStore();
+            var cacheKey = [this.$className, key];
+            var objConf = configStore.remove(cacheKey);
         },
 
         /**
@@ -8898,6 +9038,7 @@ Ext.define('Ext.io.Object', {
          *
          */
         findObjects: function(query, start, rows, callback, scope) {
+            var self= this;
             Ext.io.Io.getMessagingProxy(function(messaging){
                 messaging.getService(
                     {name: "NamingRpcService"},
@@ -8908,7 +9049,7 @@ Ext.define('Ext.io.Object', {
                                 if(result.status == "success") {
                                     var objects = [];
                                     for(var i = 0; i < result.value.length; i++) {
-                                        objects.push(Ext.create(self.$className, {id:result.value[i]._key, data:result.value[i].data}));
+                                        objects.push(self.createObject(result.value[i]));
                                     }
                                     callback.call(scope, objects);
                                 } else {
@@ -8928,7 +9069,8 @@ Ext.define('Ext.io.Object', {
 
     config: {
         id: null,
-        data: null
+        data: null,
+        allowedActions: null
     },
 
     /**
@@ -8943,6 +9085,14 @@ Ext.define('Ext.io.Object', {
             this.setId(config._key);
         }
     },
+
+    /**
+     *@private
+     * returns an instance of an object of type klass or this.$className for given config.
+     */
+    createObject: function(config,klass){
+        return Ext.create(klass||this.$className, {id:config._key, data:config.data, allowedActions:config.allowedActions});
+    }, 
 
     /**
      *
@@ -9033,9 +9183,9 @@ Ext.define('Ext.io.Object', {
     * Removes the config for this object from persistant cache.
     */
     removeCached: function(){
-            var configStore = Ext.io.Io.getConfigStore();
-            var cacheKey = [this.$className, this.getId()];
-            var objConf = configStore.remove(cacheKey);
+        var configStore = Ext.io.Io.getConfigStore();
+        var cacheKey = [this.$className, this.getId()];
+        var objConf = configStore.remove(cacheKey);
     },
 
 
@@ -9089,6 +9239,7 @@ Ext.define('Ext.io.Object', {
      * 
      */
     createRelatedObject: function(method, klass, data, callback, scope) {
+        var self= this;
         Ext.io.Io.getMessagingProxy(function(messaging){
             messaging.getService(
                 {name: "NamingRpcService"},
@@ -9096,7 +9247,7 @@ Ext.define('Ext.io.Object', {
                     if(namingRpc){
                         namingRpc.createRelatedObject(function(result) {
                             if(result.status == "success") {
-                                var object = Ext.create(klass, {id:result.value._key, data:result.value.data});
+                                var object = self.createObject(result.value,klass);
                                 callback.call(scope, object);
                             } else {
                                 callback.call(scope, undefined, result.error);
@@ -9128,6 +9279,7 @@ Ext.define('Ext.io.Object', {
      * 
      */
     getRelatedObject: function(klass, key, tag, callback, scope) {
+        var self= this;
         Ext.io.Io.getMessagingProxy(function(messaging){
             messaging.getService(
                 {name: "NamingRpcService"},
@@ -9137,7 +9289,7 @@ Ext.define('Ext.io.Object', {
                             if(result.status == "success") {
                                 var object = null;
                                 if(result.value && result.value !== null) { // it's possible there is no linked object
-                                    object = Ext.create(klass, {id:result.value._key, data:result.value.data});
+                                    object = self.createObject(result.value, klass);
                                 }
                                 callback.call(scope, object);
                             } else {
@@ -9169,6 +9321,7 @@ Ext.define('Ext.io.Object', {
      * 
      */
     getRelatedObjects: function(klass, tag, callback, scope) {
+        var self= this;
         Ext.io.Io.getMessagingProxy(function(messaging){
             messaging.getService(
                 {name: "NamingRpcService"},
@@ -9178,7 +9331,7 @@ Ext.define('Ext.io.Object', {
                             if(result.status == "success") {
                                 var objects = [];
                                 for(var i = 0; i < result.value.length; i++) {
-                                    objects.push(Ext.create(klass, {id:result.value[i]._key, data:result.value[i].data}));
+                                    objects.push(self.createObject(result.value[i],klass));
                                 }
                                 callback.call(scope, objects);
                             } else {
@@ -9212,6 +9365,7 @@ Ext.define('Ext.io.Object', {
      * 
      */
     findRelatedObjects: function(klass, key, tag, query, callback, scope) {
+        var self= this;
         Ext.io.Io.getMessagingProxy(function(messaging){
             messaging.getService(
                 {name: "NamingRpcService"},
@@ -9221,7 +9375,7 @@ Ext.define('Ext.io.Object', {
                             if(result.status == "success") {
                                 var objects = [];
                                 for(var i = 0; i < result.value.length; i++) {
-                                    objects.push(Ext.create(klass, {id:result.value[i]._key, data:result.value[i].data}));
+                                    objects.push(self.createObject(result.value[i],klass));
                                 }
                                 callback.call(scope, objects);
                             } else {
@@ -9249,10 +9403,10 @@ Ext.define('Ext.io.Object', {
  * 
  */
 Ext.define('Ext.io.Channel', {
-    extend: 'Ext.io.Object',
+    extend:  Ext.io.Object ,
     
     mixins: {
-        observable: "Ext.util.Observable" //using util instead of mixin for EXT 4 compatibility. 
+        observable:  Ext.util.Observable  //using util instead of mixin for EXT 4 compatibility. 
     },
     
     /**
@@ -9409,6 +9563,10 @@ Ext.define('Ext.io.Channel', {
                 if(this.getSubscribeOnStart()){
                     this.subscribe();
                 }
+
+                if(channelConf.allowedActions) {
+                    this.setAllowedActions(channelConf.allowedActions);
+                }
                 
                 var storesToBind = this.getBoundStores();
                 var store;
@@ -9450,7 +9608,6 @@ Ext.define('Ext.io.Channel', {
         var channel = this.getData();
 
         var configStore = Ext.io.Io.getConfigStore();
-
         if(!channelName && channel.name) {
             //we came from getRelatedObject() query and we don't need call AppService again.
             channelName = channel.name;
@@ -9891,14 +10048,14 @@ Ext.define('Ext.io.WithPicture', {
  *
  */
 Ext.define('Ext.io.App', {
-    extend: 'Ext.io.Object',
-    requires: [
-        'Ext.io.Channel',
-        'Ext.cf.util.ErrorHelper'
-    ],
+    extend:  Ext.io.Object ,
+               
+                         
+                                 
+      
 
     mixins: {
-        withpicture: 'Ext.io.WithPicture'
+        withpicture:  Ext.io.WithPicture 
     },
 
     statics: {
@@ -9910,11 +10067,9 @@ Ext.define('Ext.io.App', {
         *  Called on bootup by Io with the current group data.
         * 
         */
-        setCurrent: function(appConfig){
-             this._currentApp = Ext.create("Ext.io.App", {id:appConfig._key, data:appConfig.data});
+        setCurrent: function(config){
+            this._currentApp = this.createObject(config);
         },
-        
-        
 
         /**
          * @static
@@ -10163,7 +10318,7 @@ Ext.define('Ext.io.App', {
                             if(result.status == "success") {
                                 var object = null;
                                 if(result.value && result.value !== null) {
-                                    object = Ext.create(Ext.io.Version, {id:result.value._key, data:result.value.data});
+                                    object = self.createObject(result.value, Ext.io.Version);
                                 }
                                 callback.call(scope, object);
                             } else {
@@ -10255,11 +10410,11 @@ Ext.define('Ext.io.App', {
  * to the currently running client code. 
  */
 Ext.define('Ext.io.Group', {
-    extend: 'Ext.io.Object',
+    extend:  Ext.io.Object ,
 
-    requires: [
-        'Ext.cf.messaging.AuthStrategies'
-    ],
+               
+                                         
+      
 
     statics: {
         
@@ -10269,8 +10424,8 @@ Ext.define('Ext.io.Group', {
         *  Called on bootup by Io with the current group data.
         * 
         */
-        setCurrent: function(groupConfig){
-            this._currentGroup = Ext.create("Ext.io.Group", {id:groupConfig._key, data:groupConfig.data});
+        setCurrent: function(config){
+            this._currentGroup = this.createObject(config);
         },
 
         /**
@@ -10822,7 +10977,7 @@ Ext.define('Ext.io.Sender', {
  *
  */
 Ext.define('Ext.io.Store', {
-    extend: 'Ext.io.Object',
+    extend:  Ext.io.Object ,
 
     statics: {
 
@@ -10915,10 +11070,10 @@ Ext.define('Ext.io.Store', {
  *
  */
 Ext.define('Ext.io.Device', {
-    extend: 'Ext.io.Object',
+    extend:  Ext.io.Object ,
     
     mixins: {
-        observable: "Ext.util.Observable" //using util instead of mixin for EXT 4 compatibility. 
+        observable:  Ext.util.Observable  //using util instead of mixin for EXT 4 compatibility. 
     },
 
     /**
@@ -10926,6 +11081,14 @@ Ext.define('Ext.io.Device', {
     * Fired when the device receives a message.
     * @param {Ext.io.Sender} sender The device that sent the message
     * @param {Object} message The message received.
+    */
+
+
+    /**
+    * @event connected
+    * Fired when this device's connection status changes.
+    * Must call {Ext.io.Object.watch} to receive this event.
+    * @param {boolean} isConnected true when the device is connected.
     */
 
     statics: {
@@ -11032,6 +11195,22 @@ Ext.define('Ext.io.Device', {
             }
         }
     },
+
+
+    constructor: function(config) {
+        this.initConfig(config);
+
+        this.mixins.observable.constructor.call(this, config);
+    
+        this.on("updated",
+            function(changed, remote) {
+                if(remote && typeof changed.connected == "boolean"){
+                    this.fireEvent("connected", changed.connected);
+                }
+        }, this);
+    },
+    
+    
 
     /**
      * @private
@@ -11304,17 +11483,17 @@ Ext.define('Ext.io.WithChannel', {
  * 
  */
 Ext.define('Ext.io.User', {
-    extend: 'Ext.io.Object',
+    extend:  Ext.io.Object ,
 
-    requires: [
-            'Ext.io.Sender',
-            'Ext.io.Store',
-            'Ext.io.Device'
-        ],
+               
+                            
+                           
+                           
+          
 
     mixins: {
-        observable: "Ext.util.Observable", //using util instead of mixin for EXT 4 compatibility. 
-        withchannel: "Ext.io.WithChannel"
+        observable:  Ext.util.Observable , //using util instead of mixin for EXT 4 compatibility. 
+        withchannel:  Ext.io.WithChannel 
     },
     
     /**
@@ -11782,8 +11961,11 @@ Ext.define('Ext.io.User', {
                             if (err) {
                                 Ext.cf.util.Logger.warn("Group Manager logoutUser failed" , err);
                             }
-                            self._clearUser(callback,scope);
+                            if(callback){
+                                callback.call(scope);
+                            }
                         }, {groupId:group.getId()});
+                        self._clearUser();
                     } else {
                         Ext.cf.util.Logger.warn("Unable to get group for user" , err);
                         self._clearUser(callback,scope);
@@ -11796,12 +11978,12 @@ Ext.define('Ext.io.User', {
         }, this);
     },
 
-    _clearUser: function(callback,scope) {
+    _clearUser: function() {
         Ext.io.User.currentUser = undefined;
         this.removeCached();
         Ext.io.Io.getIdStore().remove('user','sid');
         Ext.io.Io.getIdStore().remove('user','id');
-        if (callback) callback.call(scope);
+        return;
     },
 
     /**
@@ -11878,7 +12060,7 @@ Ext.define('Ext.io.User', {
                     if(namingRpc){
                         namingRpc.getStore(function(result) {
                             if(result.status == "success") {
-                                var store = Ext.create('Ext.io.Store', {id:result.value._key, data:result.value.data});
+                                var store = this.createObject(result.value, 'Ext.io.Store');
                                 callback.call(scope,store);
                             } else {
                                 callback.call(scope,undefined,result.error);
@@ -11957,7 +12139,7 @@ Ext.define('Ext.io.User', {
  *
  */
 Ext.define('Ext.io.Service', {
-    extend: 'Ext.io.Object',
+    extend:  Ext.io.Object ,
 
     statics: {
         
@@ -12010,14 +12192,14 @@ Ext.define('Ext.io.Service', {
  * to have that in the docs structure.
  */
 Ext.define('Ext.io.data.Proxy', {
-    extend: 'Ext.data.proxy.Client',
+    extend:  Ext.data.proxy.Client ,
     alias: 'proxy.syncstorage',
-    requires: [
-        'Ext.cf.Utilities',
-        'Ext.cf.data.SyncProxy',
-        'Ext.cf.data.SyncStore',
-        'Ext.cf.data.Protocol'
-    ],
+               
+                           
+                                
+                                
+                              
+      
 
     proxyInitialized: false,
     proxyLocked: true,
@@ -12061,7 +12243,7 @@ Ext.define('Ext.io.data.Proxy', {
         //
         var directory= Ext.io.Io.getStoreDirectory();
         var db= directory.get(this.getDatabaseName(), "syncstore");
-        if(db){
+        if(!db){
             directory.add(this.getDatabaseName(), "syncstore");
         }
     },
@@ -12237,13 +12419,19 @@ Ext.define('Ext.io.data.Proxy', {
         if(createdRecords && createdRecords.length>0) {
             store.data.addAll(createdRecords);
             store.fireEvent('addrecords', this, createdRecords, 0);
+
+            Ext.each(createdRecords, function(record) {
+                record.join(store);
+            });
+            
             changed = true;
         }
         if(updatedRecords && updatedRecords.length>0) {
             store.data.addAll(updatedRecords);
             l = updatedRecords.length;
             for(i = 0; i < l; i++ ){
-              store.fireEvent('updaterecord', this, updatedRecords[i]);  
+              updatedRecords[i].join(store);
+              store.fireEvent('updaterecord', this, updatedRecords[i]);
             }
             changed = true;
         }
@@ -12251,6 +12439,7 @@ Ext.define('Ext.io.data.Proxy', {
             l= removedRecords.length;
             for(i=0;i<l;i++){
                 var id= removedRecords[i].getId();
+                removedRecords[i].unjoin(store);
                 store.data.removeAt(store.data.findIndexBy(function(i){ // slower, but will match
                     return i.getId()===id;
                 }));
@@ -12391,6 +12580,11 @@ Ext.define('Ext.io.data.Proxy', {
         };
         var remoteProxy= Ext.create('Ext.cf.data.SyncProxy');
         remoteProxy.asyncInitialize(config,function(r){
+            var model = this.getModel()
+            if(model){
+                remoteProxy.setModel(model);
+            }
+            
             if(r.r!=='ok'){
                 this.logger.error('Ext.io.data.Proxy: Unable to create remote proxy:',r);
             }
@@ -12403,7 +12597,7 @@ Ext.define('Ext.io.data.Proxy', {
 
 
 Ext.define("Ext.io.data.DirectoryModel", {
-    extend: "Ext.data.Model",
+    extend:  Ext.data.Model ,
     config: {
 		identifier: 'uuid', //required by touch but ignored by ext.
         fields: [
@@ -12421,11 +12615,11 @@ Ext.define("Ext.io.data.DirectoryModel", {
      *
      */
     Ext.define('Ext.io.data.Directory', {
-        requires: [
-            'Ext.data.Store',
-            'Ext.io.data.DirectoryModel',
-            'Ext.data.Batch' /* EXTJS */
-        ],
+                   
+                             
+                                         
+                                        
+          
         store: undefined,
         
         /**
@@ -12558,7 +12752,7 @@ Ext.define("Ext.io.data.DirectoryModel", {
     });
 
 
-Ext.setVersion('sio', '0.7.10');
+Ext.setVersion('sio', '0.7.15');
 
 //Figure out where IO is located and add CF to the loader
 //so that the developer doesn't have to manually include something 
@@ -12602,32 +12796,32 @@ Ext.setVersion('sio', '0.7.10');
  *
  */
 Ext.define('Ext.io.Io', {
-    requires: [
-            'Ext.util.Observable',
-            'Ext.cf.ServiceDefinitions',
-            'Ext.cf.Overrides',
-            'Ext.cf.messaging.DeviceAllocator',
-            'Ext.cf.messaging.Messaging',
-            'Ext.cf.util.Logger',
-            'Ext.cf.util.ParamValidator',
-            'Ext.io.Group',
-            'Ext.io.User',
-            'Ext.io.App',
-            'Ext.io.Device',
-            'Ext.io.Channel',
-            'Ext.io.Service',
-            'Ext.io.data.Proxy',
-            'Ext.cf.naming.IDStore',
-            'Ext.cf.naming.ConfigStore',
-            'Ext.io.data.Directory'
-    ],
+               
+                                  
+                                        
+                               
+                                               
+                                         
+                                 
+                                         
+                           
+                          
+                         
+                            
+                             
+                             
+                                
+                                    
+                                        
+                                   
+      
 
     alternateClassName: "Ext.Io",
 
     singleton: true,
     
     mixins: {
-           observable: "Ext.util.Observable" //using util instead of mixin for EXT 4 compatibility. 
+           observable:  Ext.util.Observable  //using util instead of mixin for EXT 4 compatibility. 
     },
 
     config: {
@@ -12753,7 +12947,7 @@ Ext.define('Ext.io.Io', {
         var appId = this.initApp();
         var device = this.initDevice();
         if(appId && device.deviceId && device.deviceSid) {
-            Ext.cf.util.Logger.debug("App has app id, and device id checking chache for objects.", appId, device.deviceId, device.deviceSid);
+            Ext.cf.util.Logger.debug("App has app id, and device id checking cache for objects.", appId, device.deviceId, device.deviceSid);
             this.restoreConfig(appId,device);   
         } else {
             Ext.cf.util.Logger.debug("device id, or device session id missing, can't start offline, must complete online bootup", appId, device.deviceId, device.deviceSid);
@@ -12813,6 +13007,9 @@ Ext.define('Ext.io.Io', {
             this.initMessaging(function(){
                self.onInitComplete();
             });
+        } else {
+            Ext.cf.util.Logger.debug("appConfig not found in cache, must complete online bootup");
+            this.bootup();
         }
     },
     
@@ -12920,7 +13117,7 @@ Ext.define('Ext.io.Io', {
 
         if(!this.verifyAppId(appId,config,cookie)){
             Ext.cf.util.Logger.warn('AppId has changed from saved app Id');
-            this.nukeStoredIds();            
+            this.nukeLocalData();
         }
         
         appId = idstore.stash('app','id',config);
@@ -12936,7 +13133,7 @@ Ext.define('Ext.io.Io', {
     * @private
     * in the event of an auth error we need to wipe the stored ids and start over.
     */
-    nukeStoredIds: function(){
+    nukeLocalData: function(){
         var idstore = Ext.io.Io.getIdStore();
    
      // device is linked to the group. if the app id has changed we need a new device id.
@@ -12946,11 +13143,35 @@ Ext.define('Ext.io.Io', {
         idstore.remove('group', 'id');
         //Users are linked to apps/groups so rest them too.
         idstore.remove('user', 'sid');
+        idstore.remove('user', 'id');
         //TODO What else needs to be dropped?  All sio local storage data?
 
         //delete all keys from config cache... 
         //config cache needs an index so everything can be deleted...
 
+        Ext.io.Io.getConfigStore().nukeCache();
+        
+        this.nukeSyncStores();
+
+    },
+
+    /**
+    * @private
+    * loops through all of the loaded stores and clears the locally stored data.
+    */
+    nukeSyncStores: function(){
+        if(Ext.StoreManager && Ext.StoreManager.all) {
+            Ext.StoreManager.all.forEach(function(store){
+                if(store && store.getProxy){
+                    var proxy = store.getProxy();
+                    if(proxy.$className == "Ext.io.data.Proxy") {
+                        Ext.cf.util.Logger.debug("Clearing sync store: " + store.getId());
+                        proxy.clear();
+                        store.load();
+                    }
+                }
+            });
+        }
     },
 
     /**
@@ -13016,9 +13237,8 @@ Ext.define('Ext.io.Io', {
 
         if(!Ext.io.Io.messaging){
             this.fireEvent("connecting");
-     
             var idstore = Ext.io.Io.getIdStore();
-            /* 
+            /*
              * Instantiate the messaging service proxies.
              */
             this.config.deviceId= idstore.getId('device');
@@ -13028,14 +13248,19 @@ Ext.define('Ext.io.Io', {
             Ext.io.Io.messaging.transport.on("invalidsession", function(err){
                 Ext.cf.util.Logger.error("Invalid Session, will attempt to re-authorize", err);
                 //If we have an invalid session, call bootup to get new device session.
+                self.nukeLocalData();
+                self.fireEvent("invalidsession", err);
                 self.bootupComplete = false;
                 self.bootup();
             });
 
             Ext.io.Io.messaging.transport.on("connected", function(type){
-                self.fireEvent("online", type);
+                self.fireEvent("connected", type);
             });
 
+
+            this.relayEvents(Ext.io.Io.messaging.transport, ["connecting", "offline"]);
+            
         } else {
             Ext.io.Io.messaging.transport.start();
         }
@@ -13372,7 +13597,7 @@ Ext.define('Ext.io.auth.Base', {
  * Facebook authentication method.
  */
 Ext.define('Ext.io.auth.Facebook', {
-    extend: 'Ext.io.auth.Base',
+    extend:  Ext.io.auth.Base ,
 
     config: {
         loginView: "Ext.io.ux.AuthFacebook",
@@ -13426,7 +13651,7 @@ Ext.define('Ext.io.auth.Facebook', {
  * twitter authentication method.
  */
 Ext.define('Ext.io.auth.Twitter', {
-    extend: 'Ext.io.auth.Base',
+    extend:  Ext.io.auth.Base ,
 
     config: {
         loginView: "Ext.io.ux.AuthTwitter",
@@ -13519,20 +13744,206 @@ Ext.define('Ext.io.auth.Twitter', {
 
 /**
  * @private
+ * google authentication method.
+ */
+Ext.define('Ext.io.auth.Google', {
+    extend:  Ext.io.auth.Base ,
+
+    config: {
+        loginView: "Ext.io.ux.AuthGoogle",
+
+        authButtonConfig: {
+            authType: "google",
+            text: "Google"
+        },
+        oauthUrl: "",
+
+        initComplete: false
+    },
+
+    constructor: function (config) {
+        this.initConfig(config);
+    },
+
+
+    /**
+     * @private
+     */
+    init: function (group, callback, scope) {
+        if (this.getInitComplete()) {
+            callback.call(scope);
+        }
+
+        var args = {
+            groupId: group.getId(),
+            provider: "google",
+            callbackPath: this.getCallbackPath()
+        };
+
+        var fn = Ext.bind(function (result) {
+            this.setOauthUrl(result.returnuri);
+            this.setInitComplete(true);
+            callback.call(scope);
+        }, this);
+
+        Ext.io.Io.getMessagingProxy(function (messaging) {
+            messaging.getService({
+                name: "GroupManager"
+            },
+
+            function (groupManager, err) {
+                if (groupManager) {
+                    groupManager.loginUser(fn, args);
+                } else {
+                    callback.call(scope, err);
+                }
+            },
+            this);
+        }, this);
+
+    },
+
+    getCallbackPath: function () {
+        return window.location.protocol + "//" + window.location.host + window.location.pathname;
+    },
+
+
+    checkAuth: function (group, callback, scope) {
+        var opts = Ext.Object.fromQueryString(document.location.search);
+        var code = opts["code"];
+        if (code) {
+            callback.call(scope, true, {
+                provider: "google",
+                callbackPath: this.getCallbackPath(),
+                query: {
+                    code: code
+                }
+            });
+        } else {
+            callback.call(scope, false, {});
+        }
+    },
+
+
+    onAuth: function (auth, callback, scope) {
+        this.restorePreviousPath();
+        callback.call(scope, auth);
+    },
+
+    logout: function (callback, scope) {
+        callback.call(scope, true, {});
+    }
+});
+
+/**
+ * @private
+ * github authentication method.
+ */
+Ext.define('Ext.io.auth.Github', {
+    extend:  Ext.io.auth.Base ,
+
+    config: {
+        loginView: "Ext.io.ux.AuthGithub",
+
+        authButtonConfig: {
+            authType: "github",
+            text: "Github"
+        },
+        oauthUrl: "",
+
+        initComplete: false
+    },
+
+    constructor: function (config) {
+        this.initConfig(config);
+    },
+
+
+    /**
+     * @private
+     */
+    init: function (group, callback, scope) {
+        if (this.getInitComplete()) {
+            callback.call(scope);
+        }
+
+        var args = {
+            groupId: group.getId(),
+            provider: "github",
+            callbackPath: this.getCallbackPath()
+        };
+
+        var fn = Ext.bind(function (result) {
+            this.setOauthUrl(result.returnuri);
+            this.setInitComplete(true);
+            callback.call(scope);
+        }, this);
+
+        Ext.io.Io.getMessagingProxy(function (messaging) {
+            messaging.getService({
+                name: "GroupManager"
+            },
+
+            function (groupManager, err) {
+                if (groupManager) {
+                    groupManager.loginUser(fn, args);
+                } else {
+                    callback.call(scope, err);
+                }
+            },
+            this);
+        }, this);
+
+    },
+
+    getCallbackPath: function () {
+        return document.location.href;
+    },
+
+
+    checkAuth: function (group, callback, scope) {
+        var opts = Ext.Object.fromQueryString(document.location.search);
+        var code = opts["code"];
+        if (code) {
+            callback.call(scope, true, {
+                provider: "github",
+                callbackPath: this.getCallbackPath(),
+                query: {
+                    code: code
+                }
+            });
+        } else {
+            callback.call(scope, false, {});
+        }
+    },
+
+
+    onAuth: function (auth, callback, scope) {
+        this.restorePreviousPath();
+        callback.call(scope, auth);
+    },
+
+    logout: function (callback, scope) {
+        callback.call(scope, true, {});
+    }
+});
+
+/**
+ * @private
  * Developer 
  *
  */
 Ext.define('Ext.io.Developer', {
-    extend: 'Ext.io.Object',
-    requires: [
-        'Ext.io.Sender',
-        'Ext.cf.util.Md5', 
-        'Ext.cf.util.ErrorHelper'
-    ],
+    extend:  Ext.io.Object ,
+               
+                        
+                           
+                                 
+      
     
     mixins: {
-        observable: "Ext.util.Observable", //using util instead of mixin for EXT 4 compatibility. 
-        withchannel: "Ext.io.WithChannel"
+        observable:  Ext.util.Observable , //using util instead of mixin for EXT 4 compatibility. 
+        withchannel:  Ext.io.WithChannel 
     },
         
     statics: {
@@ -13561,7 +13972,7 @@ Ext.define('Ext.io.Developer', {
                     if(devService){
                         devService.authenticate(function(result) {
                             if (result.status == "success") {
-                                var developer = Ext.create('Ext.io.Developer', {id:result.value._key, data:result.value.data});                            
+                                var developer = self.createObject(result.value);                            
                                 Ext.io.Io.getIdStore().setSid('developer', result.session.sid);
                                 Ext.io.Io.getIdStore().setId('developer', result.value._key);
                                 callback.call(scope,developer);
@@ -13791,8 +14202,11 @@ Ext.define('Ext.io.Developer', {
                     if (err) {
                         Ext.cf.util.Logger.warn("Team Manager logoutDeveloper failed" , err);
                     }
-                    self._clearDeveloper(callback,scope);
+                    if(callback){
+                        callback.call(scope);
+                    }
                 });
+                self._clearDeveloper();
             } else {
                 Ext.cf.util.Logger.warn("Unable to get TeamManager service" , err);
                 self._clearDeveloper(callback,scope);
@@ -13800,10 +14214,10 @@ Ext.define('Ext.io.Developer', {
         }, this);
     },
 
-    _clearDeveloper: function(callback,scope) {
+    _clearDeveloper: function() {
         Ext.io.Io.getIdStore().remove('developer','sid');
         Ext.io.Io.getIdStore().remove('developer','id');
-        if (callback) callback.call(scope);
+        return;
     },
 
     /**
@@ -13854,7 +14268,7 @@ Ext.define('Ext.io.Developer', {
  *
  */
 Ext.define('Ext.io.Replica', {
-    extend: 'Ext.io.Object',
+    extend:  Ext.io.Object ,
         
     statics: {
 
@@ -13882,10 +14296,10 @@ Ext.define('Ext.io.Replica', {
  * Team
  */
 Ext.define('Ext.io.Team', {
-    extend: 'Ext.io.Object',
+    extend:  Ext.io.Object ,
 
     mixins: {
-        withpicture: 'Ext.io.WithPicture'
+        withpicture:  Ext.io.WithPicture 
     },
         
     statics: {
@@ -14120,6 +14534,7 @@ Ext.define('Ext.io.Team', {
      *
      */
     getConnectedDevelopers: function(callback,scope) {
+        var self= this;
         Ext.io.Io.getMessagingProxy(function(messaging){
             messaging.getService(
                 {name: "PresenceService"},
@@ -14129,7 +14544,7 @@ Ext.define('Ext.io.Team', {
                             if (result.status == "success") {
                                 var objects = [];
                                 for(var i = 0; i < result.value.length; i++) {
-                                    objects.push(Ext.create(Ext.io.Developer, {id:result.value[i]._key, data:result.value[i].data}));
+                                    objects.push(self.createObject(result.value[i],Ext.io.Developer));
                                 }
                                 callback.call(scope, objects);
                             } else {
@@ -14185,7 +14600,7 @@ Ext.define('Ext.io.Team', {
  * Version
  */
 Ext.define('Ext.io.Version', {
-    extend: 'Ext.io.Object',
+    extend:  Ext.io.Object ,
         
     statics: {
 

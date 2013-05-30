@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  *
  */
@@ -16,20 +36,23 @@ Ext.define('Ext.form.field.FileButton', {
     preventDefault: false,
 
     renderTpl: [
-        '<em id="{id}-btnWrap"<tpl if="splitCls"> class="{splitCls}"</tpl>>',
-            '<button id="{id}-btnEl" type="{type}" class="{btnCls}" hidefocus="true"',
-                // the autocomplete="off" is required to prevent Firefox from remembering
-                // the button's disabled state between page reloads.
-                '<tpl if="tabIndex"> tabIndex="{tabIndex}"</tpl>',
-                '<tpl if="disabled"> disabled="disabled"</tpl>',
-                ' role="button" autocomplete="off">',
-                '<span id="{id}-btnInnerEl" class="{baseCls}-inner" style="{innerSpanStyle}">',
+        '<span id="{id}-btnWrap" class="{baseCls}-wrap',
+            '<tpl if="splitCls"> {splitCls}</tpl>',
+            '{childElCls}" unselectable="on">',
+            '<span id="{id}-btnEl" class="{baseCls}-button">',
+                '<span id="{id}-btnInnerEl" class="{baseCls}-inner {innerCls}',
+                    '{childElCls}" unselectable="on">',
                     '{text}',
                 '</span>',
-                '<span id="{id}-btnIconEl" class="{baseCls}-icon {iconCls}"<tpl if="iconUrl"> style="background-image:url({iconUrl})"</tpl>></span>',
-            '</button>',
-        '</em>',
-        '<input id="{id}-fileInputEl" class="{inputCls}" type="file" size="1" name="{inputName}">'
+                '<span role="img" id="{id}-btnIconEl" class="{baseCls}-icon-el {iconCls}',
+                    '{childElCls} {glyphCls}" unselectable="on" style="',
+                    '<tpl if="iconUrl">background-image:url({iconUrl});</tpl>',
+                    '<tpl if="glyph && glyphFontFamily">font-family:{glyphFontFamily};</tpl>">',
+                    '<tpl if="glyph">&#{glyph};</tpl><tpl if="iconCls || iconUrl">&#160;</tpl>',
+                '</span>',
+            '</span>',
+        '</span>',
+        '<input id="{id}-fileInputEl" class="{childElCls} {inputCls}" type="file" size="1" name="{inputName}">'
     ],
     
     getTemplateArgs: function(){

@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * Basic Toolbar class. Although the {@link Ext.container.Container#defaultType defaultType} for
  * Toolbar is {@link Ext.button.Button button}, Toolbar elements (child items for the Toolbar container)
@@ -10,7 +30,7 @@
  * |:---------|:--------------|:------------------------------|:---------------------------------------------------
  * | '->'     | `tbfill`      | {@link Ext.toolbar.Fill}      | begin using the right-justified button container
  * | '-'      | `tbseparator` | {@link Ext.toolbar.Separator} | add a vertical separator bar between toolbar items
- * | ' '      | `tbspacer`    | {@link Ext.toolbar.Spacer}    | add horiztonal space between elements
+ * | ' '      | `tbspacer`    | {@link Ext.toolbar.Spacer}    | add horizontal space between elements
  *
  *     @example
  *     Ext.create('Ext.toolbar.Toolbar', {
@@ -236,6 +256,11 @@ Ext.define('Ext.toolbar.Toolbar', {
      * Configure the icon class of the overflow button.
      */
     menuTriggerCls: Ext.baseCSSPrefix + 'toolbar-more-icon',
+
+    /**
+     * @cfg {String} defaultButtonUI
+     * A default {@link Ext.Component#ui ui} to use for {@link Ext.button.Button Button} items
+     */
     
     // @private
     trackMenus: true,
@@ -400,23 +425,24 @@ Ext.define('Ext.toolbar.Toolbar', {
     },
 
     // @private
-    constructButton: function(item) {
-        return item.events ? item
-                : Ext.widget(item.split ? 'splitbutton' : this.defaultType, item);
-    },
-
-    // @private
     onBeforeAdd: function(component) {
-        if (component.is('field') || (component.is('button') && this.ui != 'footer')) {
+        var me = this,
+            isButton = component.isButton;
+
+        if (isButton && me.defaultButtonUI && component.ui === 'default' &&
+            !component.hasOwnProperty('ui')) {
+            component.ui = me.defaultButtonUI;
+        } else if ((isButton || component.isFormField) && me.ui !== 'footer') {
             component.ui = component.ui + '-toolbar';
+            component.addCls(component.baseCls + '-toolbar');
         }
 
         // Any separators needs to know if is vertical or not
         if (component instanceof Ext.toolbar.Separator) {
-            component.setUI((this.vertical) ? 'vertical' : 'horizontal');
+            component.setUI((me.vertical) ? 'vertical' : 'horizontal');
         }
 
-        this.callParent(arguments);
+        me.callParent(arguments);
     },
 
     // @private

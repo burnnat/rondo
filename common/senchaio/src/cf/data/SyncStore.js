@@ -426,7 +426,6 @@ Ext.define('Ext.cf.data.SyncStore', {
      */
     setRecord: function(record) {
         //console.log('set',JSON.stringify(record))
-
         var raw = record.eco.data,
             data    = {},
             fields  = this.model.getFields().items,
@@ -441,7 +440,7 @@ Ext.define('Ext.cf.data.SyncStore', {
             if (typeof field.getEncode() == 'function') {
                 data[name] = field.getEncode()(raw[name], record);
             } else {
-                if (field.getType().type == 'date') {
+                if (field.getType().type == 'date' && Ext.isDate(raw[name])) {
                     data[name] = raw[name].getTime();
                 } else {
                     data[name] = raw[name];

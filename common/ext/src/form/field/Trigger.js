@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * Provides a convenient wrapper for TextFields that adds a clickable trigger button (looks like a combobox by default).
  * The trigger has no default action, so you must assign a function to implement the trigger click handler by overriding
@@ -128,6 +148,8 @@ Ext.define('Ext.form.field.Trigger', {
     mimicing: false,
     // @private
     triggerIndexRe: /trigger-index-(\d+)/,
+    
+    extraTriggerCls: '',
 
     componentLayout: 'triggerfield',
 
@@ -138,7 +160,7 @@ Ext.define('Ext.form.field.Trigger', {
 
     getSubTplMarkup: function(values) {
         var me = this,
-            childElCls = values.childElCls ? (' ' + values.childElCls) : '', 
+            childElCls = values.childElCls, // either '' or ' x-foo'
             field = me.callParent(arguments);
 
         return '<table id="' + me.id + '-triggerWrap" class="' + Ext.baseCSSPrefix + 'form-trigger-wrap' + childElCls + '" cellpadding="0" cellspacing="0"><tbody><tr>' +
@@ -177,7 +199,9 @@ Ext.define('Ext.form.field.Trigger', {
             triggerCls,
             triggerBaseCls = me.triggerBaseCls,
             triggerConfigs = [],
-            unselectableCls = Ext.dom.Element.unselectableCls;
+            unselectableCls = Ext.dom.Element.unselectableCls,
+            style = 'width:' + me.triggerWidth + 'px;' + (hideTrigger ? 'display:none;' : ''),
+            cls = me.extraTriggerCls + ' ' + Ext.baseCSSPrefix + 'trigger-cell ' + unselectableCls;
 
         // TODO this trigger<n>Cls API design doesn't feel clean, especially where it butts up against the
         // single triggerCls config. Should rethink this, perhaps something more structured like a list of
@@ -192,15 +216,15 @@ Ext.define('Ext.form.field.Trigger', {
             triggerConfigs.push({
                 tag: 'td',
                 valign: 'top',
-                cls: Ext.baseCSSPrefix + 'trigger-cell ' + unselectableCls,
-                style: 'width:' + me.triggerWidth + (hideTrigger ? 'px;display:none' : 'px'),
+                cls: cls,
+                style: style,
                 cn: {
                     cls: [Ext.baseCSSPrefix + 'trigger-index-' + i, triggerBaseCls, triggerCls].join(' '),
                     role: 'button'
                 }
             });
         }
-        triggerConfigs[i - 1].cn.cls += ' ' + triggerBaseCls + '-last';
+        triggerConfigs[0].cn.cls += ' ' + triggerBaseCls + '-first';
 
         return Ext.DomHelper.markup(triggerConfigs);
     },
@@ -223,7 +247,7 @@ Ext.define('Ext.form.field.Trigger', {
          * @private
          */
         if (!me.triggerWidth) {
-            tempEl = Ext.resetElement.createChild({
+            tempEl = Ext.getBody().createChild({
                 style: 'position: absolute;', 
                 cls: Ext.baseCSSPrefix + 'form-trigger'
             });

@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * The TreeStore is a store implementation that is backed by by an {@link Ext.data.Tree}.
  * It provides convenience methods for loading nodes, as well as the ability to use
@@ -190,7 +210,6 @@ Ext.define('Ext.data.TreeStore', {
             // this event must follow the relay to beforeitemexpand to allow users to
             // cancel the expand:
             beforeexpand: me.onBeforeNodeExpand,
-            beforecollapse: me.onBeforeNodeCollapse,
             append: me.onNodeAdded,
             insert: me.onNodeAdded,
             sort: me.onNodeSort
@@ -244,6 +263,7 @@ Ext.define('Ext.data.TreeStore', {
             // force rebuild
             reader.buildExtractors(true);
         }
+        return proxy;
     },
 
     // inherit docs
@@ -266,28 +286,42 @@ Ext.define('Ext.data.TreeStore', {
      * @param {Ext.data.NodeInterface} node The node being expanded.
      * @param {Function} callback The function to run after the expand finishes
      * @param {Object} scope The scope in which to run the callback function
+     * @param {Array} args The extra args to pass to the callback after the new child nodes
      */
-    onBeforeNodeExpand: function(node, callback, scope) {
+    onBeforeNodeExpand: function(node, callback, scope, args) {
         var me = this,
-            reader, dataRoot, data;
+            reader, dataRoot, data,
+            callbackArgs;
         
         // Children are loaded go ahead with expand
         if (node.isLoaded()) {
-            Ext.callback(callback, scope || node, [node.childNodes]);
-        } else if (node.childRecords) {
-            
+            callbackArgs = [node.childNodes];
+            if (args) {
+                callbackArgs.push.apply(callbackArgs, args);
+            }
+            Ext.callback(callback, scope || node, callbackArgs);
         }
         // There are unloaded child nodes in the raw data because of the lazy configuration, load them then call back.
         else if (dataRoot = (data = (node.raw || node[node.persistenceProperty])[(reader = me.getProxy().getReader()).root])) {
             me.fillNode(node, reader.extractData(dataRoot));
             delete data[reader.root];
-            Ext.callback(callback, scope || node, [node.childNodes]);
+            callbackArgs = [node.childNodes];
+            if (args) {
+                callbackArgs.push.apply(callbackArgs, args);
+            }
+            Ext.callback(callback, scope || node, callbackArgs);
         }
+        // The node is loading
         else if (node.isLoading()) {
             me.on('load', function() {
-                Ext.callback(callback, scope || node, [node.childNodes]);
+                callbackArgs = [node.childNodes];
+                if (args) {
+                    callbackArgs.push.apply(callbackArgs, args);
+                }
+                Ext.callback(callback, scope || node, callbackArgs);
             }, me, {single: true});
         }
+        // Node needs loading
         else {
             me.read({
                 node: node,
@@ -295,7 +329,11 @@ Ext.define('Ext.data.TreeStore', {
                     // Clear the callback, since if we're introducing a custom one,
                     // it may be re-used on reload
                     delete me.lastOptions.callback;
-                    Ext.callback(callback, scope || node, [node.childNodes]);
+                    callbackArgs = [node.childNodes];
+                    if (args) {
+                        callbackArgs.push.apply(callbackArgs, args);
+                    }
+                    Ext.callback(callback, scope || node, callbackArgs);
                 }
             });
         }
@@ -311,24 +349,15 @@ Ext.define('Ext.data.TreeStore', {
         return Ext.Array.filter(this.tree.flatten(), this.filterUpdated);
     },
 
-    /**
-     * Called before a node is collapsed.
-     * @private
-     * @param {Ext.data.NodeInterface} node The node being collapsed.
-     * @param {Function} callback The function to run after the collapse finishes
-     * @param {Object} scope The scope in which to run the callback function
-     */
-    onBeforeNodeCollapse: function(node, callback, scope) {
-        callback.call(scope || node, node.childNodes);
-    },
-
     onNodeRemove: function(parent, node, isMove) {
-        var me = this,
-            removed = me.removed;
+        var me = this;
 
         node.unjoin(me);
-        if (!node.isReplace && Ext.Array.indexOf(removed, node) == -1) {
-            removed.push(node);
+        // Phantom nodes should never be included in the removed collection.
+        // Also, if we're moving a node a remove will be fired, however we'll
+        // be inserting it again, so don't push it into the removed collection
+        if (!node.phantom && !isMove) {
+            Ext.Array.include(me.removed, node);
         }
 
         if (me.autoSync && !me.autoSyncSuspended && !isMove) {
@@ -610,14 +639,6 @@ Ext.define('Ext.data.TreeStore', {
         
         return newNodes;
     },
-    
-    beginBulkRemove: function(){
-        this.fireEvent('beforebulkremove', this);
-    },
-    
-    endBulkRemove: function(){
-        this.fireEvent('bulkremovecomplete', this);    
-    },
 
     /**
      * Sorter function for sorting records in index order
@@ -628,6 +649,11 @@ Ext.define('Ext.data.TreeStore', {
      */
     sortByIndex: function(node1, node2) {
         return node1[node1.persistenceProperty].index - node2[node2.persistenceProperty].index;
+    },
+    
+    onIdChanged: function(model, oldId, newId, oldInternalId){
+        this.tree.onNodeIdChanged(model, oldId, newId, oldInternalId);
+        this.callParent(arguments);    
     },
 
     // inherit docs
@@ -642,10 +668,6 @@ Ext.define('Ext.data.TreeStore', {
         if (successful) {
             if (!me.clearOnLoad) {
                 records = me.cleanRecords(node, records);
-            }
-            if (node.data.expanded) {
-                //\\
-            } else {
             }
             records = me.fillNode(node, records);
         }
@@ -664,21 +686,6 @@ Ext.define('Ext.data.TreeStore', {
         me.fireEvent('load', me, operation.node, records, successful);
         //this is a callback that would have been passed to the 'read' function and is optional
         Ext.callback(operation.callback, operation.scope || me, [records, operation, successful]);
-    },
-    
-    onCreateRecords: function(records) {
-        this.callParent(arguments);
-        
-        var i = 0,
-            len = records.length,
-            tree = this.tree,
-            node;
-
-        for (; i < len; ++i) {
-            node = records[i];
-            tree.onNodeIdChanged(node, null, node.getId());
-        }
-        
     },
     
     cleanRecords: function(node, records){

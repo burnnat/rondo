@@ -55,7 +55,7 @@ Ext.define('Ext.io.data.Proxy', {
         //
         var directory= Ext.io.Io.getStoreDirectory();
         var db= directory.get(this.getDatabaseName(), "syncstore");
-        if(db){
+        if(!db){
             directory.add(this.getDatabaseName(), "syncstore");
         }
     },
@@ -231,13 +231,19 @@ Ext.define('Ext.io.data.Proxy', {
         if(createdRecords && createdRecords.length>0) {
             store.data.addAll(createdRecords);
             store.fireEvent('addrecords', this, createdRecords, 0);
+
+            Ext.each(createdRecords, function(record) {
+                record.join(store);
+            });
+            
             changed = true;
         }
         if(updatedRecords && updatedRecords.length>0) {
             store.data.addAll(updatedRecords);
             l = updatedRecords.length;
             for(i = 0; i < l; i++ ){
-              store.fireEvent('updaterecord', this, updatedRecords[i]);  
+              updatedRecords[i].join(store);
+              store.fireEvent('updaterecord', this, updatedRecords[i]);
             }
             changed = true;
         }
@@ -245,6 +251,7 @@ Ext.define('Ext.io.data.Proxy', {
             l= removedRecords.length;
             for(i=0;i<l;i++){
                 var id= removedRecords[i].getId();
+                removedRecords[i].unjoin(store);
                 store.data.removeAt(store.data.findIndexBy(function(i){ // slower, but will match
                     return i.getId()===id;
                 }));
@@ -385,6 +392,11 @@ Ext.define('Ext.io.data.Proxy', {
         };
         var remoteProxy= Ext.create('Ext.cf.data.SyncProxy');
         remoteProxy.asyncInitialize(config,function(r){
+            var model = this.getModel()
+            if(model){
+                remoteProxy.setModel(model);
+            }
+            
             if(r.r!=='ok'){
                 this.logger.error('Ext.io.data.Proxy: Unable to create remote proxy:',r);
             }

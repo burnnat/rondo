@@ -1,35 +1,50 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
- * @class Ext.util.MixedCollection
- * <p>
  * Represents a collection of a set of key and value pairs. Each key in the MixedCollection
  * must be unique, the same key cannot exist twice. This collection is ordered, items in the
  * collection can be accessed by index  or via the key. Newly added items are added to
  * the end of the collection. This class is similar to {@link Ext.util.HashMap} however it
  * is heavier and provides more functionality. Sample usage:
- * <pre><code>
-var coll = new Ext.util.MixedCollection();
-coll.add('key1', 'val1');
-coll.add('key2', 'val2');
-coll.add('key3', 'val3');
-
-console.log(coll.get('key1')); // prints 'val1'
-console.log(coll.indexOfKey('key3')); // prints 2
- * </code></pre>
  *
- * <p>
+ *     var coll = new Ext.util.MixedCollection();
+ *     coll.add('key1', 'val1');
+ *     coll.add('key2', 'val2');
+ *     coll.add('key3', 'val3');
+ *
+ *     console.log(coll.get('key1')); // prints 'val1'
+ *     console.log(coll.indexOfKey('key3')); // prints 2
+ *
  * The MixedCollection also has support for sorting and filtering of the values in the collection.
- * <pre><code>
-var coll = new Ext.util.MixedCollection();
-coll.add('key1', 100);
-coll.add('key2', -100);
-coll.add('key3', 17);
-coll.add('key4', 0);
-var biggerThanZero = coll.filterBy(function(value){
-    return value > 0;
-});
-console.log(biggerThanZero.getCount()); // prints 2
- * </code></pre>
- * </p>
+ *
+ *     var coll = new Ext.util.MixedCollection();
+ *     coll.add('key1', 100);
+ *     coll.add('key2', -100);
+ *     coll.add('key3', 17);
+ *     coll.add('key4', 0);
+ *     var biggerThanZero = coll.filterBy(function(value){
+ *         return value > 0;
+ *     });
+ *     console.log(biggerThanZero.getCount()); // prints 2
+ *
  */
 Ext.define('Ext.util.MixedCollection', {
     extend: 'Ext.util.AbstractMixedCollection',
@@ -38,14 +53,19 @@ Ext.define('Ext.util.MixedCollection', {
     },
 
     /**
+     * @cfg {Boolean} allowFunctions
+     * Configure as `true` if the {@link #addAll} function should add function references to the collection.
+     */
+
+    /**
      * Creates new MixedCollection.
-     * @param {Object config A configuration object.
+     * @param {Object} config A configuration object.
      *  @param {Boolean} [config.allowFunctions=false] Specify `true` if the {@link #addAll}
      * function should add function references to the collection.
      *  @param {Function} [config.getKey] A function that can accept an item of the type(s) stored in this MixedCollection
      * and return the key value for that item.  This is used when available to look up the key on items that
      * were passed without an explicit key parameter to a MixedCollection method.  Passing this parameter is
-     * equivalent to providing an implementation for the {@link #getKey} method.
+     * equivalent to overriding the {@link #method-getKey} method.
      */
     constructor: function() {
         var me = this;
@@ -94,7 +114,7 @@ Ext.define('Ext.util.MixedCollection', {
         }
 
         //sort the temporary array
-        Ext.Array.sort(items, function(a, b) {
+        Ext.Array.sort(c, function(a, b) {
             return fn(a[property], b[property]) * dsc ||
                 // In case of equality, ensure stable sort by comparing collection index
                 (a.index < b.index ? -1 : 1);

@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * This class is a base class for an event domain. In the context of MVC, an "event domain"
  * is one or more base classes that fire events to which a Controller wants to listen. A
@@ -48,7 +68,11 @@ Ext.define('Ext.app.EventDomain', {
          */
         instances: {}
     },
-
+    
+    /**
+     * @cfg {String} idProperty Name of the identifier property for this event domain.
+     */
+     
     isEventDomain: true,
 
     constructor: function() {
@@ -138,12 +162,23 @@ Ext.define('Ext.app.EventDomain', {
     listen: function(selectors, controller) {
         var me = this,
             bus = me.bus,
+            idProperty = me.idProperty,
             monitoredClasses = me.monitoredClasses,
             monitoredClassesCount = monitoredClasses.length,
             i, tree, list, selector, options, listener, scope, event, listeners, ev;
 
         for (selector in selectors) {
             if (selectors.hasOwnProperty(selector) && (listeners = selectors[selector])) {
+                if (idProperty) {
+                    //<debug>
+                    if (!/^[*#]/.test(selector)) {
+                        Ext.Error.raise('Selectors containing id should begin with #');
+                    }
+                    //</debug>
+                
+                    selector = selector === '*' ? selector : selector.substring(1);
+                }
+                
                 for (ev in listeners) {
                     if (listeners.hasOwnProperty(ev)) {
                         options  = null;
@@ -161,6 +196,9 @@ Ext.define('Ext.app.EventDomain', {
                             delete options.scope;
                         }
 
+                        if (typeof listener === 'string') {
+                            listener = scope[listener];
+                        }
                         event.addListener(listener, scope, options);
 
                         for (i = monitoredClassesCount; i-- > 0;) {
@@ -182,7 +220,9 @@ Ext.define('Ext.app.EventDomain', {
 
     /**
      * This method matches the firer of the event (the `target`) to the given `selector`.
-     * This method must be provided by a derived class.
+     * Default matching is very simple: a match is true when selector equals target's
+     * {@link #cfg-idProperty idProperty}, or when selector is '*' wildcard to match any
+     * target.
      * 
      * @param {Object} target The firer of the event.
      * @param {String} selector The selector to which to match the `target`.
@@ -190,10 +230,16 @@ Ext.define('Ext.app.EventDomain', {
      * @return {Boolean} `true` if the `target` matches the `selector`.
      *
      * @protected
-     * @template
-     * @method match
      */
-    match: null,
+    match: function(target, selector) {
+        var idProperty = this.idProperty;
+        
+        if (idProperty) {
+            return selector === '*' || target[idProperty] === selector;
+        }
+        
+        return false;
+    },
 
     /**
      * This method is called by the derived class to monitor `fireEvent` calls. Any call

@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * @class Ext.data.Tree
  *
@@ -77,7 +97,7 @@ Ext.define('Ext.data.Tree', {
         // Insert upward link to owning Tree
         node.rootOf = me;
 
-        if (node.fireEvent('beforeappend', [null, node]) !== false) {
+        if (node.fireEventArgs('beforeappend', [null, node]) !== false) {
             node.set('root', true);
             // root node should never be phantom or dirty, so commit it
             node.updateInfo(true, {
@@ -219,11 +239,11 @@ Ext.define('Ext.data.Tree', {
      * @param {Number} oldId The old id
      * @param {Number} newId The new id
      */
-    onNodeIdChanged: function(node, oldId, newId) {
+    onNodeIdChanged: function(node, oldId, newId, oldInternalId) {
         var nodeHash = this.nodeHash;
     
-        nodeHash[newId] = node;
-        delete nodeHash[oldId || node.internalId];
+        nodeHash[node.internalId] = node;
+        delete nodeHash[oldInternalId];
     },
 
     /**
@@ -238,7 +258,7 @@ Ext.define('Ext.data.Tree', {
     /**
      * Registers a node with the tree
      * @private
-     * @param {Ext.data.NodeInterface} The node to register
+     * @param {Ext.data.NodeInterface} node The node to register
      * @param {Boolean} [includeChildren] True to unregister any child nodes
      */
     registerNode : function(node, includeChildren) {
@@ -258,7 +278,7 @@ Ext.define('Ext.data.Tree', {
     /**
      * Unregisters a node with the tree
      * @private
-     * @param {Ext.data.NodeInterface} The node to unregister
+     * @param {Ext.data.NodeInterface} node The node to unregister
      * @param {Boolean} [includeChildren] True to unregister any child nodes
      */
     unregisterNode : function(node, includeChildren) {

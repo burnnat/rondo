@@ -66,6 +66,14 @@ Ext.define('Ext.io.Device', {
     * @param {Object} message The message received.
     */
 
+
+    /**
+    * @event connected
+    * Fired when this device's connection status changes.
+    * Must call {Ext.io.Object.watch} to receive this event.
+    * @param {boolean} isConnected true when the device is connected.
+    */
+
     statics: {
         /**
          * @static
@@ -170,6 +178,22 @@ Ext.define('Ext.io.Device', {
             }
         }
     },
+
+
+    constructor: function(config) {
+        this.initConfig(config);
+
+        this.mixins.observable.constructor.call(this, config);
+    
+        this.on("updated",
+            function(changed, remote) {
+                if(remote && typeof changed.connected == "boolean"){
+                    this.fireEvent("connected", changed.connected);
+                }
+        }, this);
+    },
+    
+    
 
     /**
      * @private

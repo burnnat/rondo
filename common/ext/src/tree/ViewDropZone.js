@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * @private
  */
@@ -12,19 +32,19 @@ Ext.define('Ext.tree.ViewDropZone', {
     allowParentInserts: false,
  
     /**
-     * @cfg {String} allowContainerDrop
+     * @cfg {Boolean} allowContainerDrop
      * True if drops on the tree container (outside of a specific tree node) are allowed.
      */
     allowContainerDrops: false,
 
     /**
-     * @cfg {String} appendOnly
+     * @cfg {Boolean} appendOnly
      * True if the tree should only allow append drops (use for trees which are sorted).
      */
     appendOnly: false,
 
     /**
-     * @cfg {String} expandDelay
+     * @cfg {Number} expandDelay
      * The delay in milliseconds to wait before expanding a target tree node while dragging a droppable node
      * over the target.
      */
@@ -197,9 +217,9 @@ Ext.define('Ext.tree.ViewDropZone', {
 
     handleNodeDrop : function(data, targetNode, position) {
         var me = this,
-            view = me.view,
-            parentNode = targetNode ? targetNode.parentNode : view.panel.getRootNode(),
-            Model = view.getStore().treeStore.model,
+            targetView = me.view,
+            parentNode = targetNode ? targetNode.parentNode : targetView.panel.getRootNode(),
+            Model = targetView.getStore().treeStore.model,
             records, i, len, record,
             insertionMethod, argList,
             needTargetExpand,
@@ -215,7 +235,7 @@ Ext.define('Ext.tree.ViewDropZone', {
                     data.records.push(record.copy(undefined, true));
                 } else {
                     // If it's not a node, make a node copy
-                    data.records.push(new Model(record[record.persistenceProperty], record.getId()));
+                    data.records.push(new Model(record.data, record.getId()));
                 }
             }
         }
@@ -250,15 +270,29 @@ Ext.define('Ext.tree.ViewDropZone', {
             insertionMethod = targetNode.appendChild;
             argList = [null];
         }
-
+        
         // A function to transfer the data into the destination tree
         transferData = function() {
             var color,
                 n;
 
+            // Coalesce layouts caused by node removal, appending and sorting
+            Ext.suspendLayouts();
+
+            targetView.getSelectionModel().clearSelections();
+
             // Insert the records into the target node
             for (i = 0, len = data.records.length; i < len; i++) {
-                argList[0] = data.records[i];
+                record = data.records[i];
+                if (!record.isNode) {
+                    if (record.isModel) {
+                        record = new Model(record.data, record.getId());
+                    } else {
+                        record = new Model(record);
+                    }
+                    data.records[i] = record;
+                }
+                argList[0] = record;
                 insertionMethod.apply(targetNode, argList);
             }
 
@@ -266,6 +300,8 @@ Ext.define('Ext.tree.ViewDropZone', {
             if (me.sortOnDrop) {
                 targetNode.sort(targetNode.getOwnerTree().store.generateComparator());
             }
+            
+            Ext.resumeLayouts(true);
 
             // Kick off highlights after everything's been inserted, so they are
             // more in sync without insertion/render overhead.
@@ -274,7 +310,7 @@ Ext.define('Ext.tree.ViewDropZone', {
                 color = me.dropHighlightColor;
 
                 for (i = 0; i < len; i++) {
-                    n = view.getNode(data.records[i]);
+                    n = targetView.getNode(data.records[i]);
                     if (n) {
                         Ext.fly(n).highlight(color);
                     }
@@ -286,9 +322,21 @@ Ext.define('Ext.tree.ViewDropZone', {
         if (needTargetExpand) {
             targetNode.expand(false, transferData);
         }
+        // If the node is waiting for its children, we must transfer the data after the expansion.
+        // The expand event does NOT signal UI expansion, it is the SIGNAL for UI expansion.
+        // It's listened for by the NodeStore on the root node. Which means that listeners on the target
+        // node get notified BEFORE UI expansion. So we need a delay.
+        // TODO: Refactor NodeInterface.expand/collapse to notify its owning tree directly when it needs to expand/collapse.
+        else if (targetNode.isLoading()) {
+            targetNode.on({
+                expand: transferData,
+                delay: 1,
+                single: true
+            });
+        }
         // Otherwise, call the data transfer function immediately
         else {
             transferData();
         }
-    }
+    }    
 });

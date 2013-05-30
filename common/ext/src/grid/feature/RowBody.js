@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * The rowbody feature enhances the grid's markup to have an additional
  * tr -> td -> div which spans the entire width of the original row.
@@ -66,7 +86,6 @@ Ext.define('Ext.grid.feature.RowBody', {
     rowBodyCls: Ext.baseCSSPrefix + 'grid-row-body',
     rowBodyHiddenCls: Ext.baseCSSPrefix + 'grid-row-body-hidden',
     rowBodyTdSelector: 'td.' + Ext.baseCSSPrefix + 'grid-cell-rowbody',
-
     eventPrefix: 'rowbody',
     eventSelector: 'tr.' + Ext.baseCSSPrefix + 'grid-rowbody-tr',
 
@@ -75,9 +94,6 @@ Ext.define('Ext.grid.feature.RowBody', {
             var view = values.view,
                 rowValues = view.rowValues;
 
-            if (!rowValues.visibleColumns) {
-                rowValues.visibleColumns = view.headerCt.getVisibleGridColumns();
-            }
             this.rowBody.setup(values.rows, rowValues);
         },
         after: function(values, out) {
@@ -138,12 +154,15 @@ Ext.define('Ext.grid.feature.RowBody', {
         view.rowBodyFeature = me;
 
         // If we are not inside a wrapped row, we must listen for mousedown in the body row to trigger selection.
+        // Also need to remove the body row on removing a record.
         if (!view.findFeature('rowwrap')) {
             grid.mon(view, {
                 element: 'el',
                 mousedown: me.onMouseDown,
                 scope: me
             });
+            
+            me.mon(grid.getStore(), 'remove', me.onStoreRemove, me);
         }
 
         view.headerCt.on({
@@ -153,6 +172,21 @@ Ext.define('Ext.grid.feature.RowBody', {
         view.addTableTpl(me.tableTpl).rowBody = me;
         view.addRowTpl(Ext.XTemplate.getTpl(this, 'extraRowTpl'));
         me.callParent(arguments);
+    },
+    
+    onStoreRemove: function(store, model, index){
+        var view = this.view,
+            node;
+            
+        if (view.rendered) {
+            node = view.getNode(index);
+            if (node) {
+                node = Ext.fly(node).next(this.eventSelector);
+                if (node) {
+                    node.remove();
+                }
+            }
+        }
     },
 
     // Needed when not used inside a RowWrap to select the data row when mousedown on the body row.
@@ -178,7 +212,7 @@ Ext.define('Ext.grid.feature.RowBody', {
     // When columns added/removed, keep row body colspan in sync with number of columns.
     onColumnsChanged: function(headerCt) {
         var items = this.view.el.query(this.rowBodyTdSelector),
-            colspan = headerCt.getGridColumns().length,
+            colspan = headerCt.getVisibleGridColumns().length,
             len = items.length,
             i;
 

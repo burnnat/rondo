@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * Utility class for manipulating CSS rules
  * @singleton
@@ -98,15 +118,33 @@ Ext.define('Ext.util.CSS', function() {
             }
             try {// try catch for cross domain access issue
                 var ssRules = ss.cssRules || ss.rules,
-                    i = ssRules.length - 1;
+                    i = ssRules.length - 1,
+                    imports = ss.imports,
+                    len = imports ? imports.length : 0,
+                    rule, j;
+                    
+                // Old IE has a different way of handling imports
+                for (j = 0; j < len; ++j) {
+                    CSS.cacheStyleSheet(imports[j]);
+                }
 
                 for (; i >= 0; --i) {
-                    CSS.cacheRule(ssRules[i], ss);
+                    rule = ssRules[i];
+                    // If it's an @import rule, import its stylesheet
+                    if (rule.styleSheet) {
+                        CSS.cacheStyleSheet(rule.styleSheet);
+                    }
+                    CSS.cacheRule(rule, ss);
                 }
             } catch(e) {}
         },
 
         cacheRule: function(cssRule, styleSheet) {
+            // If it's an @import rule, import its stylesheet
+            if (cssRule.styleSheet) {
+                return CSS.cacheStyleSheet(cssRule.styleSheet);
+            }
+
             var selectorText = cssRule.selectorText,
                 selectorCount, j;
 
@@ -166,13 +204,17 @@ Ext.define('Ext.util.CSS', function() {
          * @return {CSSStyleRule} The CSS rule or null if one is not found
          */
         getRule: function(selector, refreshCache, rawCache) {
-            var i;
+            var i, result;
 
             if (!rules || refreshCache) {
                 CSS.refreshCache();
             }
             if (!Ext.isArray(selector)) {
-                return rawCache ? rules[selector.toLowerCase()] : rules[selector.toLowerCase()].cssRule;
+                result = rules[selector.toLowerCase()]
+                if (result && !rawCache) {
+                    result = result.cssRule;
+                }
+                return result || null;
             }
             for (i = 0; i < selector.length; i++) {
                 if (rules[selector[i]]) {

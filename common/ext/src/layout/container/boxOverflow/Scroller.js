@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * @private
  */
@@ -95,12 +115,21 @@ Ext.define('Ext.layout.container.boxOverflow.Scroller', {
     },
 
     getPrefixConfig: function() {
-        var me = this;
+        var me = this,
+            layout = me.layout,
+            owner = layout.owner,
+            cls;
+
         me.initCSSClasses();
+        cls = Ext.layout.container.Box.prototype.innerCls + ' ' + me.beforeCtCls;
+        if (owner.plain) {
+            // Add plain class for components that need separate "plain" styling (e.g. tab bar)
+            cls += ' ' + me.scrollerCls + '-plain';
+        }
         return {
-            cls: Ext.layout.container.Box.prototype.innerCls + ' ' + me.beforeCtCls,
+            cls: cls,
             cn : {
-                id : me.layout.owner.id + '-before-scroller',
+                id : owner.id + layout.names.beforeScrollerSuffix,
                 cls: me.scrollerCls + ' ' + me.beforeScrollerCls,
                 style: 'display:none'
             }
@@ -108,11 +137,19 @@ Ext.define('Ext.layout.container.boxOverflow.Scroller', {
     },
 
     getSuffixConfig: function() {
-        var me = this;
+        var me = this,
+            layout = me.layout,
+            owner = layout.owner,
+            cls = Ext.layout.container.Box.prototype.innerCls + ' ' + me.afterCtCls;
+
+        if (owner.plain) {
+            // Add plain class for components that need separate "plain" styling (e.g. tab bar)
+            cls += ' ' + me.scrollerCls + '-plain';
+        }
         return {
-            cls: Ext.layout.container.Box.prototype.innerCls + ' ' + me.afterCtCls,
+            cls: cls,
             cn : {
-                id : me.layout.owner.id + '-after-scroller',
+                id : owner.id + layout.names.afterScrollerSuffix,
                 cls: me.scrollerCls + ' ' + me.afterScrollerCls,
                 style: 'display:none'
             }
@@ -142,7 +179,7 @@ Ext.define('Ext.layout.container.boxOverflow.Scroller', {
     beginLayout: function (ownerContext) {
         var layout = this.layout;
 
-        ownerContext.innerCtScrollPos = layout.innerCt.dom[layout.names.scrollLeft];
+        ownerContext.innerCtScrollPos = this.getScrollPosition();
 
         this.callParent(arguments);
     },
@@ -169,7 +206,7 @@ Ext.define('Ext.layout.container.boxOverflow.Scroller', {
             layout = me.layout,
             scrollPos = Math.min(me.getMaxScrollPosition(), ownerContext.innerCtScrollPos);
 
-        layout.innerCt.dom[layout.names.scrollLeft] = scrollPos;
+        layout.innerCt[layout.names.setScrollLeft](scrollPos);
     },
 
     handleOverflow: function(ownerContext) {
@@ -190,19 +227,28 @@ Ext.define('Ext.layout.container.boxOverflow.Scroller', {
     captureChildElements: function() {
         var me = this,
             el = me.layout.owner.el,
-            before,
-            after;
+            before, after, hoverCls, pressedSuffix, pressedCls, hoverSuffix;
 
         // Grab the scroll click receiving elements
         if (!me.beforeCt) {
+            hoverSuffix = '-hover';
+            pressedSuffix = '-pressed';
+            hoverCls = me.scrollerCls + hoverSuffix;
+            pressedCls = me.scrollerCls + pressedSuffix;
             before = me.beforeScroller = el.getById(me.layout.owner.id + '-before-scroller');
             after = me.afterScroller = el.getById(me.layout.owner.id + '-after-scroller');
             me.beforeCt = before.up('');
             me.afterCt = after.up('');
             me.createWheelListener();
 
-            before.addClsOnOver(me.beforeScrollerCls + '-hover');
-            after.addClsOnOver(me.afterScrollerCls + '-hover');
+            before.addClsOnOver(hoverCls);
+            before.addClsOnOver(me.beforeScrollerCls + hoverSuffix);
+            before.addClsOnClick(pressedCls);
+            before.addClsOnClick(me.beforeScrollerCls + pressedSuffix);
+            after.addClsOnOver(hoverCls);
+            after.addClsOnOver(me.afterScrollerCls + hoverSuffix);
+            after.addClsOnClick(pressedCls);
+            after.addClsOnClick(me.afterScrollerCls + pressedSuffix);
 
             before.setVisibilityMode(Ext.Element.DISPLAY);
             after.setVisibilityMode(Ext.Element.DISPLAY);
@@ -229,10 +275,14 @@ Ext.define('Ext.layout.container.boxOverflow.Scroller', {
         var me = this;
         me.layout.innerCt.on({
             mousewheel: function(e) {
-                me.scrollBy(e.getWheelDelta() * me.wheelIncrement * -1, false);
+                me.scrollBy(me.getWheelDelta(e) * me.wheelIncrement * -1, false);
             },
             stopEvent: true
         });
+    },
+
+    getWheelDelta: function (e) {
+        return e.getWheelDelta();
     },
 
     /**
@@ -253,7 +303,7 @@ Ext.define('Ext.layout.container.boxOverflow.Scroller', {
         me.captureChildElements();
         me.beforeScroller.show();
         me.afterScroller.show();
-        me.layout.owner.addClsWithUI('scroller');
+        me.layout.owner.addClsWithUI(me.layout.direction === 'vertical' ? 'vertical-scroller' : 'scroller');
         // TODO - this may invalidates data in the ContextItem's styleCache
     },
 
@@ -267,7 +317,7 @@ Ext.define('Ext.layout.container.boxOverflow.Scroller', {
         if (me.beforeScroller !== undefined) {
             me.beforeScroller.hide();
             me.afterScroller.hide();
-            me.layout.owner.removeClsWithUI('scroller');
+            me.layout.owner.removeClsWithUI(me.layout.direction === 'vertical' ? 'vertical-scroller' : 'scroller');
             // TODO - this may invalidates data in the ContextItem's styleCache
         }
     },
@@ -311,7 +361,9 @@ Ext.define('Ext.layout.container.boxOverflow.Scroller', {
             beforeMeth,
             afterMeth,
             beforeCls,
-            afterCls;
+            afterCls,
+            disabledCls,
+            suffix = '-disabled';
             
         if (me.beforeScroller == null || me.afterScroller == null) {
             return;
@@ -319,21 +371,13 @@ Ext.define('Ext.layout.container.boxOverflow.Scroller', {
 
         beforeMeth = me.atExtremeBefore()  ? 'addCls' : 'removeCls';
         afterMeth  = me.atExtremeAfter() ? 'addCls' : 'removeCls';
-        beforeCls  = me.beforeScrollerCls + '-disabled';
-        afterCls   = me.afterScrollerCls  + '-disabled';
+        disabledCls = me.scrollerCls + suffix;
+        beforeCls = [disabledCls, me.beforeScrollerCls + suffix];
+        afterCls = [disabledCls, me.afterScrollerCls  + suffix];
 
         me.beforeScroller[beforeMeth](beforeCls);
         me.afterScroller[afterMeth](afterCls);
         me.scrolling = false;
-    },
-
-    /**
-     * @private
-     * Returns true if the innerCt scroll is already at its left-most point
-     * @return {Boolean} True if already at furthest left point
-     */
-    atExtremeBefore: function() {
-        return !this.getScrollPosition();
     },
 
     /**
@@ -361,9 +405,10 @@ Ext.define('Ext.layout.container.boxOverflow.Scroller', {
             layout = me.layout,
             result;
 
-        // Until we actually scroll, the scroll[Top|Left] is stored as zero to avoid DOM hits, after that it's NaN.
+        // Until we actually scroll, the scroll[Top|Left] is stored as zero to avoid DOM
+        // hits, after that it's NaN.
         if (isNaN(me.scrollPosition)) {
-            result = layout.innerCt.dom[layout.names.scrollLeft];
+            result = layout.innerCt[layout.names.getScrollLeft]();
         } else {
             result = me.scrollPosition;
         }
@@ -385,6 +430,15 @@ Ext.define('Ext.layout.container.boxOverflow.Scroller', {
 
     /**
      * @private
+     * Returns true if the innerCt scroll is already at its left-most point
+     * @return {Boolean} True if already at furthest left point
+     */
+    atExtremeBefore: function() {
+        return !this.getScrollPosition();
+    },
+
+    /**
+     * @private
      * Returns true if the innerCt scroll is already at its right-most point
      * @return {Boolean} True if already at furthest right point
      */
@@ -401,6 +455,7 @@ Ext.define('Ext.layout.container.boxOverflow.Scroller', {
     scrollTo: function(position, animate) {
         var me = this,
             layout = me.layout,
+            names = layout.names,
             oldPosition = me.getScrollPosition(),
             newPosition = Ext.Number.constrain(position, 0, me.getMaxScrollPosition());
 
@@ -410,7 +465,7 @@ Ext.define('Ext.layout.container.boxOverflow.Scroller', {
                 animate = me.animateScroll;
             }
 
-            layout.innerCt.scrollTo(layout.names.beforeX, newPosition, animate ? me.getScrollAnim() : false);
+            layout.innerCt[names.scrollTo](names.beforeScrollX, newPosition, animate ? me.getScrollAnim() : false);
             if (animate) {
                 me.scrolling = true;
             } else {
@@ -429,6 +484,7 @@ Ext.define('Ext.layout.container.boxOverflow.Scroller', {
     scrollToItem: function(item, animate) {
         var me = this,
             layout = me.layout,
+            owner = layout.owner,
             names = layout.names,
             visibility,
             box,
@@ -436,13 +492,21 @@ Ext.define('Ext.layout.container.boxOverflow.Scroller', {
 
         item = me.getItem(item);
         if (item !== undefined) {
-            visibility = me.getItemVisibility(item);
-            if (!visibility.fullyVisible) {
-                box  = item.getBox(true, true);
-                newPos = box[names.x];
-                if (visibility.hiddenEnd) {
-                    newPos -= (me.layout.innerCt[names.getWidth]() - box[names.width]);
+            if (item == owner.items.first()) {
+                newPos = 0
+            } else if (item === owner.items.last()) {
+                newPos = me.getMaxScrollPosition();
+            } else {
+                visibility = me.getItemVisibility(item);
+                if (!visibility.fullyVisible) {
+                    box = item.getBox(false, true);
+                    newPos = box[names.x];
+                    if (visibility.hiddenEnd) {
+                        newPos -= (me.layout.innerCt[names.getWidth]() - box[names.width]);
+                    }
                 }
+            }
+            if (newPos !== undefined) {
                 me.scrollTo(newPos, animate);
             }
         }

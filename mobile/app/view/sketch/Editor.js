@@ -7,7 +7,7 @@ Ext.define('Rondo.view.sketch.Editor', {
 	
 	uses: [
 		'Ext.Button',
-		'Ext.Msg',
+		'Ext.MessageBox',
 		'Ext.Toolbar',
 		'Ext.field.Text',
 		'Ext.field.Select',

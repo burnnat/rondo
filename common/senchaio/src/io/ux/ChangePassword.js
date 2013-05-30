@@ -29,24 +29,24 @@ if (!Ext.getVersion('extjs')) {
                 xtype: "formpanel",
                 items: [
                 {
-                    html: Ext.io.ux.Strings.LABEL_CHANGE_PASSWORD
+                    html: "Change Password"
                 },
                 {
                     xtype: 'fieldset',
                     items: [
                     {
                         xtype: 'passwordfield',
-                        placeHolder: Ext.io.ux.Strings.LABEL_OLD_PASSWORD,
+                        placeHolder: "Old Password",
                         name: 'oldpassword'
                     },
                     {
                         xtype: 'passwordfield',
-                        placeHolder: Ext.io.ux.Strings.LABEL_NEW_PASSWORD,
+                        placeHolder: "New Password",
                         name: 'newpassword'
                     },
                     {
                       xtype: "button",
-                      text: Ext.io.ux.Strings.CHANGE_PASSWORD_BUTTON,
+                      text: "Change Password",
                       width: "80%",
                       action: "sioChangePassword",
                       ui: 'action',

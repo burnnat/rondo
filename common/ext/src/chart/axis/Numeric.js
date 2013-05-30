@@ -1,3 +1,23 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * @class Ext.chart.axis.Numeric
  *
@@ -25,7 +45,6 @@
  *         store: store,
  *         axes: [{
  *             type: 'Numeric',
- *             grid: true,
  *             position: 'left',
  *             fields: ['data1', 'data2', 'data3', 'data4', 'data5'],
  *             title: 'Sample Values',
@@ -117,22 +136,22 @@ Ext.define('Ext.chart.axis.Numeric', {
     /**
      * @cfg {Number} minimum
      * The minimum value drawn by the axis. If not set explicitly, the axis
-     * minimum will be calculated automatically.
+     * minimum will be calculated automatically. It is ignored for stacked charts.
      */
     minimum: NaN,
 
     /**
      * @cfg {Number} maximum
      * The maximum value drawn by the axis. If not set explicitly, the axis
-     * maximum will be calculated automatically.
+     * maximum will be calculated automatically. It is ignored for stacked charts.
      */
     maximum: NaN,
 
     /**
      * @cfg {Boolean} constrain
-     * If true, the values of the chart will be rendered only if they belong between minimum and maximum
-     * If false, all values of the chart will be rendered, regardless of whether they belong between minimum and maximum or not
-     * Default's true if maximum and minimum is specified.
+     * If true, the values of the chart will be rendered only if they belong between minimum and maximum.
+     * If false, all values of the chart will be rendered, regardless of whether they belong between minimum and maximum or not.
+     * Default's true if maximum and minimum is specified. It is ignored for stacked charts.
      */
     constrain: true,
 
@@ -165,13 +184,6 @@ Ext.define('Ext.chart.axis.Numeric', {
             useAcum = false,
             value, data = [],
             addRecord;
-
-        for (i = 0, l = series.length; i < l; i++) {
-            if (series[i].type === 'bar' && series[i].stacked) {
-                // Do not constrain stacked bar chart.
-                return;
-            }
-        }
 
         for (d = 0, dLen = items.length; d < dLen; d++) {
             addRecord = true;
@@ -223,8 +235,21 @@ Ext.define('Ext.chart.axis.Numeric', {
     // applying constraint
     processView: function() {
         var me = this,
-            constrain = me.constrain;
-        if (constrain) {
+            chart = me.chart,
+            series = chart.series.items,
+            i, l;
+
+        for (i = 0, l = series.length; i < l; i++) {
+            if (series[i].stacked) {
+                // Do not constrain stacked charts (bar, column, or area).
+                delete me.minimum;
+                delete me.maximum;
+                me.constrain = false;
+                break;
+            }
+        }
+
+        if (me.constrain) {
             me.doConstrain();
         }
     },

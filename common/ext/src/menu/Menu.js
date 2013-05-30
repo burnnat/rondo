@@ -1,12 +1,32 @@
+/*
+This file is part of Ext JS 4.2
+
+Copyright (c) 2011-2013 Sencha Inc
+
+Contact:  http://www.sencha.com/contact
+
+GNU General Public License Usage
+This file may be used under the terms of the GNU General Public License version 3.0 as
+published by the Free Software Foundation and appearing in the file LICENSE included in the
+packaging of this file.
+
+Please review the following information to ensure the GNU General Public License version 3.0
+requirements will be met: http://www.gnu.org/copyleft/gpl.html.
+
+If you are unsure which license is appropriate for your use, please contact the sales department
+at http://www.sencha.com/contact.
+
+Build date: 2013-05-16 14:36:50 (f9be68accb407158ba2b1be2c226a6ce1f649314)
+*/
 /**
  * A menu object. This is the container to which you may add {@link Ext.menu.Item menu items}.
  *
  * Menus may contain either {@link Ext.menu.Item menu items}, or general {@link Ext.Component Components}.
  * Menus may also contain {@link Ext.panel.AbstractPanel#dockedItems docked items} because it extends {@link Ext.panel.Panel}.
  *
- * To make a contained general {@link Ext.Component Component} line up with other {@link Ext.menu.Item menu items},
- * specify `{@link Ext.menu.Item#plain plain}: true`. This reserves a space for an icon, and indents the Component
- * in line with the other menu items.
+ * By default, non {@link Ext.menu.Item menu items} are indented so that they line up with the text of menu items. clearing
+ * the icon column. To make a contained general {@link Ext.Component Component} left aligned configure the child
+ * Component with `indent: false.
  *
  * By default, Menus are absolutely positioned, floating Components. By configuring a Menu with `{@link #floating}: false`,
  * a Menu may be used as a child of a {@link Ext.container.Container Container}.
@@ -138,12 +158,20 @@ Ext.define('Ext.menu.Menu', {
      * The minimum width of the Menu. The default minWidth only applies when the {@link #floating} config is true.
      */
     minWidth: undefined,
-    
+
     defaultMinWidth: 120,
 
     /**
      * @cfg {Boolean} [plain=false]
      * True to remove the incised line down the left side of the menu and to not indent general Component items.
+     * 
+     * {@link Ext.menu.Item MenuItem}s will *always* have space at their start for an icon. With the `plain` setting,
+     * non {@link Ext.menu.Item MenuItem} child components will not be indented to line up.
+     * 
+     * Basically, `plain:true` makes a Menu behave more like a regular {@link Ext.layout.container.HBox HBox layout}
+     * {@link Ext.panel.Panel Panel} which just has the same background as a Menu.
+     * 
+     * See also the {@link #showSeparator} config.
      */
 
     initComponent: function() {
@@ -218,11 +246,10 @@ Ext.define('Ext.menu.Menu', {
             if (me.minWidth === undefined) {
                 me.minWidth = me.defaultMinWidth;
             }
-        }
-
-        // hidden defaults to false if floating is configured as false
-        else {
+        } else {
+            // hidden defaults to false if floating is configured as false
             me.hidden = !!me.initialConfig.hidden;
+            me.constrain = false;
         }
 
         me.callParent(arguments);
@@ -382,16 +409,19 @@ Ext.define('Ext.menu.Menu', {
         }
 
         if (!cmp.isMenuItem && !cmp.dock) {
-            cls = [prefix + 'menu-item', prefix + 'menu-item-cmp'];
+            cls = [prefix + 'menu-item-cmp'];
 
-            if (!me.plain && (cmp.indent === true || cmp.iconCls === 'no-icon')) {
+            // The "plain" setting means that the menu does not look so much like a menu. It's more like a grey Panel.
+            // So it has no vertical separator.
+            // Plain menus also will not indent non MenuItem components; there is nothing to indent them to the right of.
+            if (!me.plain && (cmp.indent !== false || cmp.iconCls === 'no-icon')) {
                 cls.push(prefix + 'menu-item-indent');
             }
 
             if (cmp.rendered) {
                 cmp.el.addCls(cls);
             } else {
-                cmp.cls = (cmp.cls ? cmp.cls : '') + ' ' + cls.join(' ');
+                cmp.cls = (cmp.cls || '') + ' ' + cls.join(' ');
             }
         }
         return cmp;
@@ -522,27 +552,29 @@ Ext.define('Ext.menu.Menu', {
         return me;
     },
 
-    show: function() {
+    beforeShow: function() {
         var me = this,
-            parentEl, viewHeight,
-            maxWas = me.maxHeight;
+            viewHeight;
 
-        // we need to get scope parent for height constraint
-        if (!me.rendered){
-            me.doAutoRender();
-        }
-
-        // constrain the height to the curren viewable area
+        // Constrain the height to the containing element's viewable area
         if (me.floating) {
-            //if our reset css is scoped, there will be a x-reset wrapper on this menu which we need to skip
-            parentEl = Ext.fly(me.el.getScopeParent());
-            viewHeight = parentEl.getViewSize().height;
-            me.maxHeight  =  Math.min(maxWas || viewHeight, viewHeight);
+            me.savedMaxHeight = me.maxHeight;
+            viewHeight = me.container.getViewSize().height;
+            me.maxHeight = Math.min(me.maxHeight || viewHeight, viewHeight);
         }
 
         me.callParent(arguments);
-        me.maxHeight = maxWas;
-        return me;
+    },
+
+    afterShow: function() {
+        var me = this;
+
+        me.callParent(arguments);
+
+        // Restore configured maxHeight
+        if (me.floating) {
+            me.maxHeight = me.savedMaxHeight;
+        }
     },
 
     // @private
@@ -555,7 +587,7 @@ Ext.define('Ext.menu.Menu', {
             returnY = y,
             height = me.getHeight(),
             viewportHeight = Ext.Element.getViewportHeight().height,
-            parentEl = Ext.fly(me.el.getScopeParent()),
+            parentEl = me.el.parent(),
             viewHeight = parentEl.getViewSize().height,
             normalY = y - parentEl.getScroll().top; // factor in scrollTop of parent
 
