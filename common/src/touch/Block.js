@@ -150,6 +150,22 @@ Ext.define('Tutti.touch.Block', {
 		);
 	},
 	
+	//<debug>
+	showMap: function() {
+		if (this.mapEl.parent() == null) {
+			Ext.getBody().appendChild(this.mapEl);
+			this.mapEl.setStyle({ position: 'absolute' });
+		}
+		
+		this.mapEl.setVisible(true);
+		this.mapEl.setXY(this.canvasEl.getXY());
+	},
+	
+	hideMap: function() {
+		this.mapEl.setVisible(false);
+	},
+	//</debug>
+	
 	toRGB: function(key) {
 		return 'rgb('
 			+ ((key & (255 << 16)) >> 16) + ','

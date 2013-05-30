@@ -14,9 +14,24 @@ Ext.define('Tutti.touch.ScoreBlock', {
 	repaint: function() {
 		this.items.clear();
 		
-		this.formatter.drawBlock(
-			this.getIndex(),
-			this.getContext()
+		this.items.addAll(
+			this.getFormatter().drawBlock(
+				this.getIndex(),
+				this.getContext()
+			)
 		);
+		
+		this.callParent();
+	},
+	
+	onTap: function(tickable) {
+		this.getFormatter().setSelected(
+			tickable && !tickable.getSelected()
+				? tickable
+				: null
+		);
+		
+		this.clear();
+		this.repaint();
 	}
 });

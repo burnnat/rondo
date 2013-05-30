@@ -2,8 +2,7 @@
  * 
  */
 Ext.define('Tutti.touch.input.Key', {
-	
-	precedence: 0,
+	extend: 'Tutti.touch.BlockItem',
 	
 	config: {
 		type: 'white',
@@ -14,10 +13,6 @@ Ext.define('Tutti.touch.input.Key', {
 		pitch: null,
 		last: false,
 		active: false
-	},
-	
-	constructor: function(config) {
-		this.initConfig(config);
 	},
 	
 	getId: function() {
@@ -72,22 +67,5 @@ Ext.define('Tutti.touch.input.Key', {
 	
 	updateType: function(type) {
 		this.precedence = type == 'black' ? 1 : 0;
-	},
-	
-	getPageBox: function() {
-		var xy = this.parent.getXY();
-		var bounds = this.getBoundingBox()
-		
-		var x = xy[0] + bounds.x;
-		var y = xy[1] + bounds.y;
-		
-		return {
-			left: x,
-			right: x + bounds.w,
-			top: y,
-			bottom: y + bounds.h,
-			width: bounds.w,
-			height: bounds.h
-		};
 	}
 });

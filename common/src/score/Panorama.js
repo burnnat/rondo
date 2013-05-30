@@ -5,7 +5,8 @@ Ext.define('Tutti.score.Panorama', {
 	extend: 'Vex.Flow.DocumentFormatter',
 	requires: [
 		'Vex.Flow.Beam',
-		'Tutti.touch.ScoreBlock'
+		'Tutti.touch.ScoreBlock',
+		'Tutti.touch.Tickable'
 	],
 	
 	standardHeight: null,
@@ -116,6 +117,11 @@ Ext.define('Tutti.score.Panorama', {
 		return this.getBlock(measure)[0];
 	},
 	
+	setSelected: function(tickable) {
+		this.selectedVoice = tickable && tickable.getVoiceId();
+		this.selectedTickable = tickable && tickable.getTickIndex();
+	},
+	
 	draw: function(parent, options) {
 		this.parent = parent;
 		var items = this.parent.getItems();
@@ -134,31 +140,113 @@ Ext.define('Tutti.score.Panorama', {
 				});
 			}
 			
-			this.drawBlock(index);
+			this.parent.getAt(index).repaint();
 			
 			index++;
 		}
 	},
 	
 	drawBlock: function(index, context) {
-		var block = this.parent.getAt(index);
-		
-		if (!context) {
-			context = block.getContext();
-		}
+		var objects = [];
+		this.mappedObjects = objects;
 		
 		this.callParent([index, context]);
+		
+		delete this.mappedObjects;
+		return objects;
 	},
 	
-	drawPart: function() {
-		var items = this.callParent(arguments);
+	drawPart: function(part, vfStaves, context) {
+		var staves = part.getStaves();
+		var voices = part.getVoices();
 		
+		Ext.Array.forEach(
+			vfStaves,
+			function(stave) {
+				stave.setContext(context).draw();
+			}
+		);
 		
+		var allVfObjects = [];
+		var vfVoices = [];
+		var lyricVoices = [];
+		
+		var selectedVoice = this.selectedVoice;
+		var selectedTickable = this.selectedTickable;
+		
+		Ext.Array.forEach(
+			voices,
+			function(voice) {
+				var voiceId = voice.id;
+				
+				var result = this.getVexflowVoice(voice, vfStaves);
+				Array.prototype.push.apply(allVfObjects, result[1]);
+				
+				var vfVoice = result[0];
+				
+				Ext.Array.forEach(
+					vfVoice.tickables,
+					function(tickable, index) {
+						this.mappedObjects.push(
+							new Tutti.touch.Tickable({
+								voiceId: voiceId,
+								tickIndex: index,
+								delegate: tickable,
+								staff: vfVoice.stave,
+								selected: voiceId === selectedVoice && index === selectedTickable
+							})
+						);
+					},
+					this
+				);
+				
+				vfVoices.push(vfVoice);
+				
+				var lyricVoice = result[2];
+				
+				if (lyricVoice) {
+					Ext.Array.forEach(
+						vfVoice.tickables,
+						function(tickable) {
+							tickable.setStave(vfVoice.stave);
+						}
+					);
+					
+					vfVoices.push(lyricVoice);
+					lyricVoices.push(lyricVoice);
+				}
+			},
+			this
+		);
+		
+		if (vfVoices.length == 0) {
+			// If the part has no voices, just return.
+			return;
+		}
+		
+		new Vex.Flow.Formatter()
+			.joinVoices(vfVoices)
+			.format(
+				vfVoices,
+				vfStaves[0].getNoteEndX() - vfStaves[0].getNoteStartX() - 10
+			);
+		
+		Ext.Array.forEach(
+			lyricVoices,
+			function(vfVoice) {
+				vfVoice.draw(context, vfVoice.stave);
+			}
+		);
+		
+		Ext.Array.forEach(
+			allVfObjects,
+			function(obj) {
+				obj.setContext(context).draw();
+			}
+		);
 	},
 	
 	getVexflowVoice: function() {
-		console.log(arguments);
-		
 		var result = this.callParent(arguments);
 		
 		// Auto-beam each measure.

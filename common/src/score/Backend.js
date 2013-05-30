@@ -37,12 +37,15 @@ Ext.define('Tutti.score.Backend', {
 			parts: []
 		};
 		
+		var getPartVoices = this.getPartVoices;
+		
 		this.parts.each(function(part) {
 			var partData = {
 				options: { key: key },
 				time: time,
 				staves: [],
-				voices: []
+				voices: [],
+				getVoices: getPartVoices
 			};
 			
 			var staves = part.staves();
@@ -64,7 +67,8 @@ Ext.define('Tutti.score.Backend', {
 							time
 						),
 						stave: staffIndex,
-						notes: voice.getNoteData()
+						notes: voice.getNoteData(),
+						id: voice.getId()
 					});
 				}
 			});
@@ -73,6 +77,27 @@ Ext.define('Tutti.score.Backend', {
 		});
 		
 		return new Vex.Flow.Measure(measureData);
+	},
+	
+	/**
+	 * @private
+	 */
+	getPartVoices: function() {
+		// this == part object
+		var options = this.options;
+		
+		return Ext.Array.map(
+			this.voices,
+			function(voice) {
+				// inject custom ID property to created voice
+				return Ext.apply(
+					new Vex.Flow.Measure.Voice(
+						Vex.Merge(Vex.Merge({}, options), voice)
+					),
+					{ id: voice.id }
+				);
+			}
+		);
 	},
 	
 	getStaveConnectors: function() {
