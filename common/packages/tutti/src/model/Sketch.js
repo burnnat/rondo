@@ -14,7 +14,7 @@ Ext.define('Tutti.model.Sketch', {
 		identifier: 'uuid',
 		
 		proxy: {
-			type: Tutti.offline ? 'localstorage' : 'syncstorage',
+			type: 'syncstorage',
 			id: 'sketches',
 			owner: 'user',
 			access: 'private'

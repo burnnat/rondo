@@ -16,7 +16,7 @@ open source applications that are distributed under a license other than GPL.
 
 * Open Source License Exception for Applications
 
-  http://www.sencha.com/products/floss-exception.php
+  
 
 * Open Source License Exception for Development
 

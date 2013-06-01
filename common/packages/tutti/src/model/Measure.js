@@ -13,7 +13,7 @@ Ext.define('Tutti.model.Measure', {
 		identifier: 'uuid',
 		
 		proxy: {
-			type: Tutti.offline ? 'localstorage' : 'syncstorage',
+			type: 'syncstorage',
 			id: 'measures',
 			owner: 'user',
 			access: 'private'

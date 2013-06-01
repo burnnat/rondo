@@ -1,5 +1,5 @@
 {
-	"name": "tutti",
+	"name": "tutti-touch",
 	"type": "code",
 	"creator": "anonymous",
 	"summary": "Short summary",
@@ -9,6 +9,6 @@
 	"format": "1",
 	"local": true,
 	"requires": [
-		"sencha-io"
+		"tutti"
 	]
 }

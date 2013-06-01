@@ -8,7 +8,7 @@ Ext.define('Tutti.model.Staff', {
 		identifier: 'uuid',
 		
 		proxy: {
-			type: Tutti.offline ? 'localstorage' : 'syncstorage',
+			type: 'syncstorage',
 			id: 'staves',
 			owner: 'user',
 			access: 'private'

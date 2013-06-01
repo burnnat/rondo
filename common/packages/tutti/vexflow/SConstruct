@@ -14,7 +14,7 @@ env = default_env.Clone()
 
 mkdir_with_cleanup("build", env)
 
-opt = dbg = default_env.Clone(tools = ['default', 'textfile']);
+opt = dbg = default_env.Clone();
 
 # Export construction environments to SConscripts
 Export("dbg opt")

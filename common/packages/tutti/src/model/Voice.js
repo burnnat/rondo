@@ -13,7 +13,7 @@ Ext.define('Tutti.model.Voice', {
 		identifier: 'uuid',
 		
 		proxy: {
-			type: Tutti.offline ? 'localstorage' : 'syncstorage',
+			type: 'syncstorage',
 			id: 'voices',
 			owner: 'user',
 			access: 'private'

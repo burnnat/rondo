@@ -13,7 +13,7 @@ Ext.define('Tutti.model.Part', {
 		identifier: 'uuid',
 		
 		proxy: {
-			type: Tutti.offline ? 'localstorage' : 'syncstorage',
+			type: 'syncstorage',
 			id: 'parts',
 			owner: 'user',
 			access: 'private'
