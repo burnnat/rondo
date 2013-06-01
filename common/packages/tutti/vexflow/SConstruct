@@ -6,7 +6,17 @@ VexFlow / TabDiv Build Script
 Copyright Mohit Muthanna Cheppudira 2010
 """
 
+import os.path
+
 from vexflow_scons import *
+
+AddOption(
+	'--vexdir',
+	'--vex-dir',
+	dest = 'vexdir',
+	default = '../../../../../vexflow',
+	help = 'VexFlow project directory'
+)
 
 env = default_env.Clone()
 
@@ -19,5 +29,19 @@ opt = dbg = default_env.Clone();
 # Export construction environments to SConscripts
 Export("dbg opt")
 
+vexdir = GetOption('vexdir')
+
+if not os.path.exists(vexdir):
+#	raise FileNotFoundError()
+	raise ValueError("Directory does not exist: " + vexdir)
+
+if not os.path.isdir(vexdir):
+#	raise NotADirectoryError()
+	raise ValueError("Path is not a directory: " + vexdir)
+
 # Build VexFlow
-SConscript("../../VexFlow/src/SConstruct", variant_dir="build", duplicate=0)
+SConscript(
+	os.path.join(vexdir, "src/SConstruct"),
+	variant_dir = "build",
+	duplicate = 0
+)

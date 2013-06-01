@@ -11,6 +11,10 @@ import os.path
 import re
 from SCons.Script import *
 
+DefaultEnvironment(
+	tools = ['textfile']
+)
+
 default_env = Environment(
 	tools = ['textfile'],
 	NAME_SOURCES = False,
