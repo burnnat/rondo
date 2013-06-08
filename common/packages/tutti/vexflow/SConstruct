@@ -32,11 +32,9 @@ Export("dbg opt")
 vexdir = GetOption('vexdir')
 
 if not os.path.exists(vexdir):
-#	raise FileNotFoundError()
 	raise ValueError("Directory does not exist: " + vexdir)
 
 if not os.path.isdir(vexdir):
-#	raise NotADirectoryError()
 	raise ValueError("Path is not a directory: " + vexdir)
 
 # Build VexFlow
