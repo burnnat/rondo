@@ -8,4 +8,86 @@
     <property name="framework.config.dir" value="${cmd.config.dir}"/>
 
     <import file="${framework.config.dir}/plugin.xml"/>
+
+	<target name="app-refresh" depends="init,app-refresh-impl,-after-refresh-app"/>
+
+	<target name="-after-refresh-app">
+		<if>
+			<isset property="jsb.file"/>
+			<then>
+				<local name="jsb.dir"/>
+				<dirname property="jsb.dir" file="${app.dir}/jsb.file"/>
+				
+				<local name="temp.file"/>
+				<tempfile property="temp.file" suffix=".json" destDir="${jsb.dir}"/>
+				
+				<x-sencha-command>
+					compile
+						meta
+							-filenames
+							-json
+							-out=${temp.file}
+				</x-sencha-command>
+				
+				<script language="javascript">
+				<![CDATA[
+					var input = new org.json.JSONArray(
+						org.apache.commons.io.FileUtils.readFileToString(
+							new java.io.File(
+								project.getProperty("temp.file")
+							)
+						)
+					);
+					
+					var appName = project.getProperty("app.name");
+					
+					var output = new org.json.JSONStringer()
+						.object()
+							.key("projectName")
+							.value(appName)
+							
+							.key("pkgs")
+							.array()
+								.object()
+									.key("name")
+									.value(appName)
+									
+									.key("fileIncludes")
+									.array();
+					
+					var file, path, name;
+					
+					for (var i = 0; i < input.length(); i++) {
+						file = input.getString(i);
+						path = org.apache.commons.io.FilenameUtils.getPath(file);
+						name = org.apache.commons.io.FilenameUtils.getName(file);
+						
+						output
+							.object()
+								.key("path")
+								.value(path)
+								
+								.key("text")
+								.value(name)
+							.endObject();
+					}
+					
+					output.endArray().endObject().endArray().endObject();
+					
+					file = new java.io.File(project.getProperty("jsb.file"));
+					
+					var echo = project.createTask("echo");
+					echo.setFile(file);
+					echo.setMessage(output.toString());
+					echo.perform();
+					
+					self.log("Wrote JSB file: " + file.getPath());
+				]]>
+				</script>
+				
+				<delete file="${temp.file}"/>
+			</then>
+		</if>
+	</target>
+	
 </project>
