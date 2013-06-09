@@ -25,19 +25,16 @@ Ext.define('Rondo.view.Sketches', {
 				docked: 'bottom',
 				items: [
 					{
-						iconCls: 'trash',
-						iconMask: true
+						iconCls: 'trash'
 					},
 					{
-						iconCls: 'refresh',
-						iconMask: true
+						iconCls: 'refresh'
 					},
 					{
 						xtype: 'spacer'
 					},
 					{
-						iconCls: 'add',
-						iconMask: true
+						iconCls: 'add'
 					}
 				]
 			}

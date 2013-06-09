@@ -71,7 +71,6 @@ Ext.define('Tutti.touch.input.NotePanel', {
 				durations.push({
 					itemId: val,
 					iconCls: icons[val],
-					iconMask: true,
 					pressed: val === active
 				});
 			}
