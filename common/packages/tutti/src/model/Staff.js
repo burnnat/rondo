@@ -21,4 +21,16 @@ Ext.define('Tutti.model.Staff', {
 			}
 		]
 	}
-});
+}
+//<debug>
+,function() {
+	if (Tutti.offline) {
+		this.prototype.initConfig({
+			proxy: {
+				type: 'localstorage'
+			}
+		});
+	}
+}
+//</debug>
+);

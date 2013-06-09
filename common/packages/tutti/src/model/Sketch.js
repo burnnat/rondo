@@ -38,4 +38,16 @@ Ext.define('Tutti.model.Sketch', {
 			}
 		]
 	}
-});
+}
+//<debug>
+,function() {
+	if (Tutti.offline) {
+		this.prototype.initConfig({
+			proxy: {
+				type: 'localstorage'
+			}
+		});
+	}
+}
+//</debug>
+);

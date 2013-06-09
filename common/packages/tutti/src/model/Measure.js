@@ -90,4 +90,16 @@ Ext.define('Tutti.model.Measure', {
 	getResolvedKey: function() {
 		return this.findPrecedingMeasure('key');
 	}
-});
+}
+//<debug>
+,function() {
+	if (Tutti.offline) {
+		this.prototype.initConfig({
+			proxy: {
+				type: 'localstorage'
+			}
+		});
+	}
+}
+//</debug>
+);

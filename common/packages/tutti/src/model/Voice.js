@@ -45,4 +45,16 @@ Ext.define('Tutti.model.Voice', {
 	getNoteData: function() {
 		return Ext.decode(this.get('notes'));
 	}
-});
+}
+//<debug>
+,function() {
+	if (Tutti.offline) {
+		this.prototype.initConfig({
+			proxy: {
+				type: 'localstorage'
+			}
+		});
+	}
+}
+//</debug>
+);

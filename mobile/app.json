@@ -43,7 +43,7 @@
 			"x-bootstrap": true
 		},
 		{
-			"path": "../vexflow/build/vexflow-min.js",
+			"path": "../common/packages/tutti/vexflow/build/vexflow-all.js",
 			"x-bootstrap": true
 		},
 		{
