@@ -1,6 +1,8 @@
 Rondo
 =====
 
+[![Build Status](https://travis-ci.org/burnnat/rondo.png)](https://travis-ci.org/burnnat/rondo)
+
 A webapp for notating musical sketches and accessing them across devices.
 
 License
