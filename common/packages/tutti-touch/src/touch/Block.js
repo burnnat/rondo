@@ -18,6 +18,20 @@ Ext.define('Tutti.touch.Block', {
 		blockWidth: null
 	},
 	
+	statics: {
+		getItemKey: function(item) {
+			if (Ext.isDefined(item.getId)) {
+				return item.getId();
+			}
+			
+			if (!Ext.isDefined(item.id)) {
+				item.id = Ext.id();
+			}
+			
+			return item.id;
+		}
+	},
+	
 	constructor: function() {
 		this.mapEl = Ext.get(document.createElement('canvas'));
 		this.callParent(arguments);
@@ -72,16 +86,9 @@ Ext.define('Tutti.touch.Block', {
 	
 	initItems: Ext.emptyFn,
 	
-	getItemKey: function(item) {
-		if (!Ext.isDefined(item.id)) {
-			item.id = Ext.id();
-		}
-		
-		return item.id;
-	},
-	
 	hash: function(item) {
-		var data = item.getId();
+		var data = Tutti.touch.Block.getItemKey(item);
+		
 		var isString = Ext.isString(data);
 		var length = isString
 			? data.length
@@ -119,8 +126,21 @@ Ext.define('Tutti.touch.Block', {
 		
 		this.items.each(
 			function(item) {
-				item.draw(context);
-				this.mapItem(item, mapper);
+				if (item.setContext) {
+					item.setContext(context);
+				}
+				
+				try {
+					item.draw(context);
+					
+					if (item.selectable) {
+						this.mapItem(item, mapper);
+					}
+				}
+				catch (e) {
+					console.log(e);
+				}
+				
 			},
 			this
 		);

@@ -7,7 +7,7 @@ Ext.define('Rondo.view.sketch.Viewer', {
 	
 	requires: [
 		'Tutti.touch.input.Keyboard',
-		'Tutti.touch.Score'
+		'Tutti.touch.score.Score'
 	],
 	
 	config: {

@@ -162,6 +162,9 @@ Ext.define('Tutti.touch.input.Keyboard', {
 	
 	onTap: function(key) {
 		this.setActiveKey(null);
-		this.fireEvent('keytap', key);
+		
+		if (key) {
+			this.fireEvent('keytap', key);
+		}
 	}
 });

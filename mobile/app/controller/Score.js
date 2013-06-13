@@ -46,31 +46,26 @@ Ext.define('Rondo.controller.Score', {
 		var voices = measure.voices();
 		var voice = voices.first();
 		
-		var note = {
-			keys: [
-				Tutti.Theory.getNoteFromPitch(this.tappedPitch, measure.getResolvedKey())
-			],
-			duration: duration
-		};
-		
-		if (voice) {
-			var notes = voice.getNoteData();
-			notes.push(note);
-			voice.set('notes', notes);
-		}
-		else {
-			voice = new Tutti.model.Voice({
-				notes: [note]
-			});
+		if (!voice) {
+			voice = new Tutti.model.Voice();
 			
 			voice.setStaff(
 				sketch.parts().first().staves().first()
 			);
 			
 			voices.add(voice);
+			voices.sync();
 		}
 		
-		voices.sync();
-		score.refreshBlock(0);
+		var notes = voice.notes();
+		notes.add(
+			new Tutti.model.Note({
+				pitches: [
+					Tutti.Theory.getNoteFromPitch(this.tappedPitch, measure.getResolvedKey())
+				],
+				duration: duration
+			})
+		);
+		notes.sync();
 	}
 });

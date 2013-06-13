@@ -4,6 +4,8 @@
 Ext.define('Tutti.touch.input.Key', {
 	extend: 'Tutti.touch.BlockItem',
 	
+	selectable: true,
+	
 	config: {
 		type: 'white',
 		x: null,

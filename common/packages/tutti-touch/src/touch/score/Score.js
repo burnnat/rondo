@@ -1,15 +1,13 @@
 /**
  * 
  */
-Ext.define('Tutti.touch.Score', {
+Ext.define('Tutti.touch.score.Score', {
 	extend: 'Ext.Container',
 	xtype: 'score',
 	
 	uses: [
 		'Ext.ux.plugin.Pinchemu',
-		'Vex.Flow.Document',
-		'Tutti.score.Backend',
-		'Tutti.score.Panorama'
+		'Tutti.touch.score.Measure'
 	],
 	
 	config: {
@@ -26,30 +24,38 @@ Ext.define('Tutti.touch.Score', {
 	},
 	
 	initialize: function() {
-		this.on({
-			scope: this,
-			painted: 'onInitialPaint',
-			single: true
-		});
-		
-		this.score = new Vex.Flow.Document(this.getSketch());
-		this.formatter = new Tutti.score.Panorama(this.score);
-		
 		this.element.on({
 			pinchstart: this.onPinchStart,
 			pinch: this.onPinch,
 			scope: this
 		});
-	},
-	
-	refreshBlock: function(index) {
-		delete this.score.measures[index];
-		this.getAt(index).clear();
-		this.formatter.drawBlock(index);
-	},
-	
-	onInitialPaint: function() {
-		this.formatter.draw(this);
+		
+		var sketch = this.getSketch();
+		var parts = sketch.parts();
+		var blockHeight = 100;
+		
+		sketch.measures().each(
+			function(measure, index, length) {
+				var first = index === 0;
+				
+				var measure = new Tutti.touch.score.Measure({
+					measure: measure,
+					parts: parts,
+					blockHeight: blockHeight,
+					blockWidth: 400 + (first ? 100 : 0),
+					systemStart: first,
+					systemEnd: index === length - 1
+				});
+				
+				if (first) {
+					blockHeight = measure.getSystemHeight();
+					measure.setBlockHeight(blockHeight);
+				}
+				
+				this.add(measure);
+			},
+			this
+		);
 	},
 	
 	onPinchStart: function() {

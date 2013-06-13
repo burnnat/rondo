@@ -4,10 +4,16 @@
 Ext.define('Tutti.touch.BlockItem', {
 	
 	precedence: 0,
+	selectable: false,
 	
 	constructor: function(config) {
 		this.initConfig(config);
 	},
+	
+	/**
+	 * @param {RenderingContext} context
+	 */
+	draw: Ext.emptyFn,
 	
 	getPageBox: function() {
 		var xy = this.parent.getXY();

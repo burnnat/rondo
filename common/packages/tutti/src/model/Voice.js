@@ -9,6 +9,10 @@ Ext.define('Tutti.model.Voice', {
 		'Tutti.model.Staff'
 	],
 	
+	uses: [
+		'Tutti.model.Note'
+	],
+	
 	config: {
 		identifier: 'uuid',
 		
@@ -42,8 +46,41 @@ Ext.define('Tutti.model.Voice', {
 		]
 	},
 	
-	getNoteData: function() {
-		return Ext.decode(this.get('notes'));
+	/**
+	 * @return {Ext.data.Store}
+	 */
+	notes: function() {
+		var store = this.noteStore;
+		
+		if (!store) {
+			store = this.noteStore = new Ext.data.Store({
+				model: 'Tutti.model.Note',
+				data: Ext.decode(this.get('notes')),
+				listeners: {
+					addrecords: this.updateNotes,
+					removerecords: this.updateNotes,
+					updaterecord: this.updateNotes,
+					scope: this
+				}
+			});
+		}
+		
+		return store;
+	},
+	
+	/**
+	 * @private
+	 */
+	updateNotes: function() {
+		var range = [];
+		
+		this.notes().each(
+			function(note) {
+				range.push(note.getData());
+			}
+		);
+		
+		this.set('notes', range);
 	}
 }
 //<debug>
