@@ -3,5 +3,4 @@ install:
  - unzip -q bundle/sencha-cmd-3.1.2.342.zip -d bundle/sencha-cmd
  - git clone git://github.com/burnnat/vexflow.git bundle/vexflow
 script:
- - export WORKSPACE=$(pwd)
- - ant -Dcmd.dir=$WORKSPACE/bundle/sencha-cmd -Dvexflow.dir=$WORKSPACE/bundle/vexflow
+ - ant -Dcmd.dir=$TRAVIS_BUILD_DIR/bundle/sencha-cmd -Dvexflow.dir=$TRAVIS_BUILD_DIR/bundle/vexflow
