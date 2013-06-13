@@ -1,0 +1,5 @@
+language: java
+install:
+ - unzip bundle/sencha-cmd-3.1.2.342.zip -d bundle/sencha-cmd
+ - git clone git://github.com/burnnat/vexflow.git bundle/vexflow
+script: ant -Dcmd.dir=./bundle/sencha-cmd -Dvexflow.dir=./bundle/vexflow

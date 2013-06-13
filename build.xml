@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project name="Rondo" default="build-all">
+	
+	<target name="build-all">
+		<ant dir="common/packages/tutti" target="vexflow" />
+		
+		<ant dir="mobile" target="build" />
+		<!-- <ant dir="desktop" target="build" /> -->
+	</target>
+	
+</project>
