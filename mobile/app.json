@@ -72,10 +72,6 @@
 		{
 			"path": "resources/css/app.css",
 			"update": "delta"
-		},
-		{
-			"path": "resources/css/score.css",
-			"update": "delta"
 		}
 	],
 
