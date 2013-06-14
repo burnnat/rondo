@@ -1,6 +1,9 @@
 language: java
 install:
- - unzip -q bundle/sencha-cmd-3.1.2.342.zip -d bundle/sencha-cmd
+ - curl -o bundle/sencha-cmd.zip http://cdn.sencha.com/cmd/3.1.2.342/SenchaCmd-3.1.2.342-linux.run.zip
+ - unzip bundle/sencha-cmd.zip
+ - chmod +x bundle/SenchaCmd-3.1.2.342-linux.run
+ - bundle/SenchaCmd-3.1.2.342-linux.run --mode unattended --prefix bundle
  - git clone git://github.com/burnnat/vexflow.git bundle/vexflow
 script:
- - ant -Dcmd.dir=$TRAVIS_BUILD_DIR/bundle/sencha-cmd -Dvexflow.dir=$TRAVIS_BUILD_DIR/bundle/vexflow
+ - ant -Dcmd.dir=$TRAVIS_BUILD_DIR/bundle/Sencha/Cmd/3.1.2.342 -Dvexflow.dir=$TRAVIS_BUILD_DIR/bundle/vexflow
