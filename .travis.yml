@@ -1,5 +1,6 @@
 language: java
 install:
+ - mkdir bundle
  - curl -o bundle/sencha-cmd.zip http://cdn.sencha.com/cmd/3.1.2.342/SenchaCmd-3.1.2.342-linux.run.zip
  - unzip bundle/sencha-cmd.zip
  - chmod +x bundle/SenchaCmd-3.1.2.342-linux.run
