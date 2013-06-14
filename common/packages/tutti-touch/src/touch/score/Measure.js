@@ -10,7 +10,7 @@ Ext.define('Tutti.touch.score.Measure', {
 	],
 	
 	config: {
-		measure: null,
+		data: null,
 		parts: null,
 		
 		systemStart: false,
@@ -28,7 +28,7 @@ Ext.define('Tutti.touch.score.Measure', {
 			parts.add(
 				partData.getId(),
 				new Tutti.touch.score.PartLink({
-					block: me,
+					measure: me,
 					data: partData,
 					showSignatures: first,
 					showEndBarline: last
@@ -59,22 +59,19 @@ Ext.define('Tutti.touch.score.Measure', {
 		
 		var voices = this.voices = new Ext.util.MixedCollection();
 		
-		var measure = this.getMeasure();
+		var measureData = this.getData();
 		
-		var timeObject = Ext.apply(
+		this.timeObject = Ext.apply(
 			{ resolution: Vex.Flow.RESOLUTION },
-			measure.getTimeObject()
+			measureData.getResolvedTime()
 		);
 		
-		measure.voices().each(function(voiceData) {
-			voices.add(
-				voiceData.getId(),
-				new Tutti.touch.score.VoiceLink({
-					block: me,
-					data: voiceData,
-					time: timeObject
-				})
-			);
+		measureData.voices().each(this.addVoice, this);
+		
+		measureData.voices().on({
+			addrecords: this.addVoices,
+			removerecords: this.removeVoices,
+			scope: this
 		});
 		
 		this.refresh({
@@ -112,6 +109,36 @@ Ext.define('Tutti.touch.score.Measure', {
 		});
 		
 		return staff;
+	},
+	
+	addVoice: function(voiceData, index) {
+		this.voices.insert(
+			index,
+			voiceData.getId(),
+			new Tutti.touch.score.VoiceLink({
+				measure: this,
+				data: voiceData,
+				time: this.timeObject
+			})
+		);
+	},
+	
+	removeVoice: function(voiceData) {
+		this.voices.removeAtKey(voiceData.getId());
+	},
+	
+	addVoices: function(store, records) {
+		Ext.Array.forEach(
+			records,
+			function(voice) {
+				this.addVoice(voice, store.indexOf(voice));
+			},
+			this
+		);
+	},
+	
+	removeVoices: function(store, records) {
+		Ext.Array.forEach(records, this.removeVoice, this);
 	},
 	
 	refresh: function(stages) {
@@ -152,7 +179,7 @@ Ext.define('Tutti.touch.score.Measure', {
 					}
 				);
 				
-				var staff = this.parts.first().getFirstStaff();
+				var staff = this.parts.first().getFirstStaff().primitive;
 				
 				new Vex.Flow.Formatter()
 					.joinVoices(
@@ -173,11 +200,11 @@ Ext.define('Tutti.touch.score.Measure', {
 	},
 	
 	getKeySignature: function() {
-		return this.getMeasure().get('key');
+		return this.getData().get('key');
 	},
 	
 	getTimeSignature: function() {
-		return this.getMeasure().get('time');
+		return this.getData().get('time');
 	},
 	
 	getSystemHeight: function() {

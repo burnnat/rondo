@@ -41,7 +41,7 @@ Ext.define('Tutti.touch.score.Score', {
 				var first = index === 0;
 				
 				var measure = new Tutti.touch.score.Measure({
-					measure: measure,
+					data: measure,
 					parts: parts,
 					blockHeight: blockHeight,
 					blockWidth: 400 + (first ? 100 : 0),

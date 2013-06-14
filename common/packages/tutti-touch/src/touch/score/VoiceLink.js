@@ -4,7 +4,7 @@
 Ext.define('Tutti.touch.score.VoiceLink', {
 	
 	config: {
-		block: null,
+		measure: null,
 		data: null,
 		time: null
 	},
@@ -21,7 +21,7 @@ Ext.define('Tutti.touch.score.VoiceLink', {
 		
 		voice.setMode(Vex.Flow.Voice.Mode.SOFT);
 		voice.setStave(
-			this.getBlock().getStaff(data.getStaff())
+			this.getMeasure().getStaff(data.getStaff()).primitive
 		);
 		
 		var store = data.notes();
@@ -44,7 +44,7 @@ Ext.define('Tutti.touch.score.VoiceLink', {
 		
 		primitive.setStave(this.voice.stave);
 		
-		this.getBlock().items.add(primitive);
+		this.getMeasure().items.add(primitive);
 		this.voice.addTickable(primitive);
 	},
 	
@@ -53,7 +53,7 @@ Ext.define('Tutti.touch.score.VoiceLink', {
 	},
 	
 	updateLayout: function() {
-		var items = this.getBlock().items;
+		var items = this.getMeasure().items;
 		
 		if (this.beams) {
 			items.removeAll(this.beams);
@@ -73,7 +73,7 @@ Ext.define('Tutti.touch.score.VoiceLink', {
 			this
 		);
 		
-		this.getBlock().refresh({
+		this.getMeasure().refresh({
 			format: true,
 			repaint: true
 		});

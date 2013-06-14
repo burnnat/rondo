@@ -12,6 +12,9 @@ Ext.define('Tutti.touch.score.Staff', {
 	selectable: true,
 	
 	config: {
+		part: null,
+		data: null,
+		
 		width: 0,
 		
 		clef: null,

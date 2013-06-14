@@ -49,32 +49,40 @@ Ext.define('Rondo.controller.Score', {
 	},
 	
 	onCreate: function(duration) {
-		var score = this.getScore();
-		var sketch = score.getSketch();
-		var measure = sketch.measures().first();
-		var voices = measure.voices();
-		var voice = voices.first();
+		var active = this.getScore().getActiveBlock();
 		
-		if (!voice) {
-			voice = new Tutti.model.Voice();
+		if (active) {
+			var measure = active.getPart().getMeasure().getData();
+			var staff = active.getData();
 			
-			voice.setStaff(
-				sketch.parts().first().staves().first()
+			var voices = measure.voices();
+			var voice;
+			
+			var match = voices.findBy(function(voice) {
+				return voice.getStaff().getId() === staff.getId();
+			});
+			
+			if (match < 0) {
+				voice = new Tutti.model.Voice();
+				voice.setStaff(staff);
+				
+				voices.add(voice);
+				voices.sync();
+			}
+			else {
+				voice = voices.getAt(match);
+			}
+			
+			var notes = voice.notes();
+			notes.add(
+				new Tutti.model.Note({
+					pitches: [
+						Tutti.Theory.getNoteFromPitch(this.tappedPitch, measure.getResolvedKey())
+					],
+					duration: duration
+				})
 			);
-			
-			voices.add(voice);
-			voices.sync();
+			notes.sync();
 		}
-		
-		var notes = voice.notes();
-		notes.add(
-			new Tutti.model.Note({
-				pitches: [
-					Tutti.Theory.getNoteFromPitch(this.tappedPitch, measure.getResolvedKey())
-				],
-				duration: duration
-			})
-		);
-		notes.sync();
 	}
 });

@@ -18,8 +18,9 @@ Ext.define('Tutti.touch.score.PartLink', {
 	},
 	
 	config: {
-		block: null,
+		measure: null,
 		data: null,
+		
 		showSignatures: false,
 		showEndBarline: false
 	},
@@ -35,6 +36,8 @@ Ext.define('Tutti.touch.score.PartLink', {
 		var data = this.getData()
 		var store = data.staves();
 		
+		store.each(this.addStaff, this);
+		
 		store.on({
 			addrecords: this.addStaves,
 			removerecords: this.removeStaves,
@@ -42,14 +45,12 @@ Ext.define('Tutti.touch.score.PartLink', {
 			scope: this
 		});
 		
-		store.each(this.addStaff, this);
-		
 		// Add barlines through parts
 		this.barline = this.addConnector('single');
 		
 		// Add closing barline if needed
 		if (this.getShowEndBarline()) {
-			this.getBlock().items.add(
+			this.getMeasure().items.add(
 				new Tutti.touch.score.Barline({
 					topStaff: staves.first(),
 					bottomStaff: staves.last()
@@ -68,9 +69,10 @@ Ext.define('Tutti.touch.score.PartLink', {
 	},
 	
 	addStaff: function(staffData, index) {
-		var block = this.getBlock();
+		var block = this.getMeasure();
 		
 		var staffConfig = {
+			part: this,
 			data: staffData,
 			width: block.getBlockWidth()
 		};
@@ -87,16 +89,12 @@ Ext.define('Tutti.touch.score.PartLink', {
 		
 		block.items.add(staff);
 		
-		this.staves.insert(
-			index,
-			staffData.getId(),
-			staff
-		);
+		this.staves.insert(index, staffData.getId(), staff);
 	},
 	
 	removeStaff: function(staff) {
 		var primitive = this.staves.removeAtKey(staff.getId());
-		this.getBlock().items.remove(primitive);
+		this.getMeasure().items.remove(primitive);
 	},
 	
 	getStaff: function(staffData) {
@@ -114,7 +112,7 @@ Ext.define('Tutti.touch.score.PartLink', {
 	addConnector: function(type) {
 		var staves = this.staves;
 		
-		return this.getBlock()
+		return this.getMeasure()
 			.items.add(
 				new Vex.Flow.StaveConnector(
 					staves.first().primitive,
@@ -165,7 +163,7 @@ Ext.define('Tutti.touch.score.PartLink', {
 		if (Ext.Array.contains(fieldNames, 'clef')) {
 			staff.setClef(record.get('clef'));
 			
-			this.getBlock().refresh({
+			this.getMeasure().refresh({
 				repaint: true
 			});
 		}
@@ -177,6 +175,7 @@ Ext.define('Tutti.touch.score.PartLink', {
 		}
 		
 		if (Ext.Array.contains(fieldNames, 'group')) {
+			var block = this.getMeasure();
 			var type = record.get('group');
 			
 			if (type) {
@@ -188,11 +187,11 @@ Ext.define('Tutti.touch.score.PartLink', {
 				}
 			}
 			else if (this.group) {
-				this.getBlock().items.remove(this.group);
+				block.items.remove(this.group);
 				this.group = null;
 			}
 			
-			this.getBlock().refresh({
+			block.refresh({
 				layout: true,
 				repaint: true
 			});
