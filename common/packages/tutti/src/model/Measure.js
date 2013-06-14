@@ -96,7 +96,8 @@ Ext.define('Tutti.model.Measure', {
 	if (Tutti.offline) {
 		this.prototype.initConfig({
 			proxy: {
-				type: 'localstorage'
+				type: 'localstorage',
+				id: 'offline-measures'
 			}
 		});
 	}

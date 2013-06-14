@@ -88,7 +88,8 @@ Ext.define('Tutti.model.Voice', {
 	if (Tutti.offline) {
 		this.prototype.initConfig({
 			proxy: {
-				type: 'localstorage'
+				type: 'localstorage',
+				id: 'offline-voices'
 			}
 		});
 	}

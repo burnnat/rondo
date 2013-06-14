@@ -27,7 +27,8 @@ Ext.define('Tutti.model.Staff', {
 	if (Tutti.offline) {
 		this.prototype.initConfig({
 			proxy: {
-				type: 'localstorage'
+				type: 'localstorage',
+				id: 'offline-staves'
 			}
 		});
 	}
