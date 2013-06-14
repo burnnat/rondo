@@ -16,12 +16,15 @@ Ext.define('Tutti.touch.score.VoiceLink', {
 		this.initConfig(config);
 		
 		var data = this.getData();
+		var staff = data.getStaff();
+		
+		this.clef = staff.get('clef');
 		
 		var voice = this.voice = new Vex.Flow.Voice(this.getTime());
 		
 		voice.setMode(Vex.Flow.Voice.Mode.SOFT);
 		voice.setStave(
-			this.getMeasure().getStaff(data.getStaff()).primitive
+			this.getMeasure().getStaff(staff).primitive
 		);
 		
 		var store = data.notes();
@@ -39,7 +42,8 @@ Ext.define('Tutti.touch.score.VoiceLink', {
 	addNote: function(note) {
 		var primitive = new Vex.Flow.StaveNote({
 			keys: note.getPitchData(),
-			duration: note.get('duration')
+			duration: note.get('duration'),
+			clef: this.clef
 		});
 		
 		primitive.setStave(this.voice.stave);
