@@ -3,7 +3,10 @@
  */
 Ext.define('Tutti.touch.score.PartLink', {
 	
-	uses: ['Tutti.touch.score.Barline'],
+	uses: [
+		'Tutti.touch.score.Barline',
+		'Tutti.touch.score.Staff'
+	],
 	
 	statics: {
 		groupTypes: {
@@ -64,26 +67,30 @@ Ext.define('Tutti.touch.score.PartLink', {
 		}
 	},
 	
-	addStaff: function(staff, index) {
+	addStaff: function(staffData, index) {
 		var block = this.getBlock();
-		var primitive = new Vex.Flow.Stave(0, 0, block.getBlockWidth());
 		
-		// Hide default barlines - we'll draw our own.
-		primitive.modifiers[0].barline = Vex.Flow.Barline.type.NONE;
-		primitive.modifiers[1].barline = Vex.Flow.Barline.type.NONE;
+		var staffConfig = {
+			data: staffData,
+			width: block.getBlockWidth()
+		};
 		
 		if (this.getShowSignatures()) {
-			primitive.addClef(staff.get('clef'));
-			primitive.addKeySignature(block.getKeySignature());
-			primitive.addTimeSignature(block.getTimeSignature());
+			Ext.apply(staffConfig, {
+				clef: staffData.get('clef'),
+				key: block.getKeySignature(),
+				time: block.getTimeSignature()
+			});
 		}
 		
-		block.items.add(primitive);
+		var staff = new Tutti.touch.score.Staff(staffConfig)
+		
+		block.items.add(staff);
 		
 		this.staves.insert(
 			index,
-			staff.getId(),
-			primitive
+			staffData.getId(),
+			staff
 		);
 	},
 	
@@ -110,40 +117,20 @@ Ext.define('Tutti.touch.score.PartLink', {
 		return this.getBlock()
 			.items.add(
 				new Vex.Flow.StaveConnector(
-					staves.first(),
-					staves.last()
+					staves.first().primitive,
+					staves.last().primitive
 				)
 				.setType(this.statics().groupTypes[type])
 			);
 	},
 	
-	updateLayout: function(x, y) {
+	updateLayout: function(x, y, width) {
 		this.staves.each(
 			function(staff) {
-				// Consider wrapping this into a staff.setX() method?
-				staff.x = x;
-				staff.glyph_start_x = x + 5;
+				staff.setLayout(x, y);
+				staff.setWidth(width);
 				
-				var noteStart = staff.glyph_start_x;
-				
-				Ext.Array.forEach(
-					staff.glyphs,
-					function(glyph) {
-						noteStart += glyph.getMetrics().width;
-					}
-				);
-				
-				staff.setNoteStartX(noteStart);
-				
-				staff.setY(y);
-				
-				var options = staff.options;
-				
-				y += options.spacing_between_lines_px * (
-					options.space_above_staff_ln +
-					options.num_lines - 1 + // subtract one to get number of spaces
-					options.space_below_staff_ln
-				);
+				y += staff.getTotalHeight();
 			}
 		);
 		
@@ -176,38 +163,7 @@ Ext.define('Tutti.touch.score.PartLink', {
 		var staff = this.getStaff(record);
 		
 		if (Ext.Array.contains(fieldNames, 'clef')) {
-			var clefType = Vex.Flow.Clef.types[record.get('clef')];
-			var clef;
-			
-			Ext.Array.each(
-				staff.modifiers,
-				function(modifier) {
-					if (modifier instanceof Vex.Flow.Clef) {
-						clef = modifier;
-						return false;
-					}
-				}
-			);
-			
-			if (!clef) {
-				return;
-			}
-			
-			Ext.Array.each(
-				staff.glyphs,
-				function(glyph) {
-					if (glyph.code == clef.clef.code && glyph.point == clef.clef.point) {
-						glyph.code = clefType.code;
-						glyph.point = clefType.point;
-						glyph.reset();
-						clef.placeGlyphOnLine(glyph, staff, clefType.line);
-						
-						return false;
-					}
-				}
-			);
-			
-			clef.clef = clefType;
+			staff.setClef(record.get('clef'));
 			
 			this.getBlock().refresh({
 				repaint: true
@@ -225,7 +181,7 @@ Ext.define('Tutti.touch.score.PartLink', {
 			
 			if (type) {
 				if (this.group) {
-					this.group.setType(this.groupTypes[type]);
+					this.group.setType(this.statics().groupTypes[type]);
 				}
 				else {
 					this.group = this.addConnector(type);

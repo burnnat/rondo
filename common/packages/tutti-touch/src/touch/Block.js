@@ -25,7 +25,7 @@ Ext.define('Tutti.touch.Block', {
 			}
 			
 			if (!Ext.isDefined(item.id)) {
-				item.id = Ext.id();
+				item.id = Ext.id() + '-' + Math.floor(Math.random() * 10000);
 			}
 			
 			return item.id;
@@ -72,8 +72,13 @@ Ext.define('Tutti.touch.Block', {
 		});
 		
 		this.initItems(items);
+		this.sortItems();
 		
-		items.sort('precedence', 'ASC');
+		items.on({
+			add: this.sortItems,
+			remove: this.sortItems,
+			scope: this
+		});
 		
 		//<debug>
 		this.mapToggle = new Tutti.touch.BlockItem();
@@ -83,14 +88,18 @@ Ext.define('Tutti.touch.Block', {
 			precedence: 5000,
 			
 			draw: function(context) {
+				this.saveContext(context, ['font', 'fillStyle']);
+				
 				context.beginPath()
 				context.arc(14.5, this.parent.getHeight() - 14, 10, 0, 2 * Math.PI, false);
 				context.fillStyle = 'blue';
 				context.fill();
 				
 				context.font = '18px Pictos';
-				context.fillStyle = 'gold';
+				context.fillStyle = '#CDF';
 				context.fillText('i', 5.5, this.parent.getHeight() - 9);
+				
+				this.restoreContext(context);
 			},
 			
 			getBoundingBox: function() {
@@ -127,6 +136,14 @@ Ext.define('Tutti.touch.Block', {
 	},
 	
 	initItems: Ext.emptyFn,
+	
+	sortItems: function() {
+		this.items.sort({
+			property: 'precedence',
+			direction: 'ASC',
+			transform: Ext.data.SortTypes.asInt
+		});
+	},
 	
 	hash: function(item) {
 		var data = Tutti.touch.Block.getItemKey(item);

@@ -15,6 +15,15 @@ Ext.define('Tutti.touch.BlockItem', {
 	 */
 	draw: Ext.emptyFn,
 	
+	saveContext: function(context, props) {
+		this.savedContext = Ext.copyTo({}, context, props);
+	},
+	
+	restoreContext: function(context) {
+		Ext.apply(context, this.savedContext);
+		delete this.savedContext;
+	},
+	
 	getPageBox: function() {
 		var xy = this.parent.getXY();
 		var bounds = this.getBoundingBox()

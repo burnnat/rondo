@@ -14,7 +14,9 @@ Ext.define('Tutti.touch.score.Measure', {
 		parts: null,
 		
 		systemStart: false,
-		systemEnd: false
+		systemEnd: false,
+		
+		activeItem: null
 	},
 	
 	initItems: function(items) {
@@ -48,8 +50,8 @@ Ext.define('Tutti.touch.score.Measure', {
 			// Add initial connector at system start
 			items.add(
 				new Vex.Flow.StaveConnector(
-					parts.first().getFirstStaff(),
-					parts.last().getLastStaff()
+					parts.first().getFirstStaff().primitive,
+					parts.last().getLastStaff().primitive
 				)
 				.setType(
 					Vex.Flow.StaveConnector.type.SINGLE
@@ -110,10 +112,11 @@ Ext.define('Tutti.touch.score.Measure', {
 			
 			var x = grouped != null ? 15 : 0;
 			var y = 0;
+			var width = this.getBlockWidth() - x;
 			
 			parts.each(
 				function(part) {
-					y = part.updateLayout(x, y);
+					y = part.updateLayout(x, y, width);
 				}
 			);
 			
@@ -165,5 +168,27 @@ Ext.define('Tutti.touch.score.Measure', {
 	
 	getSystemHeight: function() {
 		return this.height;
+	},
+	
+	onTap: function(item) {
+		this.setActiveItem(
+			this.getActiveItem() === item || !item || !item.setActive
+				? null
+				: item
+		);
+	},
+	
+	updateActiveItem: function(active, old) {
+		if (old) {
+			old.setActive(false);
+		}
+		
+		if (active) {
+			active.setActive(true);
+		}
+		
+		this.refresh({
+			repaint: true
+		});
 	}
 });

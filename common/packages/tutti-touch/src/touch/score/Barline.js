@@ -13,10 +13,10 @@ Ext.define('Tutti.touch.score.Barline', {
 		var top = this.getTopStaff();
 		var bottom = this.getBottomStaff();
 		
-		var x = top.getX() + top.width - 1;
-		var y = top.getYForLine(0);
+		var x = top.getX() + top.getWidth() - 1;
+		var y = top.getStaffTop();
 		
-		var height = bottom.getYForLine(bottom.getNumLines() - 1) - y + 1;
+		var height = bottom.getStaffBottom() - y + 1;
 		
 		context.fillRect(x - 5, y, 1, height);
 		context.fillRect(x - 2, y, 3, height);
