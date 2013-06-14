@@ -57,18 +57,14 @@ Ext.define('Tutti.touch.Block', {
 			});
 		}
 		
-		var canvas = this.canvasEl;
-		canvas.on(this.initListeners());
+		this.canvasEl.on(this.initListeners());
 		
 		var items = this.items = new Ext.util.MixedCollection(false, this.hash);
 		
 		items.on({
-			add: function(index, item) {
-				item.parent = canvas;
-			},
-			remove: function(item) {
-				item.parent = null;
-			}
+			add: this.onItemAdd,
+			remove: this.onItemRemove,
+			scope: this
 		});
 		
 		this.initItems(items);
@@ -114,6 +110,14 @@ Ext.define('Tutti.touch.Block', {
 		
 		items.add(this.mapToggle);
 		//</debug>
+	},
+	
+	onItemAdd: function(index, item) {
+		item.parent = this.canvasEl;
+	},
+	
+	onItemRemove: function(item) {
+		item.parent = null;
 	},
 	
 	initListeners: function() {
@@ -197,7 +201,7 @@ Ext.define('Tutti.touch.Block', {
 					}
 				}
 				catch (e) {
-					console.log(e);
+					Ext.Logger.error(e.stack);
 				}
 			},
 			this

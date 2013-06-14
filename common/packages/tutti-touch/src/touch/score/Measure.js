@@ -14,9 +14,7 @@ Ext.define('Tutti.touch.score.Measure', {
 		parts: null,
 		
 		systemStart: false,
-		systemEnd: false,
-		
-		activeItem: null
+		systemEnd: false
 	},
 	
 	initItems: function(items) {
@@ -83,6 +81,22 @@ Ext.define('Tutti.touch.score.Measure', {
 			layout: true,
 			format: true
 		});
+	},
+	
+	onItemAdd: function(index, item) {
+		this.callParent(arguments);
+		
+		if (item.isObservable) {
+			item.on('refresh', this.refresh, this);
+		}
+	},
+	
+	onItemRemove: function(item) {
+		this.callParent(arguments);
+		
+		if (item.isObservable) {
+			item.un('refresh', this.refresh, this);
+		}
 	},
 	
 	getStaff: function(staffData) {
@@ -171,24 +185,6 @@ Ext.define('Tutti.touch.score.Measure', {
 	},
 	
 	onTap: function(item) {
-		this.setActiveItem(
-			this.getActiveItem() === item || !item || !item.setActive
-				? null
-				: item
-		);
-	},
-	
-	updateActiveItem: function(active, old) {
-		if (old) {
-			old.setActive(false);
-		}
-		
-		if (active) {
-			active.setActive(true);
-		}
-		
-		this.refresh({
-			repaint: true
-		});
+		this.fireEvent('blocktap', item);
 	}
 });

@@ -20,7 +20,9 @@ Ext.define('Tutti.touch.score.Score', {
 		layout: {
 			type: 'hbox',
 			align: 'center'
-		}
+		},
+		
+		activeBlock: null
 	},
 	
 	initialize: function() {
@@ -78,5 +80,23 @@ Ext.define('Tutti.touch.score.Score', {
 				component.setHeight(height);
 			}
 		);
+	},
+	
+	applyActiveBlock: function(item) {
+		if (!item || !item.setActive) {
+			return null;
+		}
+		
+		return item;
+	},
+	
+	updateActiveBlock: function(active, old) {
+		if (old) {
+			old.setActive(false);
+		}
+		
+		if (active) {
+			active.setActive(true);
+		}
 	}
 });

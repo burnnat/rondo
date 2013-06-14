@@ -13,12 +13,17 @@ Ext.define('Rondo.controller.Score', {
 		control: {
 			keyboard: {
 				keytap: 'onKeyTap'
+			},
+			
+			measure: {
+				blocktap: 'onMeasureTap'
 			}
 		},
 		
 		refs: {
 			keyboard: 'keyboard',
-			score: 'score'
+			score: 'score',
+			measure: 'score block'
 		}
 	},
 	
@@ -37,6 +42,10 @@ Ext.define('Rondo.controller.Score', {
 		}
 		
 		this.notePanel.showBy(key, 'bc-tc?');
+	},
+	
+	onMeasureTap: function(item) {
+		this.getScore().setActiveBlock(item);
 	},
 	
 	onCreate: function(duration) {

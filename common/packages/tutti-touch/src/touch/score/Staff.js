@@ -4,6 +4,10 @@
 Ext.define('Tutti.touch.score.Staff', {
 	extend: 'Tutti.touch.BlockItem',
 	
+	mixins: {
+		observable: 'Ext.mixin.Observable'
+	},
+	
 	precedence: 5,
 	selectable: true,
 	
@@ -215,5 +219,9 @@ Ext.define('Tutti.touch.score.Staff', {
 				repaint: true
 			});
 		}
+	},
+	
+	updateActive: function() {
+		this.fireEvent('refresh', { repaint: true });
 	}
 });
