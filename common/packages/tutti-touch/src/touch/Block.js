@@ -34,6 +34,17 @@ Ext.define('Tutti.touch.Block', {
 	
 	constructor: function() {
 		this.mapEl = Ext.get(document.createElement('canvas'));
+		
+		//<debug>
+		this.mapEl.on(
+			'tap',
+			function() {
+				this.hideMap();
+			},
+			this
+		);
+		//</debug>
+		
 		this.callParent(arguments);
 	},
 	
@@ -63,6 +74,37 @@ Ext.define('Tutti.touch.Block', {
 		this.initItems(items);
 		
 		items.sort('precedence', 'ASC');
+		
+		//<debug>
+		this.mapToggle = new Tutti.touch.BlockItem();
+		
+		Ext.apply(this.mapToggle, {
+			selectable: true,
+			precedence: 5000,
+			
+			draw: function(context) {
+				context.beginPath()
+				context.arc(14.5, this.parent.getHeight() - 14, 10, 0, 2 * Math.PI, false);
+				context.fillStyle = 'blue';
+				context.fill();
+				
+				context.font = '18px Pictos';
+				context.fillStyle = 'gold';
+				context.fillText('i', 5.5, this.parent.getHeight() - 9);
+			},
+			
+			getBoundingBox: function() {
+				return {
+					x: 4,
+					y: this.parent.getHeight() - 24,
+					w: 21,
+					h: 21
+				};
+			}
+		});
+		
+		items.add(this.mapToggle);
+		//</debug>
 	},
 	
 	initListeners: function() {
@@ -140,7 +182,6 @@ Ext.define('Tutti.touch.Block', {
 				catch (e) {
 					console.log(e);
 				}
-				
 			},
 			this
 		);
@@ -173,7 +214,11 @@ Ext.define('Tutti.touch.Block', {
 	//<debug>
 	showMap: function() {
 		if (this.mapEl.parent() == null) {
-			Ext.getBody().appendChild(this.mapEl);
+			var parent = this.canvasEl.parent();
+			
+			parent.setStyle('position', 'relative');
+			parent.appendChild(this.mapEl);
+			
 			this.mapEl.setStyle({ position: 'absolute' });
 		}
 		
@@ -251,6 +296,16 @@ Ext.define('Tutti.touch.Block', {
 			+ (data[1] << 8)
 			+ data[2]
 		);
+		
+		//<debug>
+		if (item === this.mapToggle) {
+			if (event.type === 'mouseup') {
+				this.showMap();
+			}
+			
+			return;
+		}
+		//</debug>
 		
 		callback.call(this, item);
 	},
