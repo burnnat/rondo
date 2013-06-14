@@ -211,7 +211,8 @@ Ext.define('Tutti.touch.score.Measure', {
 		return this.height;
 	},
 	
-	onTap: function(item) {
+	onTap: function(item, event) {
 		this.fireEvent('blocktap', item);
+		event.stopEvent();
 	}
 });

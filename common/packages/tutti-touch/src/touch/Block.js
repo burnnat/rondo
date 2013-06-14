@@ -328,7 +328,7 @@ Ext.define('Tutti.touch.Block', {
 		}
 		//</debug>
 		
-		callback.call(this, item);
+		callback.call(this, item, event);
 	},
 	
 	onTouchStart: Ext.emptyFn,

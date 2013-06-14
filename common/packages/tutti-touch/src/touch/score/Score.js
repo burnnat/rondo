@@ -27,6 +27,7 @@ Ext.define('Tutti.touch.score.Score', {
 	
 	initialize: function() {
 		this.element.on({
+			tap: this.onTap,
 			pinchstart: this.onPinchStart,
 			pinch: this.onPinch,
 			scope: this
@@ -58,6 +59,10 @@ Ext.define('Tutti.touch.score.Score', {
 			},
 			this
 		);
+	},
+	
+	onTap: function() {
+		this.fireEvent('tap');
 	},
 	
 	onPinchStart: function() {
