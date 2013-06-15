@@ -1,15 +1,25 @@
 language: node_js
 node_js:
- - "0.10"
+- "0.10"
 before_install:
- - mkdir bundle
- - curl -o bundle/sencha-cmd.run.zip http://cdn.sencha.com/cmd/3.1.2.342/SenchaCmd-3.1.2.342-linux-x64.run.zip
- - unzip -p bundle/sencha-cmd.run.zip > bundle/sencha-cmd.run
- - chmod +x bundle/sencha-cmd.run
- - bundle/sencha-cmd.run --mode unattended --prefix bundle
- - git clone git://github.com/burnnat/vexflow.git bundle/vexflow
+- mkdir bundle
+- curl -o bundle/sencha-cmd.run.zip http://cdn.sencha.com/cmd/3.1.2.342/SenchaCmd-3.1.2.342-linux-x64.run.zip
+- unzip -p bundle/sencha-cmd.run.zip > bundle/sencha-cmd.run
+- chmod +x bundle/sencha-cmd.run
+- bundle/sencha-cmd.run --mode unattended --prefix bundle
+- git clone git://github.com/burnnat/vexflow.git bundle/vexflow
 before_script:
- - npm install -g grunt-cli
+- npm install -g grunt-cli
 script:
- - ant -Dcmd.dir=$TRAVIS_BUILD_DIR/bundle/Sencha/Cmd/3.1.2.342 -Dvexflow.dir=$TRAVIS_BUILD_DIR/bundle/vexflow
- - grunt test
+- ant -Dcmd.dir=$TRAVIS_BUILD_DIR/bundle/Sencha/Cmd/3.1.2.342 -Dvexflow.dir=$TRAVIS_BUILD_DIR/bundle/vexflow
+- grunt test
+env:
+  global:
+  - secure: |-
+      m1X9g9pMtu+ZmN8q17RNErGyjkvGFTz8F/NCFd0Qzknn2EL8t9Vr6Zc5IQmK
+      OyXPu33yLeUc9jphaqneZfUy34IGPgkUXG2xO1LX1lfbWe14PsPnCG9709Jo
+      BKGzrsozTvinP2Vhxf1cKXPugaMWHZxah6U1n5zqslqV6Gyvfa4=
+  - secure: |-
+      Z1ohHBHcdg/KQj4FTBHc4iCi0giZOfRjykcQ1xK5wJEfAX/OJf8tuGEQdCSo
+      5mfcudSox80u/ZkyfWShfJdqtvhqBe5a0OxgBg+D99XduyvRpLBEQH6cGF5Q
+      asr3A/7r064YKbQkAg2fTbXarvDqvOhVmryaT1yYkfcDXtK2uBE=
