@@ -35,8 +35,15 @@
 			<target name="-after-build"/>
 	-->
 
+	<target name="-after-init">
+		<script language="javascript">
+			project.setProperty("app.build.dir", project.getProperty("workspace.build.dir"));
+		</script>
+	</target>
+
 	<target name="-after-page">
-		<move file="${test.file}" todir="${app.build.dir}/${args.environment}" />
+		<property name="build.basedir" location="${basedir}" />
+		<move file="${build.basedir}/${test.file}" todir="${app.build.dir}/${args.environment}" />
 	</target>
 
 </project>

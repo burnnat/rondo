@@ -4,7 +4,9 @@
 	<target name="build-all">
 		<ant dir="common/packages/tutti" target="vexflow" />
 		
-		<ant dir="mobile" target="build" />
+		<ant dir="mobile" target="build">
+			<property name="build.basedir" location="${basedir}" />
+		</ant>
 		<!-- <ant dir="desktop" target="build" /> -->
 	</target>
 	
