@@ -1,3 +1,8 @@
+var tests = require('./test/middleware.js');
+var glob = require('glob');
+var path = require('path');
+var escape = require('escape-regexp');
+
 module.exports = function(grunt) {
 	var browsers = [
 //		{
@@ -12,12 +17,29 @@ module.exports = function(grunt) {
 		}
 	];
 	
+	var base = '.';
+	var port = 8888;
+	
+	tests.init(base);
+	
+	var testlets = glob.sync('*.html', { cwd: tests.testbase });
+	
 	grunt.initConfig({
 		connect: {
 			server: {
 				options: {
-					base: "",
-					port: 8888
+					base: base,
+					port: port,
+					middleware: function(connect, options) {
+						var middleware = testlets.map(function(filepath) {
+							return tests.jasmine(filepath.replace(/\.html$/, ''));
+						});
+						
+						middleware.push(connect.static(options.base));
+						middleware.push(connect.directory(options.base));
+						
+						return middleware;
+					}
 				}
 			}
 		},
@@ -25,7 +47,19 @@ module.exports = function(grunt) {
 		'saucelabs-jasmine': {
 			all: {
 				options: {
-					urls: ["http://127.0.0.1:8888/test/jasmine/MobileSpec.html"],
+					urls: testlets.map(function(filepath) {
+						return 'http://127.0.0.1:' + port + '/'
+							+ path.relative(
+								base,
+								path.join(
+									tests.testbase,
+									filepath
+								)
+							).replace(
+								new RegExp(escape(path.sep), 'g'),
+								'/'
+							);
+					}),
 					tunnelTimeout: 5,
 					build: process.env.TRAVIS_JOB_ID,
 					concurrency: 3,
@@ -44,7 +78,7 @@ module.exports = function(grunt) {
 	
 	// Loading dependencies
 	for (var key in grunt.file.readJSON("package.json").devDependencies) {
-		if (key !== "grunt" && key.indexOf("grunt") === 0) {
+		if (key !== "grunt" && key !== "grunt-cli" && key.indexOf("grunt") === 0) {
 			grunt.loadNpmTasks(key);
 		}
 	}
