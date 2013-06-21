@@ -1,7 +1,7 @@
 Rondo
 =====
 
-[![Build Status](https://travis-ci.org/burnnat/rondo.png)](https://travis-ci.org/burnnat/rondo)
+[![Build Status](https://travis-ci.org/burnnat/rondo.png)](https://travis-ci.org/burnnat/rondo) [![Test Status](https://saucelabs.com/buildstatus/rondo)](https://saucelabs.com/u/rondo)
 
 A webapp for notating musical sketches and accessing them across devices.
 
