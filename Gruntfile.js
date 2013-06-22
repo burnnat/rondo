@@ -98,6 +98,8 @@ module.exports = function(grunt) {
 	grunt.loadTasks('test/tasks');
 	
 	grunt.registerTask("dev", ["connect", "watch"]);
+	
+	grunt.registerTask("jasmine", ["connect", "saucelabs-jasmine:mobile"]);
 	grunt.registerTask("selenium", ["connect", "saucelabs-selenium:mobile"]);
 	
 	grunt.registerTask("test", [
