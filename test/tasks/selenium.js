@@ -6,6 +6,20 @@ module.exports = function(grunt) {
 	
 	var run = function(driverConfig, options, callback) {
 		
+		var logError = function(message, error) {
+			var message = message + ': ' + error.message;
+			
+			if (error.data) {
+				var data = JSON.parse(error.data);
+				
+				if (data.value && data.value.message) {
+					message = message + ' [ ' + data.value.message + ' ]';
+				}
+			}
+			
+			grunt.log.error(message);
+		};
+		
 		var queue = grunt.util.async.queue(
 			function(browserConfig, browserCallback) {
 				var browser = webdriver.remote(driverConfig);
@@ -20,7 +34,7 @@ module.exports = function(grunt) {
 				
 				var scriptCallback = function(err) {
 					if (err) {
-						grunt.log.error('Script ended with error: ' + err);
+						logError('Script ended with error', err);
 					}
 					else {
 						grunt.log.ok('Script run completed.');
@@ -32,22 +46,22 @@ module.exports = function(grunt) {
 				var chain = browser.chain({ onError: scriptCallback });
 				
 				chain.init(
-						browserConfig,
-						function(err) {
+					browserConfig,
+					function(err) {
+						if (err) {
 							if (err) {
-								if (err) {
-									grunt.log.error('Unable to initialize browser: ' + err);
-								}
-								
-								browserCallback(err);
+								logError('Unable to initialize browser', err);
 							}
-							else {
-								chain.get(options.url);
-								options.script(chain);
-								chain.quit(scriptCallback);
-							}
+							
+							browserCallback(err);
 						}
-					);
+						else {
+							chain.get(options.url);
+							options.script(chain);
+							chain.quit(scriptCallback);
+						}
+					}
+				);
 			},
 			options.concurrency
 		);
@@ -150,7 +164,7 @@ module.exports = function(grunt) {
 						function(err) {
 							tunnel.stop(function() {
 								grunt.log.writeln('Tunnel connection closed.');
-								done(err);
+								done(!err);
 							});
 						}
 					);
@@ -179,7 +193,7 @@ module.exports = function(grunt) {
 						grunt.log.writeln('Local WebDriver terminated.');
 					}
 					
-					done(scriptErr);
+					done(!scriptErr);
 				});
 				
 				run(
