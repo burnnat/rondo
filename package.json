@@ -20,7 +20,8 @@
 		"mustache": "~0.7.2",
 		"escape-regexp": "~0.0.1",
 		
-		"sauce-tunnel": "~1.0.1"
+		"sauce-tunnel": "~1.0.1",
+		"wd": "~0.0.32"
 	},
 	
 	"scripts": {
