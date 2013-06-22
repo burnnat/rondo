@@ -4,27 +4,40 @@ var path = require('path');
 var escape = require('escape-regexp');
 
 module.exports = function(grunt) {
-	var browsers = [
-//		{
-//			browserName: 'android',
-//			platform: 'Linux',
-//			version: '4',
-//			deviceType: 'tablet'
-//		},
-		{
-			browserName: 'chrome',
-			platform: 'Windows 7'
-		}
-	];
-	
+	var _ = grunt.util._;
 	var base = '.';
-	var port = 8888;
+	var port = 8080;
 	
 	tests.init(base);
 	
 	var testlets = glob.sync('*.html', { cwd: tests.testbase });
 	
+	var mobileOptions = {
+		browsers: [
+//			{
+//				browserName: 'android',
+//				platform: 'Linux',
+//				version: '4',
+//				deviceType: 'tablet'
+//			},
+			{
+				browserName: 'chrome',
+				platform: 'Windows 7'
+			}
+		],
+		tunnelTimeout: 5,
+		build: process.env.TRAVIS_JOB_ID,
+		concurrency: 3,
+		tags: [
+			"master",
+			"mobile"
+		]
+	};
+	
 	grunt.initConfig({
+		
+		port: port,
+		
 		connect: {
 			server: {
 				options: {
@@ -45,31 +58,30 @@ module.exports = function(grunt) {
 		},
 		
 		'saucelabs-jasmine': {
-			all: {
-				options: {
-					urls: testlets.map(function(filepath) {
-						return 'http://127.0.0.1:' + port + '/'
-							+ path.relative(
-								base,
-								path.join(
-									tests.testbase,
-									filepath
-								)
-							).replace(
-								new RegExp(escape(path.sep), 'g'),
-								'/'
-							);
-					}),
-					tunnelTimeout: 5,
-					build: process.env.TRAVIS_JOB_ID,
-					concurrency: 3,
-					browsers: browsers,
-					testname: "mobile unit tests",
-					tags: [
-						"master",
-						"mobile"
-					]
-				}
+			mobile: {
+				options: _.merge(
+					{
+						urls: ['http://127.0.0.1:<%= port %>/test/jasmine/mobile.html'],
+						testname: "mobile unit tests",
+						tags: ["unit"]
+					},
+					mobileOptions
+				)
+			}
+		},
+		
+		'saucelabs-selenium': {
+			mobile: {
+				options: _.merge(
+					{
+						url: 'http://127.0.0.1:<%= port %>/build/rondo-mobile/production/',
+						script: require('./test/selenium/mobile.js'),
+						local: grunt.option('local'),
+						testname: "mobile integration tests",
+						tags: ["itegration"]
+					},
+					mobileOptions
+				)
 			}
 		},
 		
@@ -83,6 +95,14 @@ module.exports = function(grunt) {
 		}
 	}
 	
+	grunt.loadTasks('test/tasks');
+	
 	grunt.registerTask("dev", ["connect", "watch"]);
-	grunt.registerTask("test", ["connect", "saucelabs-jasmine"]);
+	grunt.registerTask("selenium", ["connect", "saucelabs-selenium:mobile"]);
+	
+	grunt.registerTask("test", [
+		"connect",
+		"saucelabs-jasmine:mobile",
+		"saucelabs-selenium:mobile"
+	]);
 };

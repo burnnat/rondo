@@ -1,18 +1,14 @@
 var assert = require('assert');
 var xpath = require('./xpath.js');
 
-module.exports = function(browser, options, done) {
+module.exports = function(browser) {
 	var clickEl = function(err, el) {
 		browser.next('clickElement', el);
 	};
 	
 	var sketchTitle = 'Test Sketch';
 	
-	browser.chain({
-			onError: done
-		})
-		.init(options)
-		.get('http://127.0.0.1:8080/rondo/build/rondo-mobile/production/')
+	browser
 		.title(function(err, title) {
 			assert.ok(title, 'Rondo', 'Incorrect title');
 		})
@@ -23,6 +19,5 @@ module.exports = function(browser, options, done) {
 			browser.next('type', el, sketchTitle);
 		})
 		.elementByXPath(xpath.buttonText('Create'), clickEl)
-		.elementByXPath(xpath.listItem(sketchTitle), clickEl)
-		.quit(done);
+		.elementByXPath(xpath.listItem(sketchTitle), clickEl);
 }
