@@ -78,7 +78,7 @@ module.exports = function(grunt) {
 						script: require('./test/selenium/mobile.js'),
 						local: grunt.option('local'),
 						testname: "mobile integration tests",
-						tags: ["itegration"]
+						tags: ["integration"]
 					},
 					mobileOptions
 				)
