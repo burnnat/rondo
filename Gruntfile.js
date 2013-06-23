@@ -34,6 +34,13 @@ module.exports = function(grunt) {
 		]
 	};
 	
+	// Add tags for user-initiated and automated tests.
+	mobileOptions.tags.push(
+		process.env.SAUCE_USERNAME === "rondo"
+			? "automated"
+			: "user"
+	);
+	
 	grunt.initConfig({
 		
 		port: port,
