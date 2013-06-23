@@ -45,6 +45,11 @@ module.exports = function(grunt) {
 		
 		port: port,
 		
+		clean: {
+			build: ["build"],
+			logs: ["*.log", "*.log.*"]
+		},
+		
 		connect: {
 			server: {
 				options: {
