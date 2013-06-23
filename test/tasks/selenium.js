@@ -124,6 +124,7 @@ module.exports = function(grunt) {
 			
 			browserConfig.name = options.testname;
 			browserConfig.tags = options.tags;
+			browserConfig.build = options.build;
 			
 			var tunnelId = options['tunnel-identifier'];
 			
