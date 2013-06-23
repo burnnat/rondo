@@ -1,4 +1,5 @@
 var webdriver = require('wd');
+var SauceLabs = require('saucelabs');
 var SauceTunnel = require('sauce-tunnel');
 var spawn = require('child_process').spawn;
 
@@ -42,7 +43,7 @@ module.exports = function(grunt) {
 						grunt.log.ok('Script run completed.');
 					}
 					
-					browserCallback(err);
+					browserCallback(err, browser);
 				};
 				
 				var chain = browser.chain({
@@ -130,12 +131,18 @@ module.exports = function(grunt) {
 				browserConfig['tunnel-identifier'] = tunnelId;
 			}
 			
+			var afterBrowser = browserConfig.callback || options.callback;
+			
 			queue.push(
 				browserConfig,
-				function(err) {
+				function(err, browser) {
 					if (err) {
 						failures = failures || {};
 						failures[browserId] = err;
+					}
+					
+					if (afterBrowser) {
+						afterBrowser(err, browser);
 					}
 				}
 			);
@@ -204,6 +211,29 @@ module.exports = function(grunt) {
 					grunt.log.ok("Connected to Saucelabs.");
 					
 					options['tunnel-identifier'] = tunnel.identifier;
+					
+					var sauce = new SauceLabs({
+						username: options.username,
+						password: options.key
+					});
+					
+					// Update SauceLabs job status as browser run completes.
+					options.callback = function(err, browser) {
+						var job = browser.sessionID;
+						
+						sauce.updateJob(
+							job,
+							{ passed: !err },
+							function(err) {
+								if (err) {
+									grunt.log.error('Error updating SauceLabs status for job ' + job + ': ' + err);
+								}
+								else {
+									grunt.log.verbose.writeln('Updated SauceLabs status for job: ' + job);
+								}
+							}
+						);
+					};
 					
 					run(
 						{
