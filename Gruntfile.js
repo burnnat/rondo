@@ -83,7 +83,9 @@ module.exports = function(grunt) {
 					{
 						url: 'http://127.0.0.1:<%= port %>/build/rondo-mobile/production/',
 						script: require('./test/selenium/mobile.js'),
-						local: grunt.option('local'),
+						local: grunt.option('local') || grunt.option('human'),
+						slow: grunt.option('human'),
+						autoclose: !grunt.option('human'),
 						testname: "mobile integration tests",
 						tags: ["integration"]
 					},

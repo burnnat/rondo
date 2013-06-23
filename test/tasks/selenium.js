@@ -4,6 +4,8 @@ var spawn = require('child_process').spawn;
 
 module.exports = function(grunt) {
 	
+	var _ = grunt.util._;
+	
 	var run = function(driverConfig, options, callback) {
 		
 		var logError = function(message, error) {
@@ -43,7 +45,54 @@ module.exports = function(grunt) {
 					browserCallback(err);
 				};
 				
-				var chain = browser.chain({ onError: scriptCallback });
+				var chain = browser.chain({
+					onError: options.autoclose
+						? function(err) {
+							browser.quit(function() {
+								scriptCallback(err);
+							});
+						}
+						: scriptCallback
+				});
+				
+				_.each(
+					_.functions(chain),
+					function(name) {
+						var original = chain[name];
+						
+						chain[name] = function() {
+							var args = 
+								_.reduce(
+									arguments,
+									function(args, arg) {
+										if (_.isFunction(arg)) {
+											args.push(function() {
+												try {
+													arg.apply(this, arguments);
+													
+													if (options.slow) {
+														browser.next('pauseChain', 500);
+													}
+												}
+												catch(e) {
+													browser.next('haltChain');
+													browser._chainOnErrorCallback(e);
+												}
+											});
+										}
+										else {
+											args.push(arg);
+										}
+										
+										return args;
+									},
+									[]
+								);
+							
+							return original.apply(this, args);
+						};
+					}
+				);
 				
 				chain.init(
 					browserConfig,
@@ -57,8 +106,9 @@ module.exports = function(grunt) {
 						}
 						else {
 							chain.get(options.url);
-							options.script(chain);
-							chain.quit(scriptCallback);
+							options.script(browser, chain);
+							
+							chain[options.autoclose ? 'quit' : 'status'](scriptCallback);
 						}
 					}
 				);
@@ -111,7 +161,9 @@ module.exports = function(grunt) {
 				concurrency: 1,
 				tunnelTimeout: 120,
 				testname: "",
-				tags: []
+				tags: [],
+				autoclose: true,
+				slow: false
 			});
 			
 			if (!options.script) {
@@ -182,7 +234,7 @@ module.exports = function(grunt) {
 				);
 				
 				driver.stderr.on('data', function(data) {
-					grunt.log.verbose.write(data);
+					grunt.log.verbose.writeln(data);
 				});
 				
 				driver.on('close', function(code) {
