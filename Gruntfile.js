@@ -99,8 +99,28 @@ module.exports = function(grunt) {
 			}
 		},
 		
-		watch: {}
+		watch: {
+			jasmine: {
+				files: [
+					path.join(tests.specbase, '**/*.js')
+				],
+				options: {
+					event: ['added', 'deleted']
+				}
+			}
+		}
 	});
+	
+	grunt.event.on(
+		'watch',
+		function(action, filepath, target) {
+			tests.reload(
+				filepath.match(
+					new RegExp("^" + escape(tests.specbase) + "([^" + escape(path.sep) + "]+)")
+				)[1]
+			);
+		}
+	);
 	
 	// Loading dependencies
 	for (var key in grunt.file.readJSON("package.json").devDependencies) {

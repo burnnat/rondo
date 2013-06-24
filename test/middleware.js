@@ -5,28 +5,35 @@ var url = require('url');
 var path = require('path');
 
 var testpath = 'test/jasmine/';
+var specpath = 'spec/';
 
 module.exports = {
 	init: function(base) {
 		this.base = base;
 		this.testbase = path.normalize(path.join(base, testpath));
+		this.specbase = path.normalize(path.join(this.testbase, specpath));
+	},
+	
+	specs: {},
+	
+	reload: function(name) {
+		var specs = glob.sync(specpath + name + '/**/*.js', { cwd: this.testbase });
+		
+		this.specs[name] =  specs.map(function(filepath) {
+			return { path: filepath };
+		});
 	},
 	
 	jasmine: function(name) {
-		var base = this.base;
-		var testlet = path.join(this.testbase, name + '.html');
-		
-		var specs = glob.sync('spec/' + name + '/**/*.js', { cwd: this.testbase });
-		var data = {
-			specs: specs.map(function(filepath) {
-				return { path: filepath };
-			})
-		};
+		var me = this;
+		this.reload(name);
 		
 		return function(req, res, next) {
+			var testlet = path.join(me.testbase, name + '.html');
+			
 			var filepath = path.normalize(
 				path.join(
-					base,
+					me.base,
 					url.parse(req.url).pathname
 				)
 			);
@@ -44,7 +51,7 @@ module.exports = {
 					}
 					
 					res.end(
-						mustache.render(template, data)
+						mustache.render(template, { specs: me.specs[name] })
 					);
 				}
 			);
