@@ -51,20 +51,33 @@ module.exports = function(grunt) {
 		},
 		
 		connect: {
-			server: {
+			options: {
+				base: base,
+				port: port,
+				middleware: function(connect, options) {
+					var middleware = testlets.map(function(filepath) {
+						return tests.jasmine(
+							filepath.replace(/\.html$/, ''),
+							options.production
+						);
+					});
+					
+					middleware.push(connect.static(options.base));
+					middleware.push(connect.directory(options.base));
+					
+					return middleware;
+				}
+			},
+			
+			dev: {
 				options: {
-					base: base,
-					port: port,
-					middleware: function(connect, options) {
-						var middleware = testlets.map(function(filepath) {
-							return tests.jasmine(filepath.replace(/\.html$/, ''));
-						});
-						
-						middleware.push(connect.static(options.base));
-						middleware.push(connect.directory(options.base));
-						
-						return middleware;
-					}
+					production: false
+				}
+			},
+			
+			build: {
+				options: {
+					production: true
 				}
 			}
 		},
@@ -131,13 +144,13 @@ module.exports = function(grunt) {
 	
 	grunt.loadTasks('test/tasks');
 	
-	grunt.registerTask("dev", ["connect", "watch"]);
+	grunt.registerTask("dev", ["connect:dev", "watch"]);
 	
-	grunt.registerTask("jasmine", ["connect", "saucelabs-jasmine:mobile"]);
-	grunt.registerTask("selenium", ["connect", "saucelabs-selenium:mobile"]);
+	grunt.registerTask("jasmine", ["connect:build", "saucelabs-jasmine:mobile"]);
+	grunt.registerTask("selenium", ["connect:build", "saucelabs-selenium:mobile"]);
 	
 	grunt.registerTask("test", [
-		"connect",
+		"connect:build",
 		"saucelabs-jasmine:mobile",
 		"saucelabs-selenium:mobile"
 	]);

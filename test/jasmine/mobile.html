@@ -11,11 +11,15 @@
 	<script type="text/javascript" src="lib/jasmine-jsreporter.js"></script>
 
 	<!-- include source files here... -->
-	<!--
+	{{#production}}
 	<script type="text/javascript" src="/build/rondo-mobile/production/test-classes.js"></script>
-	-->
+	{{/production}}
+	{{^production}}
 	<script type="text/javascript" src="/common/touch/sencha-touch.js"></script>
 	<script type="text/javascript" src="/common/packages/tutti/vexflow/build/vexflow-all.js"></script>
+	<script type="text/javascript" src="load.js"></script>
+	{{/production}}
+
 	<script type="text/javascript" src="setup.js"></script>
 
 	<!-- include spec files here... -->

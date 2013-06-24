@@ -24,7 +24,7 @@ module.exports = {
 		});
 	},
 	
-	jasmine: function(name) {
+	jasmine: function(name, production) {
 		var me = this;
 		this.reload(name);
 		
@@ -51,7 +51,13 @@ module.exports = {
 					}
 					
 					res.end(
-						mustache.render(template, { specs: me.specs[name] })
+						mustache.render(
+							template,
+							{
+								production: production,
+								specs: me.specs[name]
+							}
+						)
 					);
 				}
 			);
