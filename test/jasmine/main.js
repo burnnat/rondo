@@ -11,16 +11,8 @@
 		return htmlReporter.specFilter(spec);
 	};
 	
-	var currentWindowOnload = window.onload;
-	
-	window.onload = function() {
-		if (currentWindowOnload) {
-			currentWindowOnload();
-		}
-		execJasmine();
-	};
-	
-	function execJasmine() {
+	Ext.onReady(function() {
+		prepareAll();
 		jasmineEnv.execute();
-	}
+	});
 })();

@@ -47,7 +47,7 @@ Ext.define('Tutti.proxy.Store', {
 		var store = this.getStore();
 		
 		var filters = Ext.Array.map(
-			operation.getFilters(),
+			operation.getFilters() || [],
 			function(filter) {
 				return filter.getFilterFn();
 			}

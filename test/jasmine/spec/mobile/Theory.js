@@ -1,8 +1,10 @@
+Ext.require(['Tutti.Theory']);
+
 describe("Tutti.Theory", function() {
 	
 	it("should provide a seven-note scale", function() {
 		expect(Tutti.Theory.NUM_SCALE).toEqual(7);
-	}),
+	});
 	
 	it("should provide the circle of fifths", function() {
 		expect(Tutti.Theory.FIFTHS).toEqual([
