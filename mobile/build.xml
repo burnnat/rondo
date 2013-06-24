@@ -42,8 +42,13 @@
 	</target>
 
 	<target name="-after-page">
-		<property name="build.basedir" location="${basedir}" />
-		<move file="${build.basedir}/${test.file}" todir="${app.build.dir}/${args.environment}" />
+		<if>
+			<available file="${test.file}" />
+			<then>
+				<property name="build.basedir" location="${basedir}" />
+				<move file="${build.basedir}/${test.file}" todir="${app.build.dir}/${args.environment}" />
+			</then>
+		</if>
 	</target>
 
 </project>
