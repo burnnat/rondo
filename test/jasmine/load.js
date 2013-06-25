@@ -1,5 +1,3 @@
-var dynamic = true;
-
 (function() {
 	Ext.Loader.setConfig({
 		enabled: true

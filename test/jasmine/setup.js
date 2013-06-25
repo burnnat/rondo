@@ -1,6 +1,4 @@
-var prep, prepareAll, dynamic;
-
-dynamic = !!dynamic;
+var prep, prepareAll;
 
 (function() {
 	var preps = [];
