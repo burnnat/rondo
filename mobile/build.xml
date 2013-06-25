@@ -43,7 +43,7 @@
 
 	<target name="-after-page">
 		<if>
-			<available file="${test.file}" />
+			<available file="${build.basedir}/${test.file}" />
 			<then>
 				<property name="build.basedir" location="${basedir}" />
 				<move file="${build.basedir}/${test.file}" todir="${app.build.dir}/${args.environment}" />
