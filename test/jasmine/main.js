@@ -11,8 +11,22 @@
 		return htmlReporter.specFilter(spec);
 	};
 	
-	Ext.onReady(function() {
+	var launch = function() {
 		prepareAll();
 		jasmineEnv.execute();
-	});
+	};
+	
+	if (dynamic) {
+		Ext.onReady(launch);
+	}
+	else {
+		var currentWindowOnload = window.onload;
+		
+		window.onload = function() {
+			if (currentWindowOnload) {
+				currentWindowOnload();
+			}
+			launch();
+		};
+	}
 })();
