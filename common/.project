@@ -20,11 +20,6 @@
 			<type>2</type>
 			<locationURI>RONDO_BASE/.sencha</locationURI>
 		</link>
-		<link>
-			<name>tomcat</name>
-			<type>2</type>
-			<locationURI>TOMCAT_HOME/conf/Catalina/localhost</locationURI>
-		</link>
 	</linkedResources>
 	<variableList>
 		<variable>
