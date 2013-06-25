@@ -48,4 +48,22 @@ describe("Tutti.proxy.Store", function() {
 			expect(store.getById(record.getId())).not.toBeNull();
 		});
 	});
+	
+	it("should read filtered data", function() {
+		store.filter('dessert', 'pie');
+		store.load();
+		
+		expect(store.getCount()).toEqual(2);
+		
+		parent.each(function(record) {
+			var found = store.getById(record.getId());
+			
+			if (record.get('dessert') === 'pie') {
+				expect(found).not.toBeNull();
+			}
+			else {
+				expect(found).toBeNull();
+			}
+		});
+	});
 });
