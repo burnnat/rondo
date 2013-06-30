@@ -2,6 +2,7 @@
 <project name="RondoMobile" default=".help">
 	<import file="${basedir}/../.sencha/workspace/build-impl.xml"/>
 	<import file="${basedir}/.sencha/app/build-impl.xml"/>
+	<import file="${basedir}/cordova/build/build-cordova.xml"/>
 
 	<!--
 	The following targets can be provided to inject logic before and/or after key steps
@@ -48,6 +49,18 @@
 			<available file="${build.basedir}/${test.file}" />
 			<then>
 				<move file="${build.basedir}/${test.file}" todir="${app.build.dir}/${args.environment}" />
+			</then>
+		</if>
+	</target>
+
+	<target name="-after-build">
+		<if>
+			<and>
+				<isset property="cordova.lib" />
+				<isset property="build.cordova.platform" />
+			</and>
+			<then>
+				<antcall target="-build-${build.cordova.platform}" />
 			</then>
 		</if>
 	</target>
