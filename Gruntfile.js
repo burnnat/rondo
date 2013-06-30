@@ -46,9 +46,18 @@ module.exports = function(grunt) {
 		port: port,
 		
 		clean: {
-			build: ["archive", "build"],
-			logs: ["*.log", "*.log.*"],
-			cordova: ["mobile/*.built"]
+			build: [
+				"archive",
+				"build/**",
+				"!build"
+			],
+			
+			logs: [
+				"*.log",
+				"*.log.*"
+			],
+			
+			flags: ["mobile/*.built"]
 		},
 		
 		connect: {
