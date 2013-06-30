@@ -52,8 +52,9 @@ module.exports = function(grunt) {
 		
 		connect: {
 			options: {
-				base: base,
+				hostname: '*',
 				port: port,
+				base: base,
 				middleware: function(connect, options) {
 					var middleware = testlets.map(function(filepath) {
 						return tests.jasmine(
