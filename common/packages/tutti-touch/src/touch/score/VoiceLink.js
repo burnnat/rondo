@@ -3,6 +3,12 @@
  */
 Ext.define('Tutti.touch.score.VoiceLink', {
 	
+	uses: [
+		'Tutti.touch.score.Note',
+		'Vex.Flow.Beam',
+		'Vex.Flow.Voice'
+	],
+	
 	config: {
 		measure: null,
 		data: null,
@@ -16,15 +22,15 @@ Ext.define('Tutti.touch.score.VoiceLink', {
 		this.initConfig(config);
 		
 		var data = this.getData();
-		var staff = data.getStaff();
-		
-		this.clef = staff.get('clef');
+		this.notes = [];
 		
 		var voice = this.voice = new Vex.Flow.Voice(this.getTime());
 		
 		voice.setMode(Vex.Flow.Voice.Mode.SOFT);
 		voice.setStave(
-			this.getMeasure().getStaff(staff).primitive
+			this.getMeasure().getStaff(
+				data.getStaff()
+			).primitive
 		);
 		
 		var store = data.notes();
@@ -40,16 +46,15 @@ Ext.define('Tutti.touch.score.VoiceLink', {
 	},
 	
 	addNote: function(note) {
-		var primitive = new Vex.Flow.StaveNote({
-			keys: note.getPitchData(),
-			duration: note.get('duration'),
-			clef: this.clef
+		var note = new Tutti.touch.score.Note({
+			voice: this,
+			data: note
 		});
 		
-		primitive.setStave(this.voice.stave);
+		note.registerWithVoice(this.voice);
 		
-		this.getMeasure().items.add(primitive);
-		this.voice.addTickable(primitive);
+		this.getMeasure().items.add(note);
+		this.notes.push(note);
 	},
 	
 	removeNote: function(note) {
@@ -57,13 +62,18 @@ Ext.define('Tutti.touch.score.VoiceLink', {
 	},
 	
 	updateLayout: function() {
+		var voice = this.voice;
 		var items = this.getMeasure().items;
 		
 		if (this.beams) {
 			items.removeAll(this.beams);
 		}
 		
-		this.beams = Vex.Flow.Beam.applyAndGetBeams(this.voice);
+		Ext.Array.forEach(this.notes, function(note) {
+			note.updateLayout(voice);
+		});
+		
+		this.beams = Vex.Flow.Beam.applyAndGetBeams(voice);
 		items.addAll(this.beams);
 	},
 	
