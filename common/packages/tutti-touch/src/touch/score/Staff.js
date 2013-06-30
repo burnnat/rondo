@@ -32,6 +32,10 @@ Ext.define('Tutti.touch.score.Staff', {
 		primitive.modifiers[1].barline = Vex.Flow.Barline.type.NONE;
 		
 		this.callParent(arguments);
+		
+		if (!this.getClef()) {
+			this.primitive.clef = this.getData().get('clef');
+		}
 	},
 	
 	updateWidth: function(width) {
