@@ -79,13 +79,12 @@ Ext.define('Ext.cf.messaging.transports.AutoTransport', {
                 
                 this.socketTransport.on({connected: {fn: this.onSocketActive, scope: this}});
                 
+                this.socketTransport.start();
             } else {
                 Ext.cf.util.Logger.debug("AutoTransport: websockets not supported, XHR polling only");
             }
             
         }
-
-        this.socketTransport.start();
         
         return true;
     },
