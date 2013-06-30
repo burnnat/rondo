@@ -65,4 +65,26 @@
 		</if>
 	</target>
 
+	<target name="-after-build-android">
+		<copy todir="${cordova.android.project}/res" overwrite="true">
+			<fileset dir="${app.dir}/cordova/res" />
+			<filterset begintoken="__" endtoken="__">
+				<filter token="ID" value="${cordova.android.project.namespace}" />
+				<filter token="NAME" value="${app.name}" />
+			</filterset>
+		</copy>
+		
+		<if>
+			<isset property="cordova.os.is-windows" />
+			<then>
+				<property name="cordova.android.project.build" location="${cordova.android.project}\\cordova\\build.bat" />
+			</then>
+			<else>
+				<property name="cordova.android.project.build" location="${cordova.android.project}/cordova/build" />
+			</else>
+		</if>
+		
+		<exec executable="${cordova.android.project.build}" />
+	</target>
+
 </project>
