@@ -20,15 +20,11 @@ Ext.define('Tutti.touch.Block', {
 	
 	statics: {
 		getItemKey: function(item) {
-			if (Ext.isDefined(item.getId)) {
-				return item.getId();
+			if (!Ext.isDefined(item.blockId)) {
+				item.blockId = Ext.id() + '-' + Math.floor(Math.random() * 10000);
 			}
 			
-			if (!Ext.isDefined(item.id)) {
-				item.id = Ext.id() + '-' + Math.floor(Math.random() * 10000);
-			}
-			
-			return item.id;
+			return item.blockId;
 		}
 	},
 	
