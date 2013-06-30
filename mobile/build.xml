@@ -66,6 +66,8 @@
 	</target>
 
 	<target name="-after-build-android">
+		<delete file="${app.dir}/cordova-android.js" />
+		
 		<copy todir="${cordova.android.project}/res" overwrite="true">
 			<fileset dir="${app.dir}/cordova/res" />
 			<filterset begintoken="__" endtoken="__">
