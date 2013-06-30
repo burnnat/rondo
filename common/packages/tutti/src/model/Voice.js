@@ -60,6 +60,7 @@ Ext.define('Tutti.model.Voice', {
 					addrecords: this.updateNotes,
 					removerecords: this.updateNotes,
 					updaterecord: this.updateNotes,
+					beforesync: this.sync,
 					scope: this
 				}
 			});
@@ -81,6 +82,18 @@ Ext.define('Tutti.model.Voice', {
 		);
 		
 		this.set('notes', range);
+	},
+	
+	/**
+	 * @private
+	 */
+	sync: function() {
+		Ext.Array.forEach(
+			this.stores,
+			function(store) {
+				store.sync();
+			}
+		);
 	}
 }
 //<debug>
