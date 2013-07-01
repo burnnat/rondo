@@ -1,0 +1,19 @@
+/*
+
+Siesta 1.2.1
+Copyright(c) 2009-2013 Bryntum AB
+http://bryntum.com/contact
+http://bryntum.com/products/siesta/license
+
+*/
+.tr-tree-column .x-grid-cell-inner {
+	position           : relative;
+}
+
+.tr-elbow-line
+{
+	position           : absolute !important;
+	display            : block !important;
+	height             : 100% !important;
+	top                : 0px;
+}

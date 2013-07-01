@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<!-- <link rel="stylesheet" type="text/css" href="/common/ext/packages/ext-theme-classic/build/resources/ext-theme-classic-all.css" /> -->
+		<link rel="stylesheet" type="text/css" href="http://cdn.sencha.io/ext-4.2.0-gpl/resources/css/ext-all.css" />
+		<link rel="stylesheet" type="text/css" href="lib/resources/css/siesta-all.css" />
+
+		<!-- <script type="text/javascript" src="/common/ext/ext-all.js"></script> -->
+		<script type="text/javascript" src="http://cdn.sencha.io/ext-4.2.0-gpl/ext-all.js"></script>
+		<script type="text/javascript" src="lib/siesta-all.js"></script>
+
+		<script type="text/javascript">
+			var Harness = Siesta.Harness.Browser.ExtJS;
+			
+			Harness.configure({
+				title: 'Awesome Test Suite',
+			
+				preload: [
+				/*
+					{{#production}}
+				*/
+						'/build/rondo-mobile/production/resources/css/app.css',
+						'/build/rondo-mobile/production/test-classes.js'
+				/*
+					{{/production}}
+					{{^production}}
+						'/mobile/resources/css/app.css',
+						'/common/touch/sencha-touch.js',
+						'/common/packages/tutti/vexflow/build/vexflow-all.js',
+						'../jasmine/load.js'
+					{{/production}}
+				*/
+				]
+			});
+			
+			Harness.start(
+				'spec/010_sanity.t.js'
+			);
+		</script>
+	</head>
+
+	<body>
+	</body>
+</html>
