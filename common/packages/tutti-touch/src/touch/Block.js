@@ -79,17 +79,23 @@ Ext.define('Tutti.touch.Block', {
 			selectable: true,
 			precedence: 5000,
 			
+			getBlockHeight: function() {
+				return this.parent.getAttribute('height');
+			},
+			
 			draw: function(context) {
 				this.saveContext(context, ['font', 'fillStyle']);
 				
+				var height = this.getBlockHeight();
+				
 				context.beginPath()
-				context.arc(14.5, this.parent.getHeight() - 14, 10, 0, 2 * Math.PI, false);
+				context.arc(14.5, height - 14, 10, 0, 2 * Math.PI, false);
 				context.fillStyle = 'blue';
 				context.fill();
 				
 				context.font = '18px Pictos';
 				context.fillStyle = '#CDF';
-				context.fillText('i', 5.5, this.parent.getHeight() - 9);
+				context.fillText('i', 5.5, height - 9);
 				
 				this.restoreContext(context);
 			},
@@ -97,7 +103,7 @@ Ext.define('Tutti.touch.Block', {
 			getBoundingBox: function() {
 				return {
 					x: 4,
-					y: this.parent.getHeight() - 24,
+					y: this.getBlockHeight() - 24,
 					w: 21,
 					h: 21
 				};
