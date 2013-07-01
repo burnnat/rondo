@@ -6,16 +6,19 @@ Ext.define('Tutti.touch.score.Score', {
 	xtype: 'score',
 	
 	uses: [
+		//<debug>
 		'Ext.ux.plugin.Pinchemu',
+		//</debug>
 		'Tutti.touch.score.Measure'
 	],
 	
 	config: {
 		sketch: null,
 		
-		scrollable: 'horizontal',
-		
-		plugins: [{ xclass: 'Ext.ux.plugin.Pinchemu' }],
+		scrollable: {
+			direction: 'auto',
+			directionLock: true
+		},
 		
 		layout: {
 			type: 'hbox',
@@ -25,10 +28,20 @@ Ext.define('Tutti.touch.score.Score', {
 		activeBlock: null
 	},
 	
+	//<debug>
+	constructor: function() {
+		this.callParent(arguments);
+		
+		if (Ext.os.is.Desktop) {
+			this.setPlugins([{ xclass: 'Ext.ux.plugin.Pinchemu' }]);
+		}
+	},
+	//</debug>
+	
 	initialize: function() {
 		this.element.on({
 			tap: this.onTap,
-			pinchstart: this.onPinchStart,
+			pinchstart: this.fetchChildHeight,
 			pinch: this.onPinch,
 			scope: this
 		});
@@ -59,32 +72,48 @@ Ext.define('Tutti.touch.score.Score', {
 			},
 			this
 		);
+		
+		this.on('painted', this.adjustHeight, this, { single: true });
 	},
 	
-	onTap: function() {
-		this.fireEvent('tap');
+	adjustHeight: function() {
+		var available = this.element.getHeight();
+		
+		this.fetchChildHeight();
+		
+		if (this.baseHeight > available) {
+			this.setChildHeight(available);
+		}
 	},
 	
-	onPinchStart: function() {
+	fetchChildHeight: function() {
 		var first = this.getAt(0);
 		this.blockHeight = first.getBlockHeight();
-		this.baseHeight = first.getHeight() || first.getBlockHeight();
+		this.baseHeight = first.getHeight() || this.blockHeight;
 	},
 	
-	onPinch: function(event) {
-		var height = Ext.Number.constrain(
-			this.baseHeight * event.scale,
-			this.blockHeight,
-			this.element.getHeight()
+	setChildHeight: function(height) {
+		height = Math.floor(
+			Ext.Number.constrain(
+				height,
+				this.blockHeight / 2,
+				this.blockHeight * 2
+			)
 		);
-		
-		var actualScale = height / this.baseHeight;
 		
 		this.getItems().each(
 			function(component) {
 				component.setHeight(height);
 			}
 		);
+	},
+	
+	onTap: function() {
+		this.fireEvent('tap');
+	},
+	
+	onPinch: function(event) {
+		this.setChildHeight(this.baseHeight * event.scale);
 	},
 	
 	applyActiveBlock: function(item) {
