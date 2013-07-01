@@ -300,11 +300,17 @@ Ext.define('Tutti.touch.Block', {
 	
 	doSetHeight: function(height) {
 		this.canvasEl.setHeight(height);
+		//<debug>
+		this.mapEl.setHeight(height);
+		//</debug>
 		this.callParent(arguments);
 	},
 	
 	doSetWidth: function(width) {
 		this.canvasEl.setWidth(width);
+		//<debug>
+		this.mapEl.setWidth(width);
+		//</debug>
 		this.callParent(arguments);
 	},
 	
