@@ -16,12 +16,9 @@
 				title: 'Awesome Test Suite',
 			
 				preload: [
-				/*
 					{{#production}}
-				*/
 						'/build/rondo-mobile/production/resources/css/app.css',
 						'/build/rondo-mobile/production/test-classes.js'
-				/*
 					{{/production}}
 					{{^production}}
 						'/mobile/resources/css/app.css',
@@ -29,12 +26,13 @@
 						'/common/packages/tutti/vexflow/build/vexflow-all.js',
 						'../jasmine/load.js'
 					{{/production}}
-				*/
 				]
 			});
 			
 			Harness.start(
-				'spec/010_sanity.t.js'
+				{{#specs}}
+					'{{{path}}}'{{^last}},{{/last}}
+				{{/specs}}
 			);
 		</script>
 	</head>

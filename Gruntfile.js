@@ -1,16 +1,28 @@
 var tests = require('./test/middleware.js');
 var glob = require('glob');
 var path = require('path');
-var escape = require('escape-regexp');
 
 module.exports = function(grunt) {
 	var _ = grunt.util._;
 	var base = '.';
 	var port = 8080;
 	
-	tests.init(base);
-	
-	var testlets = glob.sync('*.html', { cwd: tests.testbase });
+	tests.init(
+		base,
+		{
+			jasmine: {
+				path: 'test/jasmine',
+				page: '%s.html',
+				pattern: 'spec/%s/**/*.js'
+			},
+			
+			siesta: {
+				path: 'test/siesta',
+				page: '%s.html',
+				pattern: 'spec/%s/**/*.t.js'
+			}
+		}
+	);
 	
 	var mobileOptions = {
 		browsers: [
@@ -66,12 +78,7 @@ module.exports = function(grunt) {
 				port: port,
 				base: base,
 				middleware: function(connect, options) {
-					var middleware = testlets.map(function(filepath) {
-						return tests.jasmine(
-							filepath.replace(/\.html$/, ''),
-							options.production
-						);
-					});
+					var middleware = tests.getMiddleware(options.production);
 					
 					middleware.push(connect.static(options.base));
 					middleware.push(connect.directory(options.base));
@@ -123,28 +130,8 @@ module.exports = function(grunt) {
 			}
 		},
 		
-		watch: {
-			jasmine: {
-				files: [
-					path.join(tests.specbase, '**/*.js')
-				],
-				options: {
-					event: ['added', 'deleted']
-				}
-			}
-		}
+		watch: tests.getWatch(grunt)
 	});
-	
-	grunt.event.on(
-		'watch',
-		function(action, filepath, target) {
-			tests.reload(
-				filepath.match(
-					new RegExp("^" + escape(tests.specbase) + "([^" + escape(path.sep) + "]+)")
-				)[1]
-			);
-		}
-	);
 	
 	// Loading dependencies
 	for (var key in grunt.file.readJSON("package.json").devDependencies) {
