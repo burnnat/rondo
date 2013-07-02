@@ -53,6 +53,17 @@ module.exports = function(grunt) {
 			: "user"
 	);
 	
+	var sauceOptions = function(options) {
+		return _.extend(
+			{},
+			mobileOptions,
+			options,
+			{
+				tags: _.union(mobileOptions.tags, options.tags)
+			}
+		);
+	};
+	
 	grunt.initConfig({
 		
 		port: port,
@@ -102,47 +113,36 @@ module.exports = function(grunt) {
 		
 		'saucelabs-jasmine': {
 			mobile: {
-				options: _.merge(
-					{
-						urls: ['http://127.0.0.1:<%= port %>/test/jasmine/mobile.html'],
-						testname: "mobile unit tests",
-						tags: ["unit"]
-					},
-					mobileOptions
-				)
+				options: sauceOptions({
+					urls: ['http://127.0.0.1:<%= port %>/test/jasmine/mobile.html'],
+					testname: "mobile unit tests",
+					tags: ["unit"]
+				})
 			}
 		},
 		
 		'saucelabs-siesta': {
 			mobile: {
-				options: _.merge(
-					{
-						url: 'http://127.0.0.1:<%= port %>/test/siesta/mobile.html',
-						local: grunt.option('local') || grunt.option('human'),
-						slow: grunt.option('human'),
-						autoclose: !grunt.option('human'),
-						testname: "mobile component tests",
-						tags: ["component"]
-					},
-					mobileOptions
-				)
+				options: sauceOptions({
+					url: 'http://127.0.0.1:<%= port %>/test/siesta/mobile.html',
+					local: grunt.option('local'),
+					testname: "mobile component tests",
+					tags: ["component"]
+				})
 			}
 		},
 		
 		'saucelabs-selenium': {
 			mobile: {
-				options: _.merge(
-					{
-						url: 'http://127.0.0.1:<%= port %>/build/rondo-mobile/production/',
-						script: require('./test/selenium/mobile.js'),
-						local: grunt.option('local') || grunt.option('human'),
-						slow: grunt.option('human'),
-						autoclose: !grunt.option('human'),
-						testname: "mobile integration tests",
-						tags: ["integration"]
-					},
-					mobileOptions
-				)
+				options: sauceOptions({
+					url: 'http://127.0.0.1:<%= port %>/build/rondo-mobile/production/',
+					script: require('./test/selenium/mobile.js'),
+					local: grunt.option('local') || grunt.option('human'),
+					slow: grunt.option('human'),
+					autoclose: !grunt.option('human'),
+					testname: "mobile integration tests",
+					tags: ["integration"]
+				})
 			}
 		},
 		
