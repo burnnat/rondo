@@ -113,6 +113,22 @@ module.exports = function(grunt) {
 			}
 		},
 		
+		'saucelabs-siesta': {
+			mobile: {
+				options: _.merge(
+					{
+						url: 'http://127.0.0.1:<%= port %>/test/siesta/mobile.html',
+						local: grunt.option('local') || grunt.option('human'),
+						slow: grunt.option('human'),
+						autoclose: !grunt.option('human'),
+						testname: "mobile component tests",
+						tags: ["component"]
+					},
+					mobileOptions
+				)
+			}
+		},
+		
 		'saucelabs-selenium': {
 			mobile: {
 				options: _.merge(
@@ -145,11 +161,13 @@ module.exports = function(grunt) {
 	grunt.registerTask("dev", ["connect:dev", "watch"]);
 	
 	grunt.registerTask("jasmine", ["connect:build", "saucelabs-jasmine:mobile"]);
+	grunt.registerTask("siesta", ["connect:build", "saucelabs-siesta:mobile"]);
 	grunt.registerTask("selenium", ["connect:build", "saucelabs-selenium:mobile"]);
 	
 	grunt.registerTask("test", [
 		"connect:build",
 		"saucelabs-jasmine:mobile",
+		"saucelabs-siesta:mobile",
 		"saucelabs-selenium:mobile"
 	]);
 };

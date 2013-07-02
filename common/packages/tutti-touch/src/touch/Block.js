@@ -5,12 +5,13 @@ Ext.define('Tutti.touch.Block', {
 	extend: 'Ext.Component',
 	xtype: 'block',
 	
-	uses: [
-		'Ext.data.SortTypes',
-		
+	requires: [
 		//<debug>
-		'Tutti.touch.BlockItem'
+		'Tutti.touch.BlockItem',
 		//</debug>
+		
+		'Ext.data.SortTypes',
+		'Ext.util.MixedCollection'
 	],
 	
 	template: [

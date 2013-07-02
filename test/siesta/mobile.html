@@ -8,12 +8,17 @@
 		<!-- <script type="text/javascript" src="/common/ext/ext-all.js"></script> -->
 		<script type="text/javascript" src="http://cdn.sencha.io/ext-4.2.0-gpl/ext-all.js"></script>
 		<script type="text/javascript" src="lib/siesta-all.js"></script>
+		<script type="text/javascript" src="reporter.js"></script>
 
 		<script type="text/javascript">
 			var Harness = Siesta.Harness.Browser.SenchaTouch;
 			
 			Harness.configure({
-				title: 'Awesome Test Suite',
+				title: 'Rondo Mobile',
+				
+				{{#production}}
+				cachePreload: true,
+				{{/production}}
 				
 				preload: [
 					{{#production}}
@@ -23,10 +28,21 @@
 					{{^production}}
 						'/mobile/resources/css/app.css',
 						'/common/touch/sencha-touch.js',
-						'/common/packages/tutti/vexflow/build/vexflow-all.js',
-						'../jasmine/load.js'
+						'/common/packages/tutti/vexflow/build/vexflow-all.js'
 					{{/production}}
-				]
+				],
+				
+				loaderPath: {
+					'Ext': '/common/touch/src',
+					'Ext.io': '/common/packages/sencha-io/src/io',
+					'Ext.cf': '/common/packages/sencha-io/src/cf',
+					'Ext.ux': '/common/packages/tutti-touch/ux',
+					'TouchOverrides': '/common/packages/tutti-touch/overrides',
+					'Tutti': '/common/packages/tutti/src',
+					'Tutti.score': '/common/packages/tutti-touch/src/score',
+					'Tutti.touch': '/common/packages/tutti-touch/src/touch',
+					'Rondo': '/mobile/app'
+				}
 			});
 			
 			Harness.start(
