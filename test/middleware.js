@@ -154,8 +154,6 @@ module.exports = {
 						next(err);
 					}
 					
-					console.log(test.specs[name]);
-					
 					res.end(
 						mustache.render(
 							template,
