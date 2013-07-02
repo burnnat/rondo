@@ -2,12 +2,21 @@ var runner = require('./lib/runner.js');
 
 var siesta = function(browser, chain) {
 	var runButton = '.x-btn a[data-qtip="Run all"]';
-	var complete = '.tr-testgrid img.tr-status-bugs-small, .tr-testgrid img.tr-status-allgreen-small';
+	var expandButton = '.x-region-collapsed-right-placeholder .x-tool-expand-left';
+	var complete = '.tr-testgrid .tr-status-bugs-small, .tr-testgrid .tr-status-allgreen-small';
 	
 	chain
 		.waitForElementByCss(runButton, 10000)
-		.elementByCss(runButton, function(err, el) {
+		.elementByCss(expandButton, function(err, el) {
+			browser.next('moveTo', el);
 			browser.next('clickElement', el);
+		})
+		.elementByCss(runButton, function(err, el) {
+			browser.next('moveTo', el);
+			browser.next('clickElement', el);
+		})
+		.elementByCss('.tr-siesta-logo', function(err, el) {
+			browser.next('moveTo', el);
 		})
 		.waitForElementByCss(complete, 180000)
 		.safeEval("Siesta.REPORTER ? Siesta.my.activeHarness.generateReport() : null", function(err, obj) {
