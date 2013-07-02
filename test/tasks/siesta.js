@@ -32,7 +32,8 @@ module.exports = function(grunt) {
 				testname: "",
 				tags: [],
 				autoclose: true,
-				slow: false
+				slow: false,
+				logging: false
 			});
 			
 			options.script = siesta;

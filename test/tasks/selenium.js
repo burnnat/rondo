@@ -15,7 +15,8 @@ module.exports = function(grunt) {
 				testname: "",
 				tags: [],
 				autoclose: true,
-				slow: false
+				slow: false,
+				logging: true
 			});
 			
 			runner.run(grunt, options, this.async());

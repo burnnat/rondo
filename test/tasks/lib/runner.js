@@ -25,13 +25,15 @@ module.exports = {
 			function(browserConfig, browserCallback) {
 				var browser = webdriver.remote(driverConfig);
 				
-				browser.on('status', function(info){
-					grunt.log.writeln('\x1b[36m%s\x1b[0m', info);
-				});
-				
-				browser.on('command', function(method, path){
-					grunt.log.writeln(' > \x1b[33m%s\x1b[0m: %s', method, path);
-				});
+				if (options.logging) {
+					browser.on('status', function(info){
+						grunt.log.writeln('\x1b[36m%s\x1b[0m', info);
+					});
+					
+					browser.on('command', function(method, path){
+						grunt.log.writeln(' > \x1b[33m%s\x1b[0m: %s', method, path);
+					});
+				}
 				
 				var scriptCallback = function(err) {
 					if (err) {
@@ -265,14 +267,6 @@ module.exports = {
 				
 				done(!scriptErr);
 			});
-			
-			// TEMP
-			options.callback = function(err, browser) {
-				console.log({
-					passed: !err && browser.saucePassed !== false,
-					'custom-data': browser.sauceData
-				})
-			};
 			
 			this.drive(
 				grunt,
