@@ -5,6 +5,14 @@ Ext.define('Tutti.touch.Block', {
 	extend: 'Ext.Component',
 	xtype: 'block',
 	
+	uses: [
+		'Ext.data.SortTypes',
+		
+		//<debug>
+		'Tutti.touch.BlockItem'
+		//</debug>
+	],
+	
 	template: [
 		{
 			tag: 'canvas',
@@ -315,8 +323,12 @@ Ext.define('Tutti.touch.Block', {
 	},
 	
 	parseEvent: function(callback, event) {
-		var x = event.pageX - this.canvasEl.getX();
-		var y = event.pageY - this.canvasEl.getY();
+		var canvas = this.canvasEl;
+		
+		var scale = canvas.getHeight() / this.getBlockHeight();
+		
+		var x = (event.pageX - canvas.getX()) / scale;
+		var y = (event.pageY - canvas.getY()) / scale;
 		
 		var data = this.getMapperContext().getImageData(x, y, 1, 1).data;
 		
