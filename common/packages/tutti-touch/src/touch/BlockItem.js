@@ -25,7 +25,7 @@ Ext.define('Tutti.touch.BlockItem', {
 	},
 	
 	getPageBox: function() {
-		var xy = this.parent.getXY();
+		var xy = this.parent.canvasEl.getXY();
 		var bounds = this.getBoundingBox()
 		
 		var x = xy[0] + bounds.x;

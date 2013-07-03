@@ -8,6 +8,8 @@ Ext.define('Tutti.touch.score.Staff', {
 		observable: 'Ext.mixin.Observable'
 	},
 	
+	isStaff: true,
+	
 	precedence: 5,
 	selectable: true,
 	
@@ -21,7 +23,8 @@ Ext.define('Tutti.touch.score.Staff', {
 		key: null,
 		time: null,
 		
-		active: false
+		active: false,
+		cursor: 0
 	},
 	
 	constructor: function() {
@@ -107,17 +110,35 @@ Ext.define('Tutti.touch.score.Staff', {
 		primitive.setContext(context);
 		primitive.draw(context);
 		
-		this.saveContext(context, ['lineWidth', 'strokeStyle']);
+		this.saveContext(context, ['lineWidth', 'lineCap', 'strokeStyle']);
 		
 		if (this.getActive()) {
-			context.lineWidth = 3;
-			context.strokeStyle = 'red';
-			context.strokeRect(
-				primitive.x + 2.5,
-				primitive.y + 2.5,
-				primitive.width - 4,
-				this.getTotalHeight() - 4
-			);
+			var box = this.getBoundingBox();
+			var cursorX = this.getCursor();
+			
+			context.lineWidth = 2;
+			context.lineCap = 'round';
+			context.strokeStyle = 'magenta';
+			
+			context.beginPath();
+			
+			var tip = 4;
+			
+			var topY = box.y + tip + 1;
+			var bottomY = box.y + box.h - tip - 1;
+			
+			context.moveTo(cursorX - tip, topY - tip);
+			context.lineTo(cursorX, topY);
+			context.lineTo(cursorX + tip, topY - tip);
+			
+			context.moveTo(cursorX, topY);
+			context.lineTo(cursorX, bottomY);
+			
+			context.moveTo(cursorX - tip, bottomY + tip);
+			context.lineTo(cursorX, bottomY);
+			context.lineTo(cursorX + tip, bottomY + tip);
+			
+			context.stroke();
 		}
 		
 		this.restoreContext(context);
@@ -225,6 +246,22 @@ Ext.define('Tutti.touch.score.Staff', {
 			this.getBlock().refresh({
 				repaint: true
 			});
+		}
+	},
+	
+	applyCursor: function(x) {
+		var parent = this.parent;
+		
+		return parent
+			? parent.convertPoint(x).x
+			: 0;
+	},
+	
+	updateCursor: function() {
+		// if the staff is already active, we need to redraw the cursor
+		// if not, the cursor is currently hidden and all is well
+		if (this.getActive()) {
+			this.fireEvent('refresh', { repaint: true });
 		}
 	},
 	

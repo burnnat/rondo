@@ -89,7 +89,7 @@ Ext.define('Tutti.touch.Block', {
 			precedence: 5000,
 			
 			getBlockHeight: function() {
-				return this.parent.getAttribute('height');
+				return this.parent.getBlockHeight();
 			},
 			
 			draw: function(context) {
@@ -124,7 +124,7 @@ Ext.define('Tutti.touch.Block', {
 	},
 	
 	onItemAdd: function(index, item) {
-		item.parent = this.canvasEl;
+		item.parent = this;
 	},
 	
 	onItemRemove: function(item) {
@@ -323,15 +323,19 @@ Ext.define('Tutti.touch.Block', {
 		this.callParent(arguments);
 	},
 	
-	parseEvent: function(callback, event) {
+	convertPoint: function(pageX, pageY) {
 		var canvas = this.canvasEl;
-		
 		var scale = canvas.getHeight() / this.getBlockHeight();
 		
-		var x = (event.pageX - canvas.getX()) / scale;
-		var y = (event.pageY - canvas.getY()) / scale;
-		
-		var data = this.getMapperContext().getImageData(x, y, 1, 1).data;
+		return {
+			x: (pageX - canvas.getX()) / scale,
+			y: (pageY - canvas.getY()) / scale
+		};
+	},
+	
+	parseEvent: function(callback, event) {
+		var point = this.convertPoint(event.pageX, event.pageY);
+		var data = this.getMapperContext().getImageData(point.x, point.y, 1, 1).data;
 		
 		var item = this.items.getByKey(
 			(data[0] << 16)

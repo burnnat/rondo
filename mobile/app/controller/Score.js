@@ -52,7 +52,11 @@ Ext.define('Rondo.controller.Score', {
 		this.getScore().setActiveBlock(null);
 	},
 	
-	onMeasureTap: function(item) {
+	onMeasureTap: function(item, event) {
+		if (item && item.isStaff) {
+			item.setCursor(event.pageX);
+		}
+		
 		this.getScore().setActiveBlock(item);
 	},
 	

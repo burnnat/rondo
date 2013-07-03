@@ -212,7 +212,7 @@ Ext.define('Tutti.touch.score.Measure', {
 	},
 	
 	onTap: function(item, event) {
-		this.fireEvent('blocktap', item);
+		this.fireEvent('blocktap', item, event);
 		event.stopEvent();
 	}
 });
