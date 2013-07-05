@@ -4,15 +4,6 @@
 Ext.define('Tutti.touch.score.Staff', {
 	extend: 'Tutti.touch.BlockItem',
 	
-	mixins: {
-		observable: 'Ext.mixin.Observable'
-	},
-	
-	isStaff: true,
-	
-	precedence: 5,
-	selectable: true,
-	
 	config: {
 		part: null,
 		data: null,
@@ -21,10 +12,7 @@ Ext.define('Tutti.touch.score.Staff', {
 		
 		clef: null,
 		key: null,
-		time: null,
-		
-		active: false,
-		cursor: 0
+		time: null
 	},
 	
 	constructor: function() {
@@ -109,50 +97,6 @@ Ext.define('Tutti.touch.score.Staff', {
 		
 		primitive.setContext(context);
 		primitive.draw(context);
-		
-		this.saveContext(context, ['lineWidth', 'lineCap', 'strokeStyle']);
-		
-		if (this.getActive()) {
-			var box = this.getBoundingBox();
-			var cursorX = this.getCursor();
-			
-			context.lineWidth = 2;
-			context.lineCap = 'round';
-			context.strokeStyle = 'magenta';
-			
-			context.beginPath();
-			
-			var tip = 4;
-			
-			var topY = box.y + tip + 1;
-			var bottomY = box.y + box.h - tip - 1;
-			
-			context.moveTo(cursorX - tip, topY - tip);
-			context.lineTo(cursorX, topY);
-			context.lineTo(cursorX + tip, topY - tip);
-			
-			context.moveTo(cursorX, topY);
-			context.lineTo(cursorX, bottomY);
-			
-			context.moveTo(cursorX - tip, bottomY + tip);
-			context.lineTo(cursorX, bottomY);
-			context.lineTo(cursorX + tip, bottomY + tip);
-			
-			context.stroke();
-		}
-		
-		this.restoreContext(context);
-	},
-	
-	getBoundingBox: function() {
-		var primitive = this.primitive;
-		
-		return {
-			x: primitive.x,
-			y: primitive.y,
-			w: primitive.width,
-			h: this.getTotalHeight()
-		}
 	},
 	
 	setLayout: function(x, y) {
@@ -177,6 +121,10 @@ Ext.define('Tutti.touch.score.Staff', {
 	
 	getX: function() {
 		return this.primitive.getX();
+	},
+	
+	getY: function() {
+		return this.primitive.y;
 	},
 	
 	getWidth: function() {
@@ -247,25 +195,5 @@ Ext.define('Tutti.touch.score.Staff', {
 				repaint: true
 			});
 		}
-	},
-	
-	applyCursor: function(x) {
-		var parent = this.parent;
-		
-		return parent
-			? parent.convertPoint(x).x
-			: 0;
-	},
-	
-	updateCursor: function() {
-		// if the staff is already active, we need to redraw the cursor
-		// if not, the cursor is currently hidden and all is well
-		if (this.getActive()) {
-			this.fireEvent('refresh', { repaint: true });
-		}
-	},
-	
-	updateActive: function() {
-		this.fireEvent('refresh', { repaint: true });
 	}
 });

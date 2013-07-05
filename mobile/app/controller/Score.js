@@ -53,8 +53,8 @@ Ext.define('Rondo.controller.Score', {
 	},
 	
 	onMeasureTap: function(item, event) {
-		if (item && item.isStaff) {
-			item.setCursor(event.pageX);
+		if (item && item.isCursor) {
+			item.setPosition(event.pageX);
 		}
 		
 		this.getScore().setActiveBlock(item);

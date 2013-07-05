@@ -4,6 +4,7 @@
 Ext.define('Tutti.touch.score.VoiceLink', {
 	
 	uses: [
+		'Tutti.touch.score.Cursor',
 		'Tutti.touch.score.Note',
 		'Vex.Flow.Beam',
 		'Vex.Flow.Voice'
@@ -24,14 +25,13 @@ Ext.define('Tutti.touch.score.VoiceLink', {
 		var data = this.getData();
 		this.notes = [];
 		
+		var staff = this.getMeasure().getStaff(data.getStaff());
 		var voice = this.voice = new Vex.Flow.Voice(this.getTime());
 		
 		voice.setMode(Vex.Flow.Voice.Mode.SOFT);
-		voice.setStave(
-			this.getMeasure().getStaff(
-				data.getStaff()
-			).primitive
-		);
+		voice.setStave(staff.primitive);
+		
+		this.getMeasure().items.add(new Tutti.touch.score.Cursor(staff));
 		
 		var store = data.notes();
 		
