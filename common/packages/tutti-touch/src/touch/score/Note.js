@@ -54,6 +54,14 @@ Ext.define('Tutti.touch.score.Note', {
 		return this.primitive.getBoundingBox();
 	},
 	
+	getX: function() {
+		return this.primitive.getAbsoluteX();
+	},
+	
+	getHeadWidth: function() {
+		return this.primitive.glyph.head_width;
+	},
+	
 	updateActive: function() {
 		this.fireEvent('refresh', { repaint: true });
 	}

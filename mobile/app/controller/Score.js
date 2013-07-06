@@ -54,7 +54,7 @@ Ext.define('Rondo.controller.Score', {
 	
 	onMeasureTap: function(item, event) {
 		if (item && item.isCursor) {
-			item.setPosition(event.pageX);
+			item.snapNear(event.pageX);
 		}
 		
 		this.getScore().setActiveBlock(item);
@@ -63,33 +63,18 @@ Ext.define('Rondo.controller.Score', {
 	onCreate: function(duration) {
 		var active = this.getScore().getActiveBlock();
 		
-		if (active) {
-			var measure = active.getPart().getMeasure().getData();
-			var staff = active.getData();
+		if (active && active.isCursor) {
+			var voice = active.getVoice();
+			var measure = voice.getMeasure().getData();
+			var notes = voice.getData().notes();
 			
-			var voices = measure.voices();
-			var voice;
-			
-			var match = voices.findBy(function(voice) {
-				return voice.getStaff().getId() === staff.getId();
-			});
-			
-			if (match < 0) {
-				voice = new Tutti.model.Voice();
-				voice.setStaff(staff);
-				
-				voices.add(voice);
-				voices.sync();
-			}
-			else {
-				voice = voices.getAt(match);
-			}
-			
-			var notes = voice.notes();
 			notes.add(
 				new Tutti.model.Note({
 					pitches: [
-						Tutti.Theory.getNoteFromPitch(this.tappedPitch, measure.getResolvedKey())
+						Tutti.Theory.getNoteFromPitch(
+							this.tappedPitch,
+							measure.getResolvedKey()
+						)
 					],
 					duration: duration
 				})

@@ -14,12 +14,12 @@ Ext.define('Tutti.touch.score.Cursor', {
 	selectable: true,
 	
 	config: {
+		voice: null,
+		staff: null,
+		
 		active: false,
+		index: null,
 		position: 0
-	},
-	
-	constructor: function(staff) {
-		this.staff = staff;
 	},
 	
 	draw: function(context) {
@@ -60,7 +60,7 @@ Ext.define('Tutti.touch.score.Cursor', {
 	},
 	
 	getBoundingBox: function() {
-		var staff = this.staff;
+		var staff = this.getStaff();
 		
 		return {
 			x: staff.getX(),
@@ -70,14 +70,56 @@ Ext.define('Tutti.touch.score.Cursor', {
 		}
 	},
 	
-	applyPosition: function(x) {
+	/**
+	 * Snaps the cursor to the insertion point nearest the given position.
+	 * 
+	 * @param {Number} x
+	 */
+	snapNear: function(x) {
 		var parent = this.parent;
 		
 		if (!parent) {
 			return;
 		}
 		
-		return parent.convertPoint(x).x;
+		x = parent.convertPoint(x).x;
+		
+		this.setIndex(this.getVoice().findInsertionPoint(x));
+	},
+	
+	updateIndex: function(index) {
+		var notes = this.getVoice().notes;
+		
+		var start, end, box;
+		
+		var prev = notes[index - 1];
+		
+		if (prev) {
+			box = prev.getBoundingBox();
+			start = box.x + box.w;
+		}
+		else {
+			start = this.getStaff().getStartX();
+		}
+		
+		var next = notes[index];
+		
+		if (next) {
+			end = notes[index].getX();
+		}
+		else {
+			end = start
+				+ (prev
+					? prev.getHeadWidth()
+					: Vex.Flow.durationToGlyph('q').head_width)
+				* 2;
+		}
+		
+		this.setPosition((start + end) / 2);
+	},
+	
+	applyPosition: function(position) {
+		return Math.round(position);
 	},
 	
 	updatePosition: function() {

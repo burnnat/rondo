@@ -123,6 +123,10 @@ Ext.define('Tutti.touch.score.Staff', {
 		return this.primitive.getX();
 	},
 	
+	getStartX: function() {
+		return this.primitive.getNoteStartX();
+	},
+	
 	getY: function() {
 		return this.primitive.y;
 	},

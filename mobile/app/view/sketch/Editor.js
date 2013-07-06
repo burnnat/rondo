@@ -112,6 +112,22 @@ Ext.define('Rondo.view.sketch.Editor', {
 				{},
 				{}
 			);
+			
+			Ext.Array.forEach(
+				measures,
+				function(measure) {
+					var voices = measure.voices();
+					
+					part.staves().each(function(staff) {
+						voice = new Tutti.model.Voice();
+						voice.setStaff(staff);
+						voices.add(voice);
+					});
+					
+					voices.sync();
+				}
+			);
+			
 			sketch.measures().sync();
 			
 			this.hide();
