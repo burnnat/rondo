@@ -229,7 +229,7 @@ Ext.define('Tutti.touch.Block', {
 		mapper.fillStyle = this.toRGB(
 			this.hash(item)
 		);
-		mapper.fillRect(box.x, box.y, box.w, box.h);
+		mapper.fillRect(Math.round(box.x), Math.round(box.y), Math.round(box.w), Math.round(box.h));
 	},
 	
 	clear: function() {
