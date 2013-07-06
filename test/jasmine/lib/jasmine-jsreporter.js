@@ -111,9 +111,11 @@
         },
 
         reportSpecResults: function (spec) {
-            // Finish timing this spec and calculate duration/delta (in sec)
-            spec.finishedAt = new Date();
-            spec.durationSec = elapsedSec(spec.startedAt.getTime(), spec.finishedAt.getTime());
+            if (spec.startedAt) {
+                // Finish timing this spec and calculate duration/delta (in sec)
+                spec.finishedAt = new Date();
+                spec.durationSec = elapsedSec(spec.startedAt.getTime(), spec.finishedAt.getTime());
+            }
         },
 
         reportSuiteResults: function (suite) {
