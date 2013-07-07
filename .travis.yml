@@ -8,11 +8,9 @@ before_install:
 - chmod +x bundle/sencha-cmd.run
 - bundle/sencha-cmd.run --mode unattended --prefix bundle
 - git clone git://github.com/burnnat/vexflow.git bundle/vexflow
-before_script:
-- npm install -g grunt-cli
 script:
 - ant -Dcmd.dir=$TRAVIS_BUILD_DIR/bundle/Sencha/Cmd/3.1.2.342 -Dvexflow.dir=$TRAVIS_BUILD_DIR/bundle/vexflow
-- grunt test
+- npm test
 env:
   global:
   - secure: |-
