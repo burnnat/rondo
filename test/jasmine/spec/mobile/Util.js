@@ -121,4 +121,80 @@ describe("Tutti.Util", function() {
 			});
 		});
 	});
+	
+	describe("when moving array items", function() {
+		describe("with empty arrays", function() {
+			var array;
+			
+			beforeEach(function() {
+				array = [];
+			});
+			
+			it("should skip null operations", function() {
+				expect(function() { Tutti.Util.move(array, 0, 0) }).not.toThrow();
+				expect(function() { Tutti.Util.move(array, 5, 5) }).not.toThrow();
+			});
+			
+			it("should not accept invalid indices", function() {
+				expect(function() { Tutti.Util.move(array, 0, 1) }).toThrow();
+				expect(function() { Tutti.Util.move(array, 10, 2) }).toThrow();
+			});
+		});
+		
+		describe("with two-item arrays", function() {
+			var array;
+			
+			beforeEach(function() {
+				array = ['a', 'b'];
+			});
+			
+			it("should skip null operations", function() {
+				expect(function() { Tutti.Util.move(array, 0, 0) }).not.toThrow();
+				expect(function() { Tutti.Util.move(array, 5, 5) }).not.toThrow();
+			});
+			
+			it("should handle forward moves", function() {
+				Tutti.Util.move(array, 0, 1);
+				expect(array).toEqual(['b', 'a']);
+			});
+			
+			it("should handle backward moves", function() {
+				Tutti.Util.move(array, 1, 0);
+				expect(array).toEqual(['b', 'a']);
+			});
+			
+			it("should not accept invalid indices", function() {
+				expect(function() { Tutti.Util.move(array, 0, 3) }).toThrow();
+				expect(function() { Tutti.Util.move(array, 10, 2) }).toThrow();
+			});
+		});
+		
+		describe("with multi-item arrays", function() {
+			var array;
+			
+			beforeEach(function() {
+				array = ['z', 'x', 'y', 'w'];
+			});
+			
+			it("should skip null operations", function() {
+				expect(function() { Tutti.Util.move(array, 0, 0) }).not.toThrow();
+				expect(function() { Tutti.Util.move(array, 5, 5) }).not.toThrow();
+			});
+			
+			it("should handle forward moves", function() {
+				Tutti.Util.move(array, 1, 3);
+				expect(array).toEqual(['z', 'y', 'w', 'x']);
+			});
+			
+			it("should handle backward moves", function() {
+				Tutti.Util.move(array, 2, 0);
+				expect(array).toEqual(['y', 'z', 'x', 'w']);
+			});
+			
+			it("should not accept invalid indices", function() {
+				expect(function() { Tutti.Util.move(array, 0, 5) }).toThrow();
+				expect(function() { Tutti.Util.move(array, 10, 2) }).toThrow();
+			});
+		});
+	})
 });

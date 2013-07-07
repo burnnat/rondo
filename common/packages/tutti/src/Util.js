@@ -49,5 +49,30 @@ Ext.define('Tutti.Util', {
 		return mid < start
 			? mid + 1
 			: mid;
+	},
+	
+	/**
+	 * @param {Array} array
+	 * @param {Number} oldIndex
+	 * @param {Number} newIndex
+	 */
+	move: function(array, oldIndex, newIndex) {
+		if (oldIndex === newIndex) {
+			return;
+		}
+		
+		if (oldIndex < 0 || oldIndex >= array.length) {
+			Ext.Error.raise("Invalid index: " + oldIndex);
+		}
+		
+		if (newIndex < 0 || newIndex >= array.length) {
+			Ext.Error.raise("Invalid index: " + newIndex);
+		}
+		
+		Ext.Array.insert(
+			array,
+			newIndex,
+			Ext.Array.splice(array, oldIndex, 1)
+		);
 	}
 });
