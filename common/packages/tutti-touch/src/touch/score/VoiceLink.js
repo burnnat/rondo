@@ -51,16 +51,21 @@ Ext.define('Tutti.touch.score.VoiceLink', {
 		});
 	},
 	
-	addNote: function(note) {
+	addNote: function(note, index) {
 		var note = new Tutti.touch.score.Note({
 			voice: this,
 			data: note
 		});
 		
-		note.registerWithVoice(this.voice);
+		note.registerWithVoice(this.voice, index);
 		
-		this.getMeasure().items.add(note);
-		this.notes.push(note);
+		this.getMeasure().items.insert(index, note);
+		
+		Ext.Array.insert(
+			this.notes,
+			index,
+			[note]
+		);
 	},
 	
 	removeNote: function(note) {
@@ -104,7 +109,19 @@ Ext.define('Tutti.touch.score.VoiceLink', {
 	},
 	
 	updateNote: function(store, record, newIndex, oldIndex, fieldNames, fieldValues) {
-		// TODO: implement this method
+		var notes = this.notes;
+		var note = notes[oldIndex];
+		
+		if (newIndex != oldIndex) {
+			Tutti.Util.move(notes, oldIndex, newIndex);
+		}
+		
+		note.reregister();
+		
+		this.getMeasure().refresh({
+			format: true,
+			repaint: true
+		});
 	},
 	
 	findInsertionPoint: function(x) {

@@ -32,20 +32,34 @@ Ext.define('Rondo.controller.Score', {
 	},
 	
 	onKeyTap: function(key) {
-		this.tappedPitch = key.getPitch();
+		var pitch = key.getPitch();
+		var active = this.getScore().getActiveBlock();
 		
-		if (!this.notePanel) {
-			this.notePanel = new Tutti.touch.input.NotePanel({
-				modal: true,
-				hideOnMaskTap: true,
-				listeners: {
-					create: this.onCreate,
-					scope: this
-				}
-			});
+		if (active && active.isCursor) {
+			this.tappedPitch = pitch;
+			
+			if (!this.notePanel) {
+				this.notePanel = new Tutti.touch.input.NotePanel({
+					modal: true,
+					hideOnMaskTap: true,
+					listeners: {
+						create: this.onCreate,
+						scope: this
+					}
+				});
+			}
+			
+			this.notePanel.showBy(key, 'bc-tc?');
 		}
-		
-		this.notePanel.showBy(key, 'bc-tc?');
+		else {
+			this.modifyNotes(
+				active.getVoice(),
+				pitch,
+				function(pitches) {
+					active.getData().set('pitches', pitches);
+				}
+			);
+		}
 	},
 	
 	onScoreTap: function() {
@@ -64,22 +78,40 @@ Ext.define('Rondo.controller.Score', {
 		var active = this.getScore().getActiveBlock();
 		
 		if (active && active.isCursor) {
-			var voice = active.getVoice();
-			var measure = voice.getMeasure().getData();
-			var notes = voice.getData().notes();
+			var index = active.getIndex();
 			
-			notes.add(
-				new Tutti.model.Note({
-					pitches: [
-						Tutti.Theory.getNoteFromPitch(
-							this.tappedPitch,
-							measure.getResolvedKey()
-						)
-					],
-					duration: duration
-				})
+			this.modifyNotes(
+				active.getVoice(),
+				this.tappedPitch,
+				function(pitches, notes) {
+					notes.insert(
+						index,
+						[
+							new Tutti.model.Note({
+								pitches: pitches,
+								duration: duration
+							})
+						]
+					);
+				}
 			);
-			notes.sync();
+			
+			active.setIndex(index + 1);
 		}
+	},
+	
+	modifyNotes: function(voice, rawPitch, fn) {
+		var notes = voice.getData().notes();
+		
+		var pitches = [
+			Tutti.Theory.getNoteFromPitch(
+				rawPitch,
+				voice.getMeasure().getData().getResolvedKey()
+			)
+		];
+		
+		fn(pitches, notes);
+		
+		notes.sync();
 	}
 });

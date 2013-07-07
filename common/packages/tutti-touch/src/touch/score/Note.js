@@ -18,7 +18,7 @@ Ext.define('Tutti.touch.score.Note', {
 		active: false
 	},
 	
-	registerWithVoice: function(voice) {
+	registerWithVoice: function(voice, index) {
 		var data = this.getData();
 		
 		this.primitive = new Vex.Flow.StaveNote({
@@ -28,6 +28,30 @@ Ext.define('Tutti.touch.score.Note', {
 		});
 		
 		voice.addTickable(this.primitive);
+		
+		if (Ext.isDefined(index)) {
+			var tickables = voice.tickables;
+			Tutti.Util.move(tickables, tickables.length - 1, index);
+		}
+	},
+	
+	deregisterWithVoice: function(voice) {
+		var primitive = this.primitive;
+		
+		voice.ticksUsed.subtract(primitive.getTicks());
+		Ext.Array.remove(voice.tickables, primitive);
+		
+		delete this.primitive;
+	},
+	
+	reregister: function() {
+		var primitive = this.primitive;
+		var voice = primitive.getVoice();
+		
+		var index = Ext.Array.indexOf(voice.tickables, primitive);
+		
+		this.deregisterWithVoice(voice);
+		this.registerWithVoice(voice, index);
 	},
 	
 	updateLayout: function(voice) {
