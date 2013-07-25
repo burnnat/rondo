@@ -80,6 +80,21 @@ Ext.define('Tutti.Theory', {
 			(Math.floor((pitch + adjustment) / 12) - 1);
 	},
 	
+	getNoteParts: function(note) {
+		var split = note.split("/");
+		var name = split[0];
+		
+		var parts = this.callParent([name]);
+		
+		parts.name = name;
+		
+		if (split.length > 1) {
+			parts.octave = parseInt(split[1]);
+		}
+		
+		return parts;
+	},
+	
 	/**
 	 * Formats a note string (or object from #getNoteParts()) for display.
 	 * 

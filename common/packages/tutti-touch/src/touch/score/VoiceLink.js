@@ -8,6 +8,7 @@ Ext.define('Tutti.touch.score.VoiceLink', {
 		'Tutti.touch.score.Cursor',
 		'Tutti.touch.score.Note',
 		'Vex.Flow.Beam',
+		'Vex.Flow.KeyManager',
 		'Vex.Flow.Voice'
 	],
 	
@@ -74,14 +75,27 @@ Ext.define('Tutti.touch.score.VoiceLink', {
 	
 	updateLayout: function() {
 		var voice = this.voice;
-		var items = this.getMeasure().items;
+		var measure = this.getMeasure();
+		var items = measure.items;
 		
 		if (this.beams) {
 			items.removeAll(this.beams);
 		}
 		
+		var keyManager = new Vex.Flow.KeyManager(measure.getData().getResolvedKey());
+		
 		Ext.Array.forEach(this.notes, function(note) {
 			note.updateLayout(voice);
+			
+			note.clearAccidentals();
+			
+			note.eachPitch(function(pitch, index) {
+				var selected = keyManager.selectNote(pitch.name);
+				
+				if (selected.change) {
+					note.addAccidental(index, selected.accidental);
+				}
+			});
 		});
 		
 		this.beams = Vex.Flow.Beam.applyAndGetBeams(voice);
@@ -92,7 +106,6 @@ Ext.define('Tutti.touch.score.VoiceLink', {
 		Ext.Array.forEach(
 			records,
 			function(note) {
-				// TODO: allow note insertion, not just appending
 				this.addNote(note, store.indexOf(note));
 			},
 			this

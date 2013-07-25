@@ -8,6 +8,13 @@ Ext.define('Tutti.touch.score.Note', {
 		observable: 'Ext.mixin.Observable'
 	},
 	
+	uses: [
+		'Tutti.Util',
+		'Tutti.Theory',
+		'Vex.Flow.Accidental',
+		'Vex.Flow.StaveNote'
+	],
+	
 	precedence: 20,
 	selectable: true,
 	
@@ -52,6 +59,32 @@ Ext.define('Tutti.touch.score.Note', {
 		
 		this.deregisterWithVoice(voice);
 		this.registerWithVoice(voice, index);
+	},
+	
+	clearAccidentals: function() {
+		var primitive = this.primitive;
+		
+		primitive.modifiers = Ext.Array.filter(
+			primitive.modifiers,
+			function(modifier) {
+				return !(modifier instanceof Vex.Flow.Accidental);
+			}
+		);
+	},
+	
+	addAccidental: function(index, type) {
+		this.primitive.addAccidental(index, new Vex.Flow.Accidental(type || 'n'));
+	},
+	
+	eachPitch: function(fn, scope) {
+		var pitches = this.primitive.keys;
+		var length = pitches.length;
+		
+		for (var i = 0; i < length; i++) {
+			if (fn.call(scope || this, Tutti.Theory.getNoteParts(pitches[i]), i, length) === false) {
+				break;
+			}
+		}
 	},
 	
 	updateLayout: function(voice) {
