@@ -16,6 +16,29 @@ describe("Tutti.Theory", function() {
 		]);
 	});
 	
+	it("should provide scale accidentals", function() {
+		expect(Tutti.Theory.getScaleToneAccidentals('C')).toEqual({
+			a: 'n', b: 'n', c: 'n', d: 'n', e: 'n', f: 'n', g: 'n'
+		});
+		expect(Tutti.Theory.getScaleToneAccidentals('am')).toEqual({
+			a: 'n', b: 'n', c: 'n', d: 'n', e: 'n', f: 'n', g: 'n'
+		});
+		
+		expect(Tutti.Theory.getScaleToneAccidentals('Db')).toEqual({
+			a: 'b', b: 'b', c: 'n', d: 'b', e: 'b', f: 'n', g: 'b'
+		});
+		expect(Tutti.Theory.getScaleToneAccidentals('fm')).toEqual({
+			a: 'b', b: 'b', c: 'n', d: 'b', e: 'b', f: 'n', g: 'n'
+		});
+		
+		expect(Tutti.Theory.getScaleToneAccidentals('E')).toEqual({
+			a: 'n', b: 'n', c: '#', d: '#', e: 'n', f: '#', g: '#'
+		});
+		expect(Tutti.Theory.getScaleToneAccidentals('f#m')).toEqual({
+			a: 'n', b: 'n', c: '#', d: 'n', e: 'n', f: '#', g: '#'
+		});
+	});
+	
 	describe("when normalizing major pitches", function() {
 		it("should give a perfect unison" , function() {
 			expect(Tutti.Theory.getCanonicalNoteName(11, 'Cb')).toEqual('cb');

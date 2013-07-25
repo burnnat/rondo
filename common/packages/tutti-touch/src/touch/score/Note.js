@@ -73,7 +73,7 @@ Ext.define('Tutti.touch.score.Note', {
 	},
 	
 	addAccidental: function(index, type) {
-		this.primitive.addAccidental(index, new Vex.Flow.Accidental(type || 'n'));
+		this.primitive.addAccidental(index, new Vex.Flow.Accidental(type));
 	},
 	
 	eachPitch: function(fn, scope) {
@@ -81,7 +81,7 @@ Ext.define('Tutti.touch.score.Note', {
 		var length = pitches.length;
 		
 		for (var i = 0; i < length; i++) {
-			if (fn.call(scope || this, Tutti.Theory.getNoteParts(pitches[i]), i, length) === false) {
+			if (fn.call(scope || this, pitches[i], i, length) === false) {
 				break;
 			}
 		}

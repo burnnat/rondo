@@ -44,24 +44,63 @@ Ext.define('Tutti.Theory', {
 		);
 	},
 	
-	getCanonicalNoteName: function(offset, key) {
+	/**
+	 * @param {String} key
+	 * 
+	 * @return {Object}
+	 */
+	getScaleToneAccidentals: function(key) {
+		var scale = {};
+		var offset = this.getRootOffset(key);
+		
+		var i, note;
+		
+		for (i = 0; i < this.NUM_SCALE; i++) {
+			note = this.getKeyParts(this.FIFTHS[offset - 1 + i]);
+			scale[note.root] = note.accidental || 'n';
+		}
+		
+		return scale;
+	},
+	
+	/**
+	 * @param {Number} pitch
+	 * @param {String} key
+	 * 
+	 * @return {String}
+	 */
+	getCanonicalNoteName: function(pitch, key) {
 		if (!key) {
 			return this.callParent(arguments);
 		}
 		else {
-			var key = this.getKeyParts(key);
-			
 			var match = Ext.Array.indexOf(
 				this.FIFTHS_INDEX,
-				offset,
-				Ext.Array.indexOf(
-					this.FIFTHS,
-					key.root + (key.accidental || '')
-				) - (key.type == 'M' ? 3 : 6)
+				pitch,
+				this.getRootOffset(key) - 3
 			);
 			
 			return this.FIFTHS[match];
 		}
+	},
+	
+	/**
+	 * @private
+	 * 
+	 * @param {String} key
+	 */
+	getRootOffset: function(key) {
+		var parts = this.getKeyParts(key);
+		
+		return Ext.Array.indexOf(
+				this.FIFTHS,
+				parts.root
+					+ (parts.accidental || '')
+			) - (
+				parts.type == 'M'
+					? 0
+					: 3
+			);
 	},
 	
 	getNoteFromPitch: function(pitch, key) {
