@@ -5,7 +5,7 @@ Ext.define('Tutti.touch.score.Cursor', {
 	extend: 'Tutti.touch.BlockItem',
 	
 	mixins: {
-		observable: 'Ext.mixin.Observable'
+		active: 'Tutti.touch.Activatable'
 	},
 	
 	isCursor: true,
@@ -17,7 +17,6 @@ Ext.define('Tutti.touch.score.Cursor', {
 		voice: null,
 		staff: null,
 		
-		active: false,
 		index: null,
 		position: 0
 	},
@@ -27,14 +26,13 @@ Ext.define('Tutti.touch.score.Cursor', {
 			return;
 		}
 		
-		this.saveContext(context, ['lineWidth', 'lineCap', 'strokeStyle']);
+		this.saveContext(context, ['lineWidth', 'lineCap']);
 		
 		var box = this.getBoundingBox();
 		var cursorX = this.getPosition();
 		
 		context.lineWidth = 2;
 		context.lineCap = 'round';
-		context.strokeStyle = 'magenta';
 		
 		context.beginPath();
 		
@@ -142,9 +140,5 @@ Ext.define('Tutti.touch.score.Cursor', {
 		if (this.getActive()) {
 			this.fireEvent('refresh', { repaint: true });
 		}
-	},
-	
-	updateActive: function() {
-		this.fireEvent('refresh', { repaint: true });
 	}
 });

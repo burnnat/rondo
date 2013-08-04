@@ -8,6 +8,7 @@ Ext.define('Tutti.touch.BlockItem', {
 	
 	constructor: function(config) {
 		this.initConfig(config);
+		this.savedContext = [];
 	},
 	
 	/**
@@ -16,12 +17,11 @@ Ext.define('Tutti.touch.BlockItem', {
 	draw: Ext.emptyFn,
 	
 	saveContext: function(context, props) {
-		this.savedContext = Ext.copyTo({}, context, props);
+		this.savedContext.push(Ext.copyTo({}, context, props));
 	},
 	
 	restoreContext: function(context) {
-		Ext.apply(context, this.savedContext);
-		delete this.savedContext;
+		Ext.apply(context, this.savedContext.pop());
 	},
 	
 	getPageBox: function() {

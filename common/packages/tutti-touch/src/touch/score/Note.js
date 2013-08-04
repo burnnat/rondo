@@ -5,7 +5,7 @@ Ext.define('Tutti.touch.score.Note', {
 	extend: 'Tutti.touch.BlockItem',
 	
 	mixins: {
-		observable: 'Ext.mixin.Observable'
+		active: 'Tutti.touch.Activatable'
 	},
 	
 	uses: [
@@ -20,9 +20,7 @@ Ext.define('Tutti.touch.score.Note', {
 	
 	config: {
 		voice: null,
-		data: null,
-		
-		active: false
+		data: null
 	},
 	
 	registerWithVoice: function(voice, index) {
@@ -95,16 +93,7 @@ Ext.define('Tutti.touch.score.Note', {
 		var primitive = this.primitive;
 		
 		primitive.setContext(context);
-		
-		this.saveContext(context, ['fillStyle']);
-		
-		if (this.getActive()) {
-			context.fillStyle = 'magenta';
-		}
-		
 		primitive.draw(context);
-		
-		this.restoreContext(context);
 	},
 	
 	getBoundingBox: function() {
@@ -117,9 +106,5 @@ Ext.define('Tutti.touch.score.Note', {
 	
 	getHeadWidth: function() {
 		return this.primitive.glyph.head_width;
-	},
-	
-	updateActive: function() {
-		this.fireEvent('refresh', { repaint: true });
 	}
 });

@@ -15,7 +15,10 @@ Ext.define('Test.BlockItem', {
 	},
 	
 	constructor: function(config) {
-		Ext.copyTo(this, config, ['selectable', 'precedence']);
+		if (config) {
+			Ext.copyTo(this, config, ['selectable', 'precedence']);
+		}
+		
 		this.callParent(arguments);
 	},
 	

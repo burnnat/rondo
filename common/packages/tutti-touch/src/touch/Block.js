@@ -137,6 +137,7 @@ Ext.define('Tutti.touch.Block', {
 		var listeners = {
 			touchstart: me.onTouchStart,
 			touchmove: me.onTouchMove,
+			touchend: me.onTouchEnd,
 			tap: me.onTap
 		};
 		
@@ -323,14 +324,29 @@ Ext.define('Tutti.touch.Block', {
 		this.callParent(arguments);
 	},
 	
+	/**
+	 * @param {Number} pageX
+	 * @param {Number} pageY
+	 * 
+	 * @return {Object}
+	 * @return {Number} return.x
+	 * @return {Number} return.y
+	 */
 	convertPoint: function(pageX, pageY) {
 		var canvas = this.canvasEl;
-		var scale = canvas.getHeight() / this.getBlockHeight();
+		var scale = this.getScale();
 		
 		return {
 			x: (pageX - canvas.getX()) / scale,
 			y: (pageY - canvas.getY()) / scale
 		};
+	},
+	
+	/**
+	 * @return {Number}
+	 */
+	getScale: function() {
+		return this.canvasEl.getHeight() / this.getBlockHeight();
 	},
 	
 	parseEvent: function(callback, event) {
@@ -358,5 +374,6 @@ Ext.define('Tutti.touch.Block', {
 	
 	onTouchStart: Ext.emptyFn,
 	onTouchMove: Ext.emptyFn,
+	onTouchEnd: Ext.emptyFn,
 	onTap: Ext.emptyFn
 });

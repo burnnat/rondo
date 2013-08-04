@@ -5,6 +5,7 @@ Ext.define('Tutti.touch.score.PartLink', {
 	
 	uses: [
 		'Tutti.touch.score.Barline',
+		'Tutti.touch.score.Connector',
 		'Tutti.touch.score.Staff'
 	],
 	
@@ -114,11 +115,11 @@ Ext.define('Tutti.touch.score.PartLink', {
 		
 		return this.getMeasure()
 			.items.add(
-				new Vex.Flow.StaveConnector(
-					staves.first().primitive,
-					staves.last().primitive
-				)
-				.setType(this.statics().groupTypes[type])
+				new Tutti.touch.score.Connector({
+					topStaff: staves.first(),
+					bottomStaff: staves.last(),
+					type: this.statics().groupTypes[type]
+				})
 			);
 	},
 	

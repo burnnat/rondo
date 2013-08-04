@@ -33,12 +33,12 @@ Ext.define('Tutti.touch.score.VoiceLink', {
 		voice.setMode(Vex.Flow.Voice.Mode.SOFT);
 		voice.setStave(staff.primitive);
 		
-		this.getMeasure().items.add(
-			new Tutti.touch.score.Cursor({
-				voice: this,
-				staff: staff
-			})
-		);
+		this.cursor = new Tutti.touch.score.Cursor({
+			voice: this,
+			staff: staff
+		});
+		
+		this.getMeasure().items.add(this.cursor);
 		
 		var store = data.notes();
 		
@@ -104,6 +104,10 @@ Ext.define('Tutti.touch.score.VoiceLink', {
 		items.addAll(this.beams);
 	},
 	
+	afterLayout: function() {
+		this.cursor.updateLayout();
+	},
+	
 	addNotes: function(store, records) {
 		Ext.Array.forEach(
 			records,
@@ -137,6 +141,10 @@ Ext.define('Tutti.touch.score.VoiceLink', {
 			format: true,
 			repaint: true
 		});
+	},
+	
+	getNote: function(index) {
+		return this.notes[index];
 	},
 	
 	findInsertionPoint: function(x) {

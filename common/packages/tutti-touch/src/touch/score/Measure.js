@@ -44,7 +44,7 @@ Ext.define('Tutti.touch.score.Measure', {
 			scope: this
 		});
 		
-		if (first) {
+		if (first && parts.getCount() > 0) {
 			// Add initial connector at system start
 			items.add(
 				new Vex.Flow.StaveConnector(
@@ -142,6 +142,12 @@ Ext.define('Tutti.touch.score.Measure', {
 	},
 	
 	refresh: function(stages) {
+		if (this.refreshing) {
+			return;
+		}
+		
+		this.refreshing = true;
+		
 		if (stages.layout) {
 			var parts = this.parts;
 			
@@ -190,6 +196,10 @@ Ext.define('Tutti.touch.score.Measure', {
 						primitives,
 						staff.getNoteEndX() - staff.getNoteStartX() - 10
 					);
+				
+				voices.each(function(voice) {
+					voice.afterLayout();
+				});
 			}
 		}
 		
@@ -197,6 +207,8 @@ Ext.define('Tutti.touch.score.Measure', {
 			this.clear();
 			this.repaint();
 		}
+		
+		this.refreshing = false;
 	},
 	
 	getKeySignature: function() {
@@ -211,6 +223,108 @@ Ext.define('Tutti.touch.score.Measure', {
 		return this.height;
 	},
 	
+	/**
+	 * @param {Tutti.touch.BlockItem} item
+	 * @param {Ext.event.Event} event
+	 */
+	onTouchStart: function(item, event) {
+		var x = event.pageX;
+		var bounds = this.canvasEl.getPageBox();
+		
+		var siblings = this.getParent().getItems();
+		var index = siblings.indexOf(this);
+		
+		var target, display;
+		
+		if (x > bounds.right - 10) {
+			target = this;
+			
+			if (index < siblings.getCount() - 1) {
+				display = siblings.getAt(index + 1);
+			}
+			else {
+				display = this;
+			}
+		}
+		else if (x < bounds.left + 10) {
+			if (index > 0) {
+				target = siblings.getAt(index - 1);
+				display = this;
+			}
+		}
+		
+		if (target) {
+			this.resizeStart = {
+				x: x,
+				target: target,
+				display: display,
+				width: target.getBlockWidth(),
+				initial: true
+			};
+		}
+	},
+	
+	/**
+	 * @param {Tutti.touch.BlockItem} item
+	 * @param {Ext.event.Event} event
+	 */
+	onTouchMove: function(item, event) {
+		var resize = this.resizeStart;
+		
+		if (resize != null) {
+			event.stopPropagation();
+			
+			var target = resize.target;
+			
+			if (resize.initial) {
+				var display = resize.display;
+				var end = (display === target);
+				
+				display.items.each(function(item) {
+				if (end ? item.isBarline : item.isConnector) {
+						item.setActive(true);
+					}
+				});
+				
+				delete resize.initial;
+			}
+			
+			target.setBlockWidth(
+				Math.max(resize.width + (event.pageX - resize.x) / this.getScale(), 0)
+			);
+			
+			target.refresh({
+				layout: true,
+				format: true,
+				repaint: true
+			});
+		}
+	},
+	
+	/**
+	 * 
+	 */
+	onTouchEnd: function() {
+		var resize = this.resizeStart;
+		
+		if (resize && !resize.initial) {
+			var display = resize.display;
+			var end = (display === resize.target);
+			
+			display.items.each(function(item) {
+				if (end ? item.isBarline : item.isConnector) {
+					item.setActive(false);
+				}
+			});
+		}
+		
+		this.resizeStart = null;
+	},
+	
+	/**
+	 * @param {Tutti.touch.BlockItem} item
+	 * @param {Ext.event.Event} event
+	 */
 	onTap: function(item, event) {
 		this.fireEvent('blocktap', item, event);
 		event.stopEvent();

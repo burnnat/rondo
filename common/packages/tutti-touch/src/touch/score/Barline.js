@@ -4,6 +4,12 @@
 Ext.define('Tutti.touch.score.Barline', {
 	extend: 'Tutti.touch.BlockItem',
 	
+	mixins: {
+		active: 'Tutti.touch.Activatable'
+	},
+	
+	isBarline: true,
+	
 	config: {
 		topStaff: null,
 		bottomStaff: null
