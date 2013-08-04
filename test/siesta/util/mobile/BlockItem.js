@@ -20,13 +20,10 @@ Ext.define('Test.BlockItem', {
 	},
 	
 	draw: function(context) {
+		var box = this.getBoundingBox();
+		
 		context.fillStyle = this.getColor();
-		context.fillRect(
-			this.getX(),
-			this.getY(),
-			this.getWidth(),
-			this.getHeight()
-		);
+		context.fillRect(box.x, box.y, box.w, box.h);
 	},
 	
 	getBoundingBox: function() {

@@ -88,11 +88,22 @@ Ext.define('Tutti.touch.score.Cursor', {
 	},
 	
 	updateIndex: function(index) {
-		var notes = this.getVoice().notes;
+		this.updateLayout(index);
+	},
+	
+	/**
+	 * Updates the cursor's position based on its current index.
+	 */
+	updateLayout: function(index) {
+		if (!Ext.isDefined(index)) {
+			index = this.getIndex();
+		}
+		
+		var voice = this.getVoice();
 		
 		var start, end, box;
 		
-		var prev = notes[index - 1];
+		var prev = voice.getNote(index - 1);
 		
 		if (prev) {
 			box = prev.getBoundingBox();
@@ -102,10 +113,13 @@ Ext.define('Tutti.touch.score.Cursor', {
 			start = this.getStaff().getStartX();
 		}
 		
-		var next = notes[index];
+		var next = voice.getNote(index);
 		
 		if (next) {
-			end = notes[index].getX();
+			var bound = next.getBoundingBox().x;
+			var head = next.getX();
+			
+			end = Ext.Number.constrain(bound, 2 * bound - (start + head) / 2, head);
 		}
 		else {
 			end = start
