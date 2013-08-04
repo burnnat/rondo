@@ -1,0 +1,1 @@
+Ext.Loader.setConfig('disableCaching', false);
