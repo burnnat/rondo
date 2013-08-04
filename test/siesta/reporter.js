@@ -30,6 +30,9 @@ Siesta.Harness.meta.extend({
 								}
 							);
 						}
+						else {
+							return suite;
+						}
 					},
 					this
 				)
