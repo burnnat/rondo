@@ -12,7 +12,7 @@ StartTest(function(t) {
 		function() {
 			Ext.Viewport.setLayout('auto');
 			
-			var addScore = function(scale) {
+			var addScore = function(t, scale) {
 				var total = 2;
 				var measures = [];
 				
@@ -46,11 +46,21 @@ StartTest(function(t) {
 					}
 				);
 				
-				Ext.Viewport.add(
+				var owner = Ext.Viewport.add(
 					new Ext.Container({
 						layout: 'hbox',
 						items: measures
 					})
+				);
+				
+				owner.element.on(
+					'touchmove',
+					function() {
+						if (owner.checkEvents) {
+							t.fail('Resize events should not be bubbled to container');
+							owner.checkEvents = false;
+						}
+					}
 				);
 				
 				Ext.Array.forEach(
@@ -126,12 +136,16 @@ StartTest(function(t) {
 								t.is(target.getBlockWidth(), width - delta, 'Measure shrank correct amount');
 								t.mouseDown();
 								
+								target.parent.checkEvents = true;
+								
 								t.is(activeItem.getActive(), false, 'Barline is inactive before move');
 								t.moveMouseBy([delta * scale, 0], next);
 							},
 							function(next) {
 								t.is(activeItem.getActive(), true, 'Barline is active after move');
 								t.mouseUp();
+								
+								target.parent.checkEvents = false;
 								
 								t.is(target.getBlockWidth(), width, 'Measure grew correct amount');
 							}
@@ -156,6 +170,8 @@ StartTest(function(t) {
 				
 				t.chain(
 					function(next) {
+						target.parent.checkEvents = true;
+						
 						t.dragBy(
 							pointFor(target, scale, true),
 							[-2 * target.getBlockWidth() * scale, 0],
@@ -163,6 +179,7 @@ StartTest(function(t) {
 						);
 					},
 					function() {
+						target.parent.checkEvents = false;
 						t.is(target.getBlockWidth(), 0, 'Measure width has a minimum of zero');
 					}
 				);
@@ -170,7 +187,7 @@ StartTest(function(t) {
 			
 			t.describe("Measures", function(t) {
 				t.describe("at natural size", function(t) {
-					var measures = addScore(1);
+					var measures = addScore(t, 1);
 					
 					t.it("should ignore starting barline", function(t) {
 						checkResize(t, {
@@ -210,7 +227,7 @@ StartTest(function(t) {
 				
 				t.describe("at half size", function(t) {
 					var scale = 0.5;
-					var measures = addScore(scale);
+					var measures = addScore(t, scale);
 					
 					t.it("should ignore starting barline", function(t) {
 						checkResize(t, {
@@ -255,7 +272,7 @@ StartTest(function(t) {
 				
 				t.describe("at double size", function(t) {
 					var scale = 2;
-					var measures = addScore(scale);
+					var measures = addScore(t, scale);
 					
 					t.it("should ignore starting barline", function(t) {
 						checkResize(t, {
