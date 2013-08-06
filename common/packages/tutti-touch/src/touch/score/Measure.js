@@ -4,6 +4,10 @@
 Ext.define('Tutti.touch.score.Measure', {
 	extend: 'Tutti.touch.Block',
 	
+	mixins: {
+		refresh: 'Tutti.touch.Refreshable'
+	},
+	
 	uses: [
 		'Tutti.touch.score.PartLink',
 		'Tutti.touch.score.VoiceLink'
@@ -15,6 +19,15 @@ Ext.define('Tutti.touch.score.Measure', {
 		
 		systemStart: false,
 		systemEnd: false
+	},
+	
+	constructor: function() {
+		this.callParent(arguments);
+		
+		this.performRefresh({
+			layout: true,
+			format: true
+		});
 	},
 	
 	initItems: function(items) {
@@ -73,27 +86,6 @@ Ext.define('Tutti.touch.score.Measure', {
 			removerecords: this.removeVoices,
 			scope: this
 		});
-		
-		this.refresh({
-			layout: true,
-			format: true
-		});
-	},
-	
-	onItemAdd: function(index, item) {
-		this.callParent(arguments);
-		
-		if (item.isObservable) {
-			item.on('refresh', this.refresh, this);
-		}
-	},
-	
-	onItemRemove: function(item) {
-		this.callParent(arguments);
-		
-		if (item.isObservable) {
-			item.un('refresh', this.refresh, this);
-		}
 	},
 	
 	getStaff: function(staffData) {
@@ -141,12 +133,10 @@ Ext.define('Tutti.touch.score.Measure', {
 		Ext.Array.forEach(records, this.removeVoice, this);
 	},
 	
-	refresh: function(stages) {
-		if (this.refreshing) {
-			return;
+	performRefresh: function(stages) {
+		if (stages.resize) {
+			this.setBlockWidth(stages.values.width);
 		}
-		
-		this.refreshing = true;
 		
 		if (stages.layout) {
 			var parts = this.parts;
@@ -207,8 +197,6 @@ Ext.define('Tutti.touch.score.Measure', {
 			this.clear();
 			this.repaint();
 		}
-		
-		this.refreshing = false;
 	},
 	
 	getKeySignature: function() {
@@ -289,11 +277,12 @@ Ext.define('Tutti.touch.score.Measure', {
 				delete resize.initial;
 			}
 			
-			target.setBlockWidth(
-				Math.max(resize.width + (event.pageX - resize.x) / this.getScale(), 0)
-			);
-			
 			target.refresh({
+				values: {
+					width: Math.max(resize.width + (event.pageX - resize.x) / this.getScale(), 0)
+				},
+				
+				resize: true,
 				layout: true,
 				format: true,
 				repaint: true
