@@ -1,4 +1,4 @@
-var runner = require('./lib/runner.js');
+var runner = require('../lib/sauce-runner.js');
 
 module.exports = function(grunt) {
 	

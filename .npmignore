@@ -1,0 +1,17 @@
+/.sencha
+/.settings
+/archive
+/build
+/common
+/desktop
+/mobile
+/test
+.project
+.pydevproject
+.travis.yml
+build.xml
+Gruntfile.js
+local.properties
+*.pyc
+*.log
+*.log.*

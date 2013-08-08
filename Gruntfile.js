@@ -1,28 +1,11 @@
-var tests = require('./test/middleware.js');
 var glob = require('glob');
 var path = require('path');
+var tests = require('./server/lib/tests.js');
 
 module.exports = function(grunt) {
 	var _ = grunt.util._;
 	var base = '.';
 	var port = 8080;
-	
-	tests.init(
-		base,
-		{
-			jasmine: {
-				path: 'test/jasmine',
-				page: '%s.html',
-				pattern: 'spec/%s/**/*.js'
-			},
-			
-			siesta: {
-				path: 'test/siesta',
-				page: '%s.html',
-				pattern: 'spec/%s/**/*.t.js'
-			}
-		}
-	);
 	
 	var mobileOptions = {
 		browsers: [
@@ -64,6 +47,8 @@ module.exports = function(grunt) {
 		);
 	};
 	
+	var deployTarget = grunt.option('target') || 'build/deploy';
+	
 	grunt.initConfig({
 		
 		port: port,
@@ -80,34 +65,44 @@ module.exports = function(grunt) {
 				"*.log.*"
 			],
 			
-			flags: ["mobile/*.built"]
+			flags: ["mobile/*.built"],
+			
+			deploy: {
+				src: [
+					path.join(deployTarget, '**'),
+					'!' + deployTarget,
+					'!' + path.join(deployTarget, '.git/**'),
+					'!' + path.join(deployTarget, '.gitignore'),
+					'!' + path.join(deployTarget, '.project'),
+					'!' + path.join(deployTarget, 'Procfile')
+				],
+				options: {
+					force: true
+				}
+			},
+			
+			postdeploy: {
+				src: [
+					path.join(deployTarget, 'node_modules/rondo/**')
+				],
+				options: {
+					force: true
+				}
+			}
 		},
 		
-		connect: {
+		express: {
 			options: {
-				hostname: '*',
-				port: port,
-				base: base,
-				middleware: function(connect, options) {
-					var middleware = tests.getMiddleware(options.production);
-					
-					middleware.push(connect.static(options.base));
-					middleware.push(connect.directory(options.base));
-					
-					return middleware;
-				}
+				script: './server/web.js',
+				port: port
 			},
 			
 			dev: {
-				options: {
-					production: false
-				}
+				node_env: 'development'
 			},
 			
 			build: {
-				options: {
-					production: true
-				}
+				node_env: 'production'
 			}
 		},
 		
@@ -146,7 +141,40 @@ module.exports = function(grunt) {
 			}
 		},
 		
-		watch: tests.getWatch(grunt)
+		watch: tests.getWatch(grunt),
+		
+		copy: {
+			mobile: {
+				expand: true,
+				cwd: 'build/rondo-mobile/production/',
+				src: '**',
+				dest: path.join(deployTarget, 'build/mobile/')
+			},
+			
+			desktop: {
+				expand: true,
+				cwd: 'build/rondo-desktop/production/',
+				src: '**',
+				dest: path.join(deployTarget, 'build/desktop/')
+			},
+			
+			deploy: {
+				expand: true,
+				cwd: path.join(deployTarget, 'node_modules/rondo/'),
+				src: '**',
+				dest: deployTarget
+			}
+		},
+		
+		exec: {
+			build: {
+				command: 'ant'
+			},
+			deploy: {
+				cwd: deployTarget,
+				command: 'npm install ' + path.relative(deployTarget, '.')
+			}
+		}
 	});
 	
 	// Loading dependencies
@@ -156,18 +184,28 @@ module.exports = function(grunt) {
 		}
 	}
 	
-	grunt.loadTasks('test/tasks');
+	grunt.loadTasks('./server/tasks');
 	
-	grunt.registerTask("dev", ["connect:dev", "watch"]);
+	grunt.registerTask("dev", ["express:dev", "watch"]);
 	
 	grunt.registerTask("jasmine", ["connect:build", "saucelabs-jasmine:mobile"]);
 	grunt.registerTask("siesta", ["connect:build", "saucelabs-siesta:mobile"]);
 	grunt.registerTask("selenium", ["connect:build", "saucelabs-selenium:mobile"]);
 	
 	grunt.registerTask("test", [
-		"connect:build",
+		"express:build",
 		"saucelabs-jasmine:mobile",
 		"saucelabs-siesta:mobile",
 		"saucelabs-selenium:mobile"
+	]);
+	
+	grunt.registerTask("deploy", [
+		"clean:deploy",
+		"exec:deploy",
+		"copy:deploy",
+		"clean:postdeploy",
+//		"exec:build",
+		"copy:mobile",
+		"copy:desktop"
 	]);
 };

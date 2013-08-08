@@ -1,0 +1,13 @@
+{
+	"jasmine": {
+		"path": "test/jasmine",
+		"page": "%s.html",
+		"pattern": "spec/%s/**/*.js"
+	},
+	
+	"siesta": {
+		"path": "test/siesta",
+		"page": "%s.html",
+		"pattern": "spec/%s/**/*.t.js"
+	}
+}

@@ -1,4 +1,4 @@
-var runner = require('./lib/runner.js');
+var runner = require('../lib/sauce-runner.js');
 
 var siesta = function(browser, chain) {
 	var runButton = '.x-btn a[data-qtip="Run all"]';

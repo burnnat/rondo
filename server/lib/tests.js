@@ -6,30 +6,32 @@ var url = require('url');
 var path = require('path');
 var escape = require('escape-regexp');
 
-var grunt;
+var base = '.';
+var tests = {};
+
+var config = JSON.parse(
+	fs.readFileSync(
+		'test/tests.json',
+		'utf8'
+	)
+);
+
+for (framework in config) {
+	var test = config[framework];
+	var testBase = path.normalize(path.join(base, test.path));
+	
+	tests[framework] = {
+		path: testBase,
+		page: path.normalize(path.join(testBase, test.page)),
+		pattern: path.normalize(path.join(testBase, test.pattern)),
+		specs: {}
+	}
+}
 
 module.exports = {
 	
-	tests: {},
-	
-	/**
-	 * 
-	 */
-	init: function(base, tests) {
-		this.base = base;
-		
-		for (framework in tests) {
-			var test = tests[framework];
-			var testBase = path.normalize(path.join(base, test.path));
-			
-			this.tests[framework] = {
-				path: testBase,
-				page: path.normalize(path.join(testBase, test.page)),
-				pattern: path.normalize(path.join(testBase, test.pattern)),
-				specs: {}
-			}
-		}
-	},
+	base: base,
+	tests: tests,
 	
 	extract: function(string, pattern) {
 		var segment = "[^" + escape(path.sep) + "]+";
@@ -148,7 +150,7 @@ module.exports = {
 			
 			fs.readFile(
 				testlet,
-				'utf-8',
+				'utf8',
 				function(err, template) {
 					if (err) {
 						next(err);

@@ -7,15 +7,21 @@
 		"url": "git://github.com/burnnat/rondo.git"
 	},
 	
-	"dependencies": {},
+	"dependencies": {
+		"express": "3.1.x"
+	},
 	
 	"devDependencies": {
 		"grunt": "~0.4.1",
 		"grunt-cli": "~0.1.9",
-		"grunt-saucelabs": "~4.0.3",
+		
 		"grunt-contrib-clean": "~0.4.1",
-		"grunt-contrib-connect": "~0.3.0",
+		"grunt-contrib-copy": "~0.4.1",
 		"grunt-contrib-watch": "~0.4.4",
+		
+		"grunt-exec": "~0.4.2",
+		"grunt-express-server": "~0.4.2",
+		"grunt-saucelabs": "~4.0.3",
 		
 		"glob": "~3.2.1",
 		"mustache": "~0.7.2",
@@ -27,6 +33,7 @@
 	},
 	
 	"scripts": {
+		"start": "node ./server/web.js production",
 		"test": "grunt test"
 	}
 }
