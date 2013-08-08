@@ -35,5 +35,10 @@
 	"scripts": {
 		"start": "node ./server/web.js production",
 		"test": "grunt test"
+	},
+	
+	"engines": {
+		"node": "0.10.x",
+		"npm": "1.2.x"
 	}
 }
