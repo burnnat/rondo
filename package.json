@@ -8,16 +8,16 @@
 	},
 	
 	"dependencies": {
-		"express": "3.1.x"
+		"express": "~3.3.5"
 	},
 	
 	"devDependencies": {
 		"grunt": "~0.4.1",
 		"grunt-cli": "~0.1.9",
 		
-		"grunt-contrib-clean": "~0.4.1",
+		"grunt-contrib-clean": "~0.5.0",
 		"grunt-contrib-copy": "~0.4.1",
-		"grunt-contrib-watch": "~0.4.4",
+		"grunt-contrib-watch": "~0.5.1",
 		
 		"grunt-exec": "~0.4.2",
 		"grunt-express-server": "~0.4.2",
