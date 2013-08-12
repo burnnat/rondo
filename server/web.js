@@ -9,9 +9,9 @@ var express = require("express");
 var app = express();
 var env = app.get('env');
 
+console.log('Loading server for environment: ' + env);
+
 if (env == 'production') {
-	console.log('Loading production files...');
-	
 	app.use(express.logger());
 	app.use(express.static('build'));
 	
@@ -19,28 +19,35 @@ if (env == 'production') {
 		res.redirect('/mobile/');
 	});
 }
-else if (env == 'development') {
-	console.log('Loading development files...');
+else if (env == 'development' || env == 'staging') {
+	var isStaging = env == 'staging';
 	
 	var tests = require('./lib/tests.js');
 	
-	tests.getMiddleware()
+	tests.getMiddleware(isStaging)
 		.forEach(function(middleware) {
 			app.use(middleware);
 		});
 	
-	[
-		'common',
-		'desktop',
-		'mobile',
-		'test'
-	].forEach(function(dir) {
+	var dirs = isStaging
+		? [
+			'build',
+			'test'
+		]
+		: [
+			'common',
+			'desktop',
+			'mobile',
+			'test'
+		];
+	
+	dirs.forEach(function(dir) {
 		app.use('/' + dir, express.static(dir))
 	});
 }
 else {
-	console.error('Unknown environment type: ' + env);
-	return;
+	console.error('Unknown environment type');
+	return false;
 }
 
 var port = process.env.PORT || 5000;

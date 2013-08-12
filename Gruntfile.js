@@ -98,11 +98,15 @@ module.exports = function(grunt) {
 			},
 			
 			dev: {
-				node_env: 'development'
+				options: {
+					node_env: 'development'
+				}
 			},
 			
 			build: {
-				node_env: 'production'
+				options: {
+					node_env: 'staging'
+				}
 			}
 		},
 		
@@ -187,10 +191,11 @@ module.exports = function(grunt) {
 	grunt.loadTasks('./server/tasks');
 	
 	grunt.registerTask("dev", ["express:dev", "watch"]);
+	grunt.registerTask("staging", ["express:build", "watch"]);
 	
-	grunt.registerTask("jasmine", ["connect:build", "saucelabs-jasmine:mobile"]);
-	grunt.registerTask("siesta", ["connect:build", "saucelabs-siesta:mobile"]);
-	grunt.registerTask("selenium", ["connect:build", "saucelabs-selenium:mobile"]);
+	grunt.registerTask("jasmine", ["express:build", "saucelabs-jasmine:mobile"]);
+	grunt.registerTask("siesta", ["express:build", "saucelabs-siesta:mobile"]);
+	grunt.registerTask("selenium", ["express:build", "saucelabs-selenium:mobile"]);
 	
 	grunt.registerTask("test", [
 		"express:build",
