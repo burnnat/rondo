@@ -11,11 +11,31 @@ app.reset = function(done) {
 };
 
 before(function(done) {
-	app.get('/').end(done);
-});
-
-after(function(done) {
-	app.post('/api/close').end(done);
+	this.timeout(0);
+	var start = Date.now();
+	
+	var attempt = function() {
+		console.log('Attempting connection...');
+		app.get('/').end(complete);
+	};
+	
+	var complete = function(err) {
+		if (!err || Date.now() - start > 30000) {
+			if (err) {
+				console.log('Connection timed out');
+			}
+			else {
+				console.log('Connection succeeded');
+			}
+			
+			done(err);
+		}
+		else {
+			setTimeout(attempt, 250);
+		}
+	};
+	
+	setTimeout(attempt, 250);
 });
 
 module.exports = app;
