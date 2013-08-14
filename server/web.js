@@ -49,7 +49,10 @@ else {
 	return false;
 }
 
-mongoose.connect(process.env.MONGOHQ_URL);
+var databaseURL = process.env.MONGOHQ_URL || 'localhost';
+console.log("Connecting to database at: " + databaseURL);
+mongoose.connect(databaseURL);
+
 var db = mongoose.connection;
 
 app.get('/', function(req, res) {
@@ -65,6 +68,8 @@ if (env == 'development') {
 
 db.on('error', console.error.bind(console, 'database connection error:'));
 db.once('open', function() {
+	console.log("Database connection opened");
+	
 	var port = process.env.PORT || 5000;
 	
 	app.listen(port, function() {

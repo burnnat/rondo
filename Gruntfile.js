@@ -195,7 +195,7 @@ module.exports = function(grunt) {
 			},
 			
 			mongo: {
-				command: 'mongod --dbpath E:\\mongo-data',
+				command: 'mongod',
 				options: {
 					async: true,
 					stdout: false,

@@ -29,7 +29,11 @@ module.exports = {
 			});
 			
 			app.post('/api/close', function(req, res) {
+				console.log("Closing database connection");
+				
 				mongoose.disconnect(function() {
+				console.log("Database connection closed");
+					
 					res.send({
 						success: true
 					});
