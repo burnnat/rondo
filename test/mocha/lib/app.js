@@ -10,4 +10,12 @@ app.reset = function(done) {
 		);
 };
 
+before(function(done) {
+	app.get('/').end(done);
+});
+
+after(function(done) {
+	app.post('/api/close').end(done);
+});
+
 module.exports = app;

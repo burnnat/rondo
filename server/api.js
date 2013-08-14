@@ -1,5 +1,7 @@
 var express = require("express");
+var mongoose = require("mongoose");
 var async = require("async");
+
 var info = require('../package.json');
 var sketches = require("./api/sketch");
 
@@ -24,6 +26,14 @@ module.exports = {
 						});
 					}
 				);
+			});
+			
+			app.post('/api/close', function(req, res) {
+				mongoose.disconnect(function() {
+					res.send({
+						success: true
+					});
+				});
 			});
 		}
 		

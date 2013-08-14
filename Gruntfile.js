@@ -201,6 +201,14 @@ module.exports = function(grunt) {
 					stdout: false,
 					stderr: false
 				}
+			},
+			
+			mongoStop: {
+				command: 'mongo --eval "db.getSiblingDB(\'admin\').shutdownServer()"',
+				options: {
+					stdout: false,
+					stderr: false
+				}
 			}
 		}
 	});
@@ -217,7 +225,7 @@ module.exports = function(grunt) {
 	grunt.registerTask("dev", ["shell:mongo", "express:dev", "watch"]);
 	grunt.registerTask("staging", ["shell:mongo", "express:build", "watch"]);
 	
-	grunt.registerTask("mocha", ["shell:mongo", "express:build", "mochaTest:server"]);
+	grunt.registerTask("mocha", ["shell:mongo", "express:build", "mochaTest:server", "shell:mongoStop"]);
 	grunt.registerTask("jasmine", ["express:build", "saucelabs-jasmine:mobile"]);
 	grunt.registerTask("siesta", ["express:build", "saucelabs-siesta:mobile"]);
 	grunt.registerTask("selenium", ["express:build", "saucelabs-selenium:mobile"]);
