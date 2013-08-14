@@ -1,6 +1,8 @@
 language: node_js
 node_js:
 - "0.10"
+services:
+- mongodb
 before_install:
 - mkdir bundle
 - curl -o bundle/sencha-cmd.run.zip http://cdn.sencha.com/cmd/3.1.2.342/SenchaCmd-3.1.2.342-linux-x64.run.zip
@@ -13,6 +15,7 @@ script:
 - npm test
 env:
   global:
+  - MONGOHQ_URL=mongodb://localhost
   - secure: |-
       m1X9g9pMtu+ZmN8q17RNErGyjkvGFTz8F/NCFd0Qzknn2EL8t9Vr6Zc5IQmK
       OyXPu33yLeUc9jphaqneZfUy34IGPgkUXG2xO1LX1lfbWe14PsPnCG9709Jo

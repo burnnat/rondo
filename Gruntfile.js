@@ -110,6 +110,16 @@ module.exports = function(grunt) {
 			}
 		},
 		
+		mochaTest: {
+			options: {
+				reporter: 'spec'
+			},
+			
+			server: {
+				src: ['test/mocha/**/*.js']
+			}
+		},
+		
 		'saucelabs-jasmine': {
 			mobile: {
 				options: sauceOptions({
@@ -174,6 +184,7 @@ module.exports = function(grunt) {
 			build: {
 				command: 'ant'
 			},
+			
 			deploy: {
 				command: 'npm install ' + path.relative(deployTarget, '.'),
 				options: {
@@ -182,10 +193,13 @@ module.exports = function(grunt) {
 					}
 				}
 			},
+			
 			mongo: {
 				command: 'mongod --dbpath E:\\mongo-data',
 				options: {
-					async: true
+					async: true,
+					stdout: false,
+					stderr: false
 				}
 			}
 		}
@@ -203,12 +217,14 @@ module.exports = function(grunt) {
 	grunt.registerTask("dev", ["shell:mongo", "express:dev", "watch"]);
 	grunt.registerTask("staging", ["shell:mongo", "express:build", "watch"]);
 	
+	grunt.registerTask("mocha", ["shell:mongo", "express:build", "mochaTest:server"]);
 	grunt.registerTask("jasmine", ["express:build", "saucelabs-jasmine:mobile"]);
 	grunt.registerTask("siesta", ["express:build", "saucelabs-siesta:mobile"]);
 	grunt.registerTask("selenium", ["express:build", "saucelabs-selenium:mobile"]);
 	
 	grunt.registerTask("test", [
 		"express:build",
+		"mochaTest:server",
 		"saucelabs-jasmine:mobile",
 		"saucelabs-siesta:mobile",
 		"saucelabs-selenium:mobile"

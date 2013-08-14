@@ -12,13 +12,11 @@ var env = app.get('env');
 
 console.log('Loading server for environment: ' + env);
 
+app.use(express.bodyParser());
+
 if (env == 'production') {
 	app.use(express.logger());
 	app.use(express.static('build'));
-	
-	app.get('/', function(req, res) {
-		res.redirect('/mobile/');
-	});
 }
 else if (env == 'development' || env == 'staging') {
 	var isStaging = env == 'staging';
@@ -54,12 +52,12 @@ else {
 mongoose.connect(process.env.MONGOHQ_URL);
 var db = mongoose.connection;
 
-app.get('/api', function(req, res) {
-	res.send('API is available');
+app.get('/', function(req, res) {
+	res.redirect('/mobile/');
 });
 
-var sketches = require("./api/sketch");
-sketches.init(app);
+var api = require("./api");
+api.init(app);
 
 if (env == 'development') {
 	app.use(express.errorHandler());
