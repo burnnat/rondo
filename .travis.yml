@@ -4,7 +4,6 @@ node_js:
 services:
 - mongodb
 before_install:
-- mongo --eval "db.getCollectionNames()" --verbose
 - mkdir bundle
 - curl -o bundle/sencha-cmd.run.zip http://cdn.sencha.com/cmd/3.1.2.342/SenchaCmd-3.1.2.342-linux-x64.run.zip
 - unzip -p bundle/sencha-cmd.run.zip > bundle/sencha-cmd.run

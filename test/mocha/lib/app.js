@@ -13,9 +13,12 @@ app.reset = function(done) {
 before(function(done) {
 	this.timeout(0);
 	var start = Date.now();
+	var attempts = 0;
+	
+	console.log('Waiting for server connection...');
 	
 	var attempt = function() {
-		console.log('Attempting connection...');
+		attempts++;
 		app.get('/').end(complete);
 	};
 	
@@ -25,7 +28,7 @@ before(function(done) {
 				console.log('Connection timed out');
 			}
 			else {
-				console.log('Connection succeeded');
+				console.log('Connection succeeded after ' + attempts + ' attempts');
 			}
 			
 			done(err);
@@ -35,7 +38,7 @@ before(function(done) {
 		}
 	};
 	
-	setTimeout(attempt, 250);
+	attempt();
 });
 
 module.exports = app;
