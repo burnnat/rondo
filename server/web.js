@@ -5,6 +5,7 @@ if (args.length > 0) {
 }
 
 var express = require("express");
+var mongoose = require("mongoose");
 
 var app = express();
 var env = app.get('env');
@@ -50,8 +51,26 @@ else {
 	return false;
 }
 
-var port = process.env.PORT || 5000;
+mongoose.connect(process.env.MONGOHQ_URL);
+var db = mongoose.connection;
 
-app.listen(port, function() {
-	console.log("Listening on port " + port);
+app.get('/api', function(req, res) {
+	res.send('API is available');
 });
+
+var sketches = require("./api/sketch");
+sketches.init(app);
+
+if (env == 'development') {
+	app.use(express.errorHandler());
+}
+
+db.on('error', console.error.bind(console, 'database connection error:'));
+db.once('open', function() {
+	var port = process.env.PORT || 5000;
+	
+	app.listen(port, function() {
+		console.log("Listening on port " + port);
+	});
+});
+

@@ -170,13 +170,23 @@ module.exports = function(grunt) {
 			}
 		},
 		
-		exec: {
+		shell: {
 			build: {
 				command: 'ant'
 			},
 			deploy: {
-				cwd: deployTarget,
-				command: 'npm install ' + path.relative(deployTarget, '.')
+				command: 'npm install ' + path.relative(deployTarget, '.'),
+				options: {
+					execOptions: {
+						cwd: deployTarget
+					}
+				}
+			},
+			mongo: {
+				command: 'mongod --dbpath E:\\mongo-data',
+				options: {
+					async: true
+				}
 			}
 		}
 	});
@@ -190,8 +200,8 @@ module.exports = function(grunt) {
 	
 	grunt.loadTasks('./server/tasks');
 	
-	grunt.registerTask("dev", ["express:dev", "watch"]);
-	grunt.registerTask("staging", ["express:build", "watch"]);
+	grunt.registerTask("dev", ["shell:mongo", "express:dev", "watch"]);
+	grunt.registerTask("staging", ["shell:mongo", "express:build", "watch"]);
 	
 	grunt.registerTask("jasmine", ["express:build", "saucelabs-jasmine:mobile"]);
 	grunt.registerTask("siesta", ["express:build", "saucelabs-siesta:mobile"]);
@@ -206,10 +216,10 @@ module.exports = function(grunt) {
 	
 	grunt.registerTask("deploy", [
 		"clean:deploy",
-		"exec:deploy",
+		"shell:deploy",
 		"copy:deploy",
 		"clean:postdeploy",
-//		"exec:build",
+//		"shell:build",
 		"copy:mobile",
 		"copy:desktop"
 	]);
