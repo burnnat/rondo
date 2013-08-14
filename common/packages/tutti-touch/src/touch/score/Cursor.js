@@ -86,7 +86,7 @@ Ext.define('Tutti.touch.score.Cursor', {
 	},
 	
 	updateIndex: function(index) {
-		this.updateLayout(index);
+		this.fireEvent('refresh', { format: true });
 	},
 	
 	/**

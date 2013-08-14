@@ -13,10 +13,8 @@ Ext.define('Tutti.model.Measure', {
 		identifier: 'uuid',
 		
 		proxy: {
-			type: 'syncstorage',
-			id: 'measures',
-			owner: 'user',
-			access: 'private'
+			type: 'localstorage',
+			id: 'measures'
 		},
 		
 		fields: [
@@ -90,17 +88,4 @@ Ext.define('Tutti.model.Measure', {
 	getResolvedKey: function() {
 		return this.findPrecedingMeasure('key');
 	}
-}
-//<debug>
-,function() {
-	if (Tutti.offline) {
-		this.prototype.initConfig({
-			proxy: {
-				type: 'localstorage',
-				id: 'offline-measures'
-			}
-		});
-	}
-}
-//</debug>
-);
+});

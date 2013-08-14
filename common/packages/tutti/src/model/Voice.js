@@ -17,10 +17,8 @@ Ext.define('Tutti.model.Voice', {
 		identifier: 'uuid',
 		
 		proxy: {
-			type: 'syncstorage',
-			id: 'voices',
-			owner: 'user',
-			access: 'private'
+			type: 'localstorage',
+			id: 'voices'
 		},
 		
 		fields: [
@@ -95,17 +93,4 @@ Ext.define('Tutti.model.Voice', {
 			}
 		);
 	}
-}
-//<debug>
-,function() {
-	if (Tutti.offline) {
-		this.prototype.initConfig({
-			proxy: {
-				type: 'localstorage',
-				id: 'offline-voices'
-			}
-		});
-	}
-}
-//</debug>
-);
+});

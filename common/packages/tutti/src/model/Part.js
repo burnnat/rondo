@@ -13,10 +13,8 @@ Ext.define('Tutti.model.Part', {
 		identifier: 'uuid',
 		
 		proxy: {
-			type: 'syncstorage',
-			id: 'parts',
-			owner: 'user',
-			access: 'private'
+			type: 'localstorage',
+			id: 'parts'
 		},
 		
 		fields: [
@@ -38,17 +36,4 @@ Ext.define('Tutti.model.Part', {
 			}
 		]
 	}
-}
-//<debug>
-,function() {
-	if (Tutti.offline) {
-		this.prototype.initConfig({
-			proxy: {
-				type: 'localstorage',
-				id: 'offline-parts'
-			}
-		});
-	}
-}
-//</debug>
-);
+});

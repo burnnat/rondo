@@ -4,8 +4,6 @@
 		disableCaching: false
 	});
 	
-	Ext.namespace('Tutti').offline = true;
-	
 	Ext.Loader.setPath({
 		'Ext': '/common/touch/src',
 		'Ext.io': '/common/packages/sencha-io/src/io',

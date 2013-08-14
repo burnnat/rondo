@@ -3,8 +3,6 @@ Ext.Loader.setConfig({
 	enabled: true,
 	disableCaching: false
 });
-
-Ext.namespace('Tutti').offline = true;
 //</debug>
 
 Ext.Loader.setPath({
