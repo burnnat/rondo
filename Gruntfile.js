@@ -1,11 +1,11 @@
+var fs = require('fs');
 var glob = require('glob');
 var path = require('path');
+var properties = require('properties-parser');
 var tests = require('./server/lib/tests.js');
 
 module.exports = function(grunt) {
 	var _ = grunt.util._;
-	var base = '.';
-	var port = 8080;
 	
 	var mobileOptions = {
 		browsers: [
@@ -47,11 +47,24 @@ module.exports = function(grunt) {
 		);
 	};
 	
-	var deployTarget = grunt.option('target') || 'build/deploy';
+	var propFile = 'local.properties';
+	
+	var local = {
+		'server.port': '8080',
+		'deploy.dir': 'build/deploy'
+	};
+	
+	if (fs.existsSync(propFile)) {
+		_.extend(
+			local,
+			properties.read('local.properties')
+		);
+	}
 	
 	grunt.initConfig({
 		
-		port: port,
+		port: parseInt(local['server.port']),
+		deployTarget: local['deploy.dir'],
 		
 		clean: {
 			build: [
@@ -69,12 +82,13 @@ module.exports = function(grunt) {
 			
 			deploy: {
 				src: [
-					path.join(deployTarget, '**'),
-					'!' + deployTarget,
-					'!' + path.join(deployTarget, '.git/**'),
-					'!' + path.join(deployTarget, '.gitignore'),
-					'!' + path.join(deployTarget, '.project'),
-					'!' + path.join(deployTarget, 'Procfile')
+					'<%= deployTarget %>/**',
+					'!<%= deployTarget %>',
+					'!<%= deployTarget %>/.git/**',
+					'!<%= deployTarget %>/archive/**',
+					'!<%= deployTarget %>/.gitignore',
+					'!<%= deployTarget %>/.project',
+					'!<%= deployTarget %>/Procfile'
 				],
 				options: {
 					force: true
@@ -82,9 +96,7 @@ module.exports = function(grunt) {
 			},
 			
 			postdeploy: {
-				src: [
-					path.join(deployTarget, 'node_modules/rondo/**')
-				],
+				src: ['<%= deployTarget %>/node_modules/rondo/**'],
 				options: {
 					force: true
 				}
@@ -94,7 +106,7 @@ module.exports = function(grunt) {
 		express: {
 			options: {
 				script: './server/web.js',
-				port: port
+				port: '<%= port %>'
 			},
 			
 			dev: {
@@ -162,53 +174,61 @@ module.exports = function(grunt) {
 				expand: true,
 				cwd: 'build/rondo-mobile/production/',
 				src: '**',
-				dest: path.join(deployTarget, 'build/mobile/')
+				dest: '<%= deployTarget %>/build/mobile/'
 			},
 			
 			desktop: {
 				expand: true,
 				cwd: 'build/rondo-desktop/production/',
 				src: '**',
-				dest: path.join(deployTarget, 'build/desktop/')
+				dest: '<%= deployTarget %>/build/desktop/'
 			},
 			
 			deploy: {
 				expand: true,
-				cwd: path.join(deployTarget, 'node_modules/rondo/'),
+				cwd: '<%= deployTarget %>/node_modules/rondo/',
 				src: '**',
-				dest: deployTarget
+				dest: '<%= deployTarget %>'
+			},
+			
+			prebuild: {
+				expand: true,
+				cwd: '<%= deployTarget %>',
+				src: 'archive/**',
+				dest: path.relative(local['deploy.dir'], '.')
+			},
+			
+			postbuild: {
+				expand: true,
+				cwd: 'archive',
+				src: '**',
+				dest: '<%= deployTarget %>/archive'
 			}
 		},
 		
-		shell: {
+		bgShell: {
 			build: {
-				command: 'ant'
+				cmd: 'ant'
 			},
 			
 			deploy: {
-				command: 'npm install ' + path.relative(deployTarget, '.'),
-				options: {
-					execOptions: {
-						cwd: deployTarget
-					}
+				cmd: 'npm install "' + path.relative(local['deploy.dir'], '.') + '"',
+				execOpts: {
+					cwd: '<%= deployTarget %>'
 				}
 			},
 			
 			mongo: {
-				command: 'mongod',
-				options: {
-					async: true,
-					stdout: false,
-					stderr: false
-				}
+				cmd: 'mongod',
+				bg: true,
+				stdout: false,
+				stderr: false
 			},
 			
 			mongoStop: {
-				command: 'mongo --eval "db.getSiblingDB(\'admin\').shutdownServer()"',
-				options: {
-					stdout: false,
-					stderr: false
-				}
+				cmd: 'mongo --eval "db.getSiblingDB(\'admin\').shutdownServer()"',
+				stdout: false,
+				stderr: false
 			}
 		}
 	});
@@ -222,10 +242,10 @@ module.exports = function(grunt) {
 	
 	grunt.loadTasks('./server/tasks');
 	
-	grunt.registerTask("dev", ["shell:mongo", "express:dev", "watch"]);
-	grunt.registerTask("staging", ["shell:mongo", "express:build", "watch"]);
+	grunt.registerTask("dev", ["bgShell:mongo", "express:dev", "watch"]);
+	grunt.registerTask("staging", ["bgShell:mongo", "express:build", "watch"]);
 	
-	grunt.registerTask("mocha", ["shell:mongo", "express:build", "mochaTest:server", "shell:mongoStop"]);
+	grunt.registerTask("mocha", ["bgShell:mongo", "express:build", "mochaTest:server", "bgShell:mongoStop"]);
 	grunt.registerTask("jasmine", ["express:build", "saucelabs-jasmine:mobile"]);
 	grunt.registerTask("siesta", ["express:build", "saucelabs-siesta:mobile"]);
 	grunt.registerTask("selenium", ["express:build", "saucelabs-selenium:mobile"]);
@@ -239,11 +259,17 @@ module.exports = function(grunt) {
 	]);
 	
 	grunt.registerTask("deploy", [
+		"clean:build",
 		"clean:deploy",
-		"shell:deploy",
+		
+		"bgShell:deploy",
 		"copy:deploy",
 		"clean:postdeploy",
-//		"shell:build",
+		
+		"copy:prebuild",
+		"bgShell:build",
+		"copy:postbuild",
+		
 		"copy:mobile",
 		"copy:desktop"
 	]);

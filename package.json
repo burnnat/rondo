@@ -23,7 +23,7 @@
 		"grunt-contrib-copy": "~0.4.1",
 		"grunt-contrib-watch": "~0.5.1",
 		
-		"grunt-shell-spawn": "~0.2.4",
+		"grunt-bg-shell": "~2.1.0",
 		"grunt-express-server": "~0.4.2",
 		"grunt-saucelabs": "~4.0.3",
 		"grunt-mocha-test": "~0.6.2",
@@ -34,6 +34,7 @@
 		"glob": "~3.2.1",
 		"mustache": "~0.7.2",
 		"escape-regexp": "~0.0.1",
+		"properties-parser": "~0.1.1",
 		
 		"saucelabs": "~0.1.0",
 		"sauce-tunnel": "~1.0.1",
