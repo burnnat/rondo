@@ -7,6 +7,13 @@ if (args.length > 0) {
 var express = require("express");
 var mongoose = require("mongoose");
 
+var options = {
+	port: process.env.PORT || 5000,
+	databaseURL: process.env.MONGOHQ_URL || 'localhost',
+	databaseRetry: 5,
+	databaseMaxAttempts: 10
+};
+
 var app = express();
 var env = app.get('env');
 
@@ -19,6 +26,8 @@ if (env == 'production') {
 	app.use(express.static('build'));
 }
 else if (env == 'development' || env == 'staging') {
+	options.databaseRetry = 2;
+	
 	var isStaging = env == 'staging';
 	
 	var tests = require('./lib/tests.js');
@@ -49,9 +58,28 @@ else {
 	return false;
 }
 
-var databaseURL = process.env.MONGOHQ_URL || 'localhost';
-console.log("Connecting to database at: " + databaseURL);
-mongoose.connect(databaseURL);
+console.log("Connecting to database at: " + options.databaseURL);
+
+var attempts = 0;
+
+var connectWithRetry = function() {
+	attempts++;
+	
+	return mongoose.connect(options.databaseURL, function(err) {
+		if (err) {
+			if (attempts <= options.databaseMaxAttempts) {
+				console.error("Database connection failed, retrying in " + options.databaseRetry + " seconds");
+			}
+			
+			if (attempts == options.databaseMaxAttempts) {
+				console.log("Maximum connection attempts (" + options.databaseMaxAttempts + ") reached, hush mode activated");
+			}
+			
+			setTimeout(connectWithRetry, options.databaseRetry * 1000);
+		}
+	});
+};
+connectWithRetry();
 
 var db = mongoose.connection;
 
@@ -66,14 +94,12 @@ if (env == 'development') {
 	app.use(express.errorHandler());
 }
 
-db.on('error', console.error.bind(console, 'database connection error:'));
+db.on('error', console.error.bind(console, 'Database connection error:'));
 db.once('open', function() {
 	console.log("Database connection opened");
-	
-	var port = process.env.PORT || 5000;
-	
-	app.listen(port, function() {
-		console.log("Listening on port " + port);
-	});
+});
+
+app.listen(options.port, function() {
+	console.log("Listening on port " + options.port);
 });
 
