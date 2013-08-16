@@ -54,8 +54,8 @@ Ext.define('Rondo.controller.Sketches', {
 	},
 	
 	init: function() {
-		this.getApplication().sio.on({
-			authorized: this.onAuth,
+		this.getApplication().on({
+			login: this.onLogin,
 			logout: this.onLogout,
 			scope: this
 		});
@@ -76,7 +76,7 @@ Ext.define('Rondo.controller.Sketches', {
 		);
 	},
 	
-	onAuth: function() {
+	onLogin: function() {
 		this.eachStore(
 			function(store) {
 //				store.setAutoSync(true);
@@ -89,7 +89,7 @@ Ext.define('Rondo.controller.Sketches', {
 		this.eachStore(
 			function(store) {
 //				store.setAutoSync(false);
-				store.getProxy().clear();
+//				store.getProxy().clear();
 				store.load();
 			}
 		);

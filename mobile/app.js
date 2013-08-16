@@ -7,8 +7,6 @@ Ext.Loader.setConfig({
 
 Ext.Loader.setPath({
 	'Ext': '../common/touch/src',
-	'Ext.io': '../common/packages/sencha-io/src/io',
-	'Ext.cf': '../common/packages/sencha-io/src/cf',
 	'Ext.ux': '../common/packages/tutti-touch/ux',
 	'TouchOverrides': '../common/packages/tutti-touch/overrides',
 	'Tutti': '../common/packages/tutti/src',
@@ -21,11 +19,13 @@ Ext.application({
 	name: 'Rondo',
 	
 	requires: [
+		'Ext.Component',
 		'Ext.MessageBox',
 		'Ext.NavigationView',
-		'Ext.io.ux.AuthButton',
 		
-		'TouchOverrides.data.Store'
+		'TouchOverrides.data.Store',
+		
+		'Rondo.login.Toggler'
 	],
 	
 	views: [
@@ -33,14 +33,10 @@ Ext.application({
 	],
 	
 	controllers: [
-		'Ext.io.Controller',
+		'Login',
 		'Sketches',
 		'Score'
 	],
-	
-	io: {
-		appId: "681c6bef-6a59-42ee-8f88-594b57ffecf6"
-	},
 	
 	icon: {
 		'57': 'resources/icons/Icon.png',
@@ -72,7 +68,7 @@ Ext.application({
 				],
 				navigationBar: { 
 					items: {
-						xtype: 'sioAuthButton',
+						xtype: 'logintoggler',
 						align: 'right'
 					}
 				}

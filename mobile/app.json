@@ -70,6 +70,10 @@
 	 */
 	"css": [
 		{
+			"path": "resources/zocial/zocial.css",
+			"update": "delta"
+		},
+		{
 			"path": "resources/css/app.css",
 			"update": "delta"
 		}
@@ -103,7 +107,8 @@
 	"resources": [
 		"resources/images",
 		"resources/icons",
-		"resources/startup"
+		"resources/startup",
+		"resources/zocial"
 	],
 
 	/**

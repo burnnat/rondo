@@ -8,7 +8,5 @@
 	"compatVersion": "1.0.0",
 	"format": "1",
 	"local": true,
-	"requires": [
-		"sencha-io"
-	]
+	"requires": []
 }
