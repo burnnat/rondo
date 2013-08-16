@@ -13,6 +13,26 @@ StartTest(function(t) {
 			
 			t.describe("Cursors", function(t) {
 				
+				var snapNear = function(t, cursor, position) {
+					var expected;
+					
+					t.isFiredWithSignature(
+						cursor,
+						'refresh',
+						function(data) {
+							return !expected || (Ext.Object.getSize(data) == 1 && data[expected] === true);
+						}
+					);
+					
+					expected = 'format';
+					cursor.snapNear(position);
+					
+					expected = 'repaint';
+					cursor.updateLayout();
+					
+					expected = null;
+				};
+				
 				t.describe("at large size", function(t) {
 					
 					var block = Ext.Viewport.add(
@@ -41,26 +61,26 @@ StartTest(function(t) {
 								staff: staff
 							})
 						);
-					}
+					};
 					
 					t.it("should handle starting offsets", function(t) {
 						var cursor = makeCursor();
-						cursor.snapNear(0);
+						snapNear(t, cursor, 0);
 						t.is(cursor.getPosition(), 70, 'Cursor is halfway between staff start and note head');
 					});
 					
 					t.it("should align between notes", function(t) {
 						var cursor = makeCursor();
-						cursor.snapNear(110);
+						snapNear(t, cursor, 110);
 						t.is(cursor.getPosition(), 155, 'Cursor is halfway between note end and note head');
 						
-						cursor.snapNear(210);
+						snapNear(t, cursor, 210);
 						t.is(cursor.getPosition(), 255, 'Cursor is halfway between note end and note head');
 					});
 					
 					t.it("should handle ending notes", function(t) {
 						var cursor = makeCursor();
-						cursor.snapNear(310);
+						snapNear(t, cursor, 310);
 						t.is(cursor.getPosition(), 320, 'Cursor is one node head past note end');
 					});
 				});
@@ -97,25 +117,25 @@ StartTest(function(t) {
 					
 					t.it("should handle starting offsets", function(t) {
 						var cursor = makeCursor();
-						cursor.snapNear(0);
+						snapNear(t, cursor, 0);
 						t.isGreater(cursor.getPosition(), 14.5, 'Cursor is mixed between staff start and note start');
 						t.isLess(cursor.getPosition(), 17.5, 'Cursor is mixed between staff start and note head');
 					});
 					
 					t.it("should align between notes", function(t) {
 						var cursor = makeCursor();
-						cursor.snapNear(27);
+						snapNear(t, cursor, 27);
 						t.isGreater(cursor.getPosition(), 37, 'Cursor is mixed between note end and note start');
 						t.isLess(cursor.getPosition(), 40, 'Cursor is mixed between note end and note head');
 						
-						cursor.snapNear(56);
+						snapNear(t, cursor, 56);
 						t.isGreater(cursor.getPosition(), 62, 'Cursor is mixed between note end and note start');
 						t.isLess(cursor.getPosition(), 65, 'Cursor is mixed between note end and note head');
 					});
 					
 					t.it("should handle ending notes", function(t) {
 						var cursor = makeCursor();
-						cursor.snapNear(90);
+						snapNear(t, cursor, 90);
 						t.is(cursor.getPosition(), 87, 'Cursor is one node head past note end');
 					});
 				});
@@ -152,22 +172,22 @@ StartTest(function(t) {
 					
 					t.it("should handle starting offsets", function(t) {
 						var cursor = makeCursor();
-						cursor.snapNear(0);
+						snapNear(t, cursor, 0);
 						t.is(cursor.getPosition(), 4, 'Cursor is halfway between staff start and note start');
 					});
 					
 					t.it("should align between notes", function(t) {
 						var cursor = makeCursor();
-						cursor.snapNear(12);
+						snapNear(t, cursor, 12);
 						t.is(cursor.getPosition(), 15, 'Cursor is halfway between note end and note start');
 						
-						cursor.snapNear(23);
+						snapNear(t, cursor, 23);
 						t.is(cursor.getPosition(), 25, 'Cursor is halfway between note end and note start');
 					});
 					
 					t.it("should handle ending notes", function(t) {
 						var cursor = makeCursor();
-						cursor.snapNear(36);
+						snapNear(t, cursor, 36);
 						t.is(cursor.getPosition(), 38, 'Cursor is one node head past note end');
 					});
 				});
