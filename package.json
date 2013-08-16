@@ -38,7 +38,7 @@
 		
 		"saucelabs": "~0.1.0",
 		"sauce-tunnel": "~1.0.1",
-		"wd": "~0.0.32"
+		"wd": "~0.1.0"
 	},
 	
 	"scripts": {

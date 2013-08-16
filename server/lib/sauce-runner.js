@@ -30,6 +30,10 @@ module.exports = {
 						grunt.log.writeln('\x1b[36m%s\x1b[0m', info);
 					});
 					
+					browser.on('log', function(message){
+						grunt.log.writeln(' > \x1b[36mLOG\x1b[0m: %s', message);
+					});
+					
 					browser.on('command', function(method, path){
 						grunt.log.writeln(' > \x1b[33m%s\x1b[0m: %s', method, path);
 					});

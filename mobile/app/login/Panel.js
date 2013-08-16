@@ -23,7 +23,7 @@ Ext.define('Rondo.login.Panel', {
 	},
 	
 	initialize: function() {
-		this.add(
+		this.add([
 			{
 				xtype: 'titlebar',
 				docked: 'top',
@@ -44,7 +44,7 @@ Ext.define('Rondo.login.Panel', {
 			{ type: 'facebook' },
 			{ type: 'twitter' },
 			{ type: 'windows' }
-		);
+		]);
 		
 		this.callParent();
 	}
