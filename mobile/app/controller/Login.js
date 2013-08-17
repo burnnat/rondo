@@ -5,6 +5,7 @@ Ext.define('Rondo.controller.Login', {
 	extend: 'Ext.app.Controller',
 	
 	requires: [
+		'Rondo.User',
 		'Rondo.login.Panel'
 	],
 	
@@ -24,7 +25,7 @@ Ext.define('Rondo.controller.Login', {
 	
 	onLoginToggle: function(button) {
 		if (button.getAuthenticated()) {
-			this.getApplication().fireEvent('logout');
+			Rondo.User.logout();
 		}
 		else {
 			this.returnTo = Ext.Viewport.getActiveItem();
@@ -42,27 +43,31 @@ Ext.define('Rondo.controller.Login', {
 	},
 	
 	onLoginStart: function(button) {
-		if (button.getType() == 'google') {
-			// do google login
-		}
-		else if (button.getType() == 'facebook') {
-			// do facebook login
-		}
-		else if (button.getType() == 'windows') {
-			// do windows live login
-		}
+		Ext.Viewport.setMasked({
+			xtype: 'loadmask',
+			message: 'Logging in...'
+		});
 		
-		// just hook directly until the login backend is in place
-		this.onLoginComplete();
+		Rondo.User.login(
+			button.getType(),
+			this.onLoginComplete,
+			this
+		);
 	},
 	
 	onLoginCancel: function() {
 		this.closeLoginPanel();
 	},
 	
-	onLoginComplete: function() {
-		this.closeLoginPanel();
-		this.getApplication().fireEvent('login');
+	onLoginComplete: function(provider) {
+		Ext.Viewport.setMasked(false);
+		
+		if (Rondo.User.authenticated) {
+			this.closeLoginPanel();
+		}
+		else {
+			Rondo.User.loginExternal(provider);
+		}
 	},
 	
 	closeLoginPanel: function() {

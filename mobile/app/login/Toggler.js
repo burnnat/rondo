@@ -5,12 +5,14 @@ Ext.define('Rondo.login.Toggler', {
 	extend: 'Ext.Button',
 	xtype: 'logintoggler',
 	
+	requires: ['Rondo.User'],
+	
 	config: {
 		authenticated: false
 	},
 	
 	initialize: function() {
-		Rondo.app.on({
+		Rondo.User.on({
 			login: function() {
 				this.setAuthenticated(true);
 			},

@@ -1,3 +1,4 @@
+var _ = require("lodash");
 var mongoose = require("mongoose");
 var passport = require('passport');
 var GoogleStrategy = require('passport-google').Strategy;
@@ -19,25 +20,31 @@ module.exports = {
 		
 		app.get('/auth/logout', function(req, res) {
 			req.logout();
-			res.send({ success: true });
+			res.redirect('/auth/user');
 		})
 		
 		app.get('/auth/user', function(req, res) {
 			var user = req.user;
+			var data = {
+				authenticated: !!user
+			};
 			
 			if (user) {
-				res.send({
-					success: true,
-					authorized: true,
-					user: user
-				});
+				_.assign(
+					data,
+					{
+						id: user._id,
+						providers: {
+							google: user.id
+						}
+					}
+				);
 			}
-			else {
-				res.send({
-					success: true,
-					authorized: false
-				});
-			}
+			
+			res.send({
+				success: true,
+				user: data
+			});
 		});
 		
 		passport.serializeUser(function(user, done) {
@@ -51,7 +58,7 @@ module.exports = {
 			);
 		});
 		
-		passport.use(
+		var strategy = 
 			new GoogleStrategy(
 				{
 					returnURL: options.appDomain + '/auth/google/return',
@@ -69,20 +76,59 @@ module.exports = {
 						done
 					);
 				}
-			)
-		);
+			);
 		
-		app.get('/auth/google', passport.authenticate('google'));
+		passport.use(strategy);
+		
+		app.get(
+			'/auth/google',
+			function(req, res, next) {
+				var immediate = req.query.immediate;
+				
+				if (immediate) {
+					var party = strategy._relyingParty;
+					
+					var landing = party.returnUrl;
+					party.returnUrl = landing + '?immediate=true';
+					
+					party.authenticate(
+						strategy._providerURL,
+						true,
+						function(err, url) {
+							party.returnUrl = landing;
+							
+							if (!err) {
+								res.redirect(url);
+							}
+						}
+					);
+				}
+				else {
+					passport.authenticate('google')(req, res, next);
+				}
+			}
+		);
 		
 		app.get(
 			'/auth/google/return',
-			passport.authenticate(
-				'google',
-				{
-					successRedirect: '/',
-					failureRedirect: '/'
+			function(req, res, next) {
+				var immediate = req.query.immediate;
+				var redirect = immediate ? '/auth/user' : '/';
+				
+				if (immediate && req.query['openid.mode'] != 'id_res') {
+					// failed, don't bother verification ... just redirect to failure
+					res.redirect(redirect);
 				}
-			)
+				else {
+					passport.authenticate(
+						'google',
+						{
+							successRedirect: redirect,
+							failureRedirect: redirect
+						}
+					)(req, res, next);
+				}
+			}
 		);
 	}
 };

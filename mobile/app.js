@@ -25,6 +25,7 @@ Ext.application({
 		
 		'TouchOverrides.data.Store',
 		
+		'Rondo.User',
 		'Rondo.login.Toggler'
 	],
 	
@@ -59,6 +60,8 @@ Ext.application({
 	launch: function() {
 		// Destroy the #appLoadingIndicator element
 		Ext.fly('appLoadingIndicator').destroy();
+		
+		Rondo.User.login();
 		
 		// Initialize the main view
 		Ext.Viewport.add(

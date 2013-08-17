@@ -40,10 +40,10 @@ Ext.define('Rondo.login.Panel', {
 				xtype: 'component',
 				html: 'Choose a login provider:'
 			},
-			{ type: 'google' },
+			{ type: 'google' }/*,
 			{ type: 'facebook' },
 			{ type: 'twitter' },
-			{ type: 'windows' }
+			{ type: 'windows' }(*/
 		]);
 		
 		this.callParent();
