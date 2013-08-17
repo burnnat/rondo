@@ -9,19 +9,37 @@ var mongoose = require("mongoose");
 
 var options = {
 	port: process.env.PORT || 5000,
+	secret: process.env.APP_SECRET || 'insecure',
+	appDomain: process.env.APP_DOMAIN,
 	databaseURL: process.env.MONGOHQ_URL || 'localhost',
 	databaseRetry: 5,
 	databaseMaxAttempts: 10
 };
+
+if (!options.appDomain) {
+	options.appDomain = 'http://localhost:' + options.port;
+}
 
 var app = express();
 var env = app.get('env');
 
 console.log('Loading server for environment: ' + env);
 
+app.use(express.cookieParser());
 app.use(express.bodyParser());
+app.use(express.session({ secret: options.secret }));
+
+var auth = require("./auth");
+auth.init(app, options);
+
+var api = require("./api");
+api.init(app, options);
 
 if (env == 'production') {
+	if (options.secret == 'insecure') {
+		console.warn('Warning: using insecure salt on production server');
+	}
+	
 	app.use(express.logger());
 	app.use(express.static('build'));
 }
@@ -86,9 +104,6 @@ var db = mongoose.connection;
 app.get('/', function(req, res) {
 	res.redirect('/mobile/');
 });
-
-var api = require("./api");
-api.init(app);
 
 if (env == 'development') {
 	app.use(express.errorHandler());

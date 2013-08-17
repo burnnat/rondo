@@ -86,6 +86,7 @@ module.exports = function(grunt) {
 					'!<%= deployTarget %>',
 					'!<%= deployTarget %>/.git/**',
 					'!<%= deployTarget %>/archive/**',
+					'!<%= deployTarget %>/.env',
 					'!<%= deployTarget %>/.gitignore',
 					'!<%= deployTarget %>/.project',
 					'!<%= deployTarget %>/Procfile'
