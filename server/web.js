@@ -8,7 +8,7 @@ var express = require("express");
 var mongoose = require("mongoose");
 
 var options = {
-	port: process.env.PORT || 5000,
+	port: process.env.PORT || 8080,
 	secret: process.env.APP_SECRET || 'insecure',
 	appDomain: process.env.APP_DOMAIN,
 	databaseURL: process.env.MONGOHQ_URL || 'localhost',
