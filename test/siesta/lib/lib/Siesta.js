@@ -1,13 +1,13 @@
 /*
 
-Siesta 1.2.1
+Siesta 2.0.1
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
 
 */
 Class('Siesta', {
-    /*PKGVERSION*/VERSION : '1.2.1',
+    /*PKGVERSION*/VERSION : '2.0.1',
 
     // "my" should been named "static"
     my : {

@@ -1,13 +1,12 @@
 /*
 
-Siesta 1.2.1
+Siesta 2.0.1
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
 
 */
 /**
- * 
 @class Siesta.Test.SenchaTouch
 @extends Siesta.Test.Browser
 @mixin Siesta.Test.ExtJSCore
@@ -67,14 +66,15 @@ Class('Siesta.Test.SenchaTouch', {
             
             if (!Ext) return
             
+            // calling SUPER to setup the loader paths, Ext.setup() will already do Ext.require
+            this.SUPERARG(arguments)
+            
             // execute "Ext.setup()" for top-level tests only 
             if (this.performSetup && !this.parent) Ext.setup({
                 onReady : function () {
                     me.isSTSetupDone    = true
                 }
             })
-            
-            this.SUPERARG(arguments)
         }
     },
     

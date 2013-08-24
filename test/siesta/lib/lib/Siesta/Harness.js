@@ -1,6 +1,6 @@
 /*
 
-Siesta 1.2.1
+Siesta 2.0.1
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -260,6 +260,24 @@ Class('Siesta.Harness', {
         }
     )
     
+         * When using the code coverage feature, one need to explicitly mark the JavaScript files that needs to be instrumented with the "instrument : true".
+         * See {@link Siesta.Harness.Browser#enableCodeCoverage} for details.
+         * 
+
+    Harness.configure({
+        preload         : [
+            {
+                type        : 'js',
+                url         : 'some_file.js',
+                instrument  : true
+            }
+        ],
+        ...
+    })
+
+
+         *     
+         *     
          */
         preload                 : Joose.I.Array,
         
@@ -345,9 +363,9 @@ Class('Siesta.Harness', {
         
         /**
          * @cfg {Boolean} overrideSetTimeout When set to `true`, the tests will override the native "setTimeout" from the context of each test
-         * for asynchronous code tracking. If setting it to false, you will need to use `beginAsync/endAsync` calls to indicate that test is still running.
+         * for asynchronous code tracking. If setting it to `false`, you will need to use `beginAsync/endAsync` calls to indicate that test is still running.
          * 
-         * This option can be also specified in the test file descriptor. Defaults to false.
+         * This option can be also specified in the test file descriptor. Defaults to `false`.
          */
         overrideSetTimeout      : false,
         
@@ -467,7 +485,7 @@ Class('Siesta.Harness', {
         },
         
         
-        onTestSuiteEnd : function () {
+        onTestSuiteEnd : function (descriptors, contentManager) {
             this.endDate    = new Date()
             
             /**
@@ -709,6 +727,7 @@ Class('Siesta.Harness', {
             
             // cache either everything (this.cachePreload) or only the test files (to be able to show missing files / show content) 
             var contentManager  = new this.contentManagerClass({
+                harness         : this,
                 presets         : [ testScriptsPreset ].concat(this.cachePreload ? presets : [])
             })
             
@@ -718,15 +737,17 @@ Class('Siesta.Harness', {
             
             //console.time('caching')
             
-            me.onTestSuiteStart(descriptors)
+            me.onTestSuiteStart(descriptors, contentManager)
             
             contentManager.cache(function () {
                 
                 //console.timeEnd('caching')
                 
-                Joose.A.each(flattenDescriptors, function (desc) { 
-                    if (contentManager.hasContentOf(desc.url)) {
-                        var testConfig  = desc.testConfig = Siesta.getConfigForTestScript(contentManager.getContentOf(desc.url))
+                Joose.A.each(flattenDescriptors, function (desc) {
+                    var url             = desc.url
+                    
+                    if (contentManager.hasContentOf(url)) {
+                        var testConfig  = desc.testConfig = Siesta.getConfigForTestScript(contentManager.getContentOf(url))
                         
                         // if testConfig contains the "preload" or "alsoPreload" key - then we need to update the preset of the descriptor
                         if (testConfig && (testConfig.preload || testConfig.alsoPreload)) desc.preset = me.getDescriptorPreset(desc)
@@ -1064,6 +1085,19 @@ Class('Siesta.Harness', {
         },
         
         
+        canUseCachedContent : function (resource) {
+            return this.cachePreload && resource instanceof Siesta.Content.Resource.JavaScript
+        },
+        
+        
+        addCachedResourceToPreloads : function (scopeProvider, contentManager, resource) {
+            scopeProvider.addPreload({
+                type        : 'js',
+                content     : contentManager.getContentOf(resource)
+            })
+        },
+        
+        
         processURL : function (desc, index, contentManager, urlOptions, callback) {
             var me      = this
             var url     = desc.url
@@ -1102,13 +1136,11 @@ Class('Siesta.Harness', {
 //            })
             
             desc.preset.eachResource(function (resource) {
+                var hasConent       = contentManager.hasContentOf(resource)
                 
-                if (me.cachePreload && contentManager.hasContentOf(resource))
-                    scopeProvider.addPreload({
-                        type        : (resource instanceof Siesta.Content.Resource.CSS) ? 'css' : 'js', 
-                        content     : contentManager.getContentOf(resource)
-                    })
-                else {
+                if (hasConent && me.canUseCachedContent(resource)) {
+                    me.addCachedResourceToPreloads(scopeProvider, contentManager, resource)
+                } else {
                     var resourceDesc    = resource.asDescriptor()
                     
                     if (resourceDesc.url) resourceDesc.url = me.resolveURL(resourceDesc.url, scopeProvider, desc)
@@ -1133,6 +1165,14 @@ Class('Siesta.Harness', {
             
             scopeProvider.setup(function () {
                 me.onAfterScopePreload(scopeProvider, url)
+                
+                // scope provider has been cleaned up while setting up? (may be user has restarted the test)
+                // then do nothing
+                if (!scopeProvider.scope) {
+                    callback()
+                    
+                    return
+                }
                 
                 var startTestAnchor     = scopeProvider.scope.StartTest
                 
@@ -1188,8 +1228,13 @@ Class('Siesta.Harness', {
             scopeProvider.scope.setTimeout(function() {
                 //console.timeEnd('launch')
                 
+                me.fireEvent('beforeteststart', test)
+                
                 // start the test after slight delay - to run it already *after* onload (in browsers)
-                test.start(options.preloadErrors[ 0 ])
+                // in the edge case, test can be already finished before its even started :)
+                // this happens if user re-launch the test during these 10ms - test will be 
+                // finalized forcefully in the "deleteTestByUrl" method
+                if (!test.isFinished()) test.start(options.preloadErrors[ 0 ])
             }, 10);
         },
         

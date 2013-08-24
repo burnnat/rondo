@@ -1,6 +1,6 @@
 /*
 
-Siesta 1.2.1
+Siesta 2.0.1
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -19,12 +19,23 @@ Ext.define('Siesta.Harness.Browser.UI.MouseVisualizer', {
     currentContainer            : null,
     
     hideTimer                   : null,
+    supportsTransitions         : null,
+
+    clickEvents                 : {
+        click       : 0,
+        dblclick    : 0,
+        touchstart  : 0,
+        touchend    : 0,
+        mousedown   : 0,
+        contextmenu : 0
+    },
 
     constructor : function (config) {
         config      = config || {}
         
         Ext.apply(this, config)
-        
+        this.supportsTransitions = (Ext.supports && Ext.supports.Transitions) || (Ext.feature && Ext.feature.has.CssTransitions);
+
         delete this.harness
         
         this.setHarness(config.harness)
@@ -154,21 +165,9 @@ Ext.define('Siesta.Harness.Browser.UI.MouseVisualizer', {
                 y               = test.currentPosition[1];
                 
             this.updateGhostCursor(type, x, y);
-             
-            // Touch vs Ext
-            if ((Ext.supports && Ext.supports.Transitions) || (Ext.feature && Ext.feature.has.CssTransitions)) {
 
-                if ( 
-                    type === 'click'        || 
-                    type === 'dblclick'     || 
-                    type === 'touchstart'   || 
-                    type === 'touchend'     || 
-                    type === 'mousedown'    || 
-                    type === 'mouseup'      || 
-                    type === 'contextmenu'
-                ) {
-                    this.showClickIndicator(type, x, y);
-                }
+            if (this.supportsTransitions && type in this.clickEvents) {
+                this.showClickIndicator(type, x, y);
             }
         }
     },
@@ -176,11 +175,10 @@ Ext.define('Siesta.Harness.Browser.UI.MouseVisualizer', {
     // This method shows a fading circle at the position of click/dblclick/mousedown/contextmenu
     showClickIndicator : function(type, x, y) {
         var clickCircle = Ext.fly(this.currentContainer).createChild({
-            tag     : 'div',
             cls     : 'ghost-cursor-click-indicator ' ,
             style   : 'left:' + x + 'px;top:' + y + 'px'
         });
-        
+
         // need to a delay to make it work in FF
         setTimeout(function() {
             clickCircle.addCls('ghost-cursor-click-indicator-big');
@@ -190,13 +188,14 @@ Ext.define('Siesta.Harness.Browser.UI.MouseVisualizer', {
     
     // This method updates the ghost cursor position and appearance
     updateGhostCursor: function (type, x, y) {
-        var cursorEl        = this.getCursorEl()
+        var cursorEl        = this.getCursorEl(),
+            translate3d     = 'translate3d(' + (x - 5) + 'px, ' + y + 'px, 0px)';
         
         cursorEl.setStyle({
-            '-webkit-transform' : 'translate3d(' + (x - 5) + 'px, ' + y + 'px, 0px)',
-            '-moz-transform'    : 'translate3d(' + (x - 5) + 'px, ' + y + 'px, 0px)',
-            '-o-transform'      : 'translate3d(' + (x - 5) + 'px, ' + y + 'px, 0px)',
-            'transform'         : 'translate3d(' + (x - 5) + 'px, ' + y + 'px, 0px)'
+            '-webkit-transform' : translate3d,
+            '-moz-transform'    : translate3d,
+            '-o-transform'      : translate3d,
+            'transform'         : translate3d
         })
         
         switch(type) {

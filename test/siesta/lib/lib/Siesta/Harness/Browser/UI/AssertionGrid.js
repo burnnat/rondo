@@ -1,6 +1,6 @@
 /*
 
-Siesta 1.2.1
+Siesta 2.0.1
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -14,8 +14,13 @@ Ext.define('Siesta.Harness.Browser.UI.AssertionGrid', {
     mixins          : [
         'Siesta.Harness.Browser.UI.CanFillAssertionsStore'
     ],
-    
-    
+
+//    requires            : [
+//        'Siesta.Harness.Browser.Model.AssertionTreeStore',
+//        'Siesta.Harness.Browser.UI.FilterableTreeView',
+//        'Siesta.Harness.Browser.UI.TreeColumn'
+//    ],
+
     cls                 : 'siesta-assertion-grid hide-simulated',
 
     enableColumnHide    : false,
@@ -28,22 +33,22 @@ Ext.define('Siesta.Harness.Browser.UI.AssertionGrid', {
     minWidth            : 100,
     trackMouseOver      : false,
     autoScrollToBottom  : true,
-    
+    hideHeaders         : true,
     resultTpl           : null,
-    
+    rowLines            : false,
     isStandalone        : false,
-    
+    rootVisible         : false,
+
     test                : null,
     testListeners       : null,
-    
-    
+    viewType            : 'filterabletreeview',
+
     initComponent : function() {
         var me = this;
         
         this.testListeners  = []
         
         if (!this.store) this.store = new Siesta.Harness.Browser.Model.AssertionTreeStore({
-            model   : 'Siesta.Harness.Browser.Model.Assertion',
 
             proxy   : {
                 type        : 'memory',
@@ -91,11 +96,7 @@ Ext.define('Siesta.Harness.Browser.UI.AssertionGrid', {
                     sortable        : false
                 } 
             ],
-            
-            rootVisible : false,
-            rowLines    : true,
-                    
-            viewType    : 'filterabletreeview',
+
             viewConfig  : {
                 enableTextSelection     : true,
                 stripeRows              : false,

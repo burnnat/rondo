@@ -1,6 +1,6 @@
 /*
 
-Siesta 1.2.1
+Siesta 2.0.1
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -40,7 +40,9 @@ Role('Siesta.Test.More', {
                 'setTimeout',
                 'clearTimeout',
                 'requestAnimationFrame',
-                'cancelAnimationFrame'
+                'cancelAnimationFrame',
+                '__coverage__',
+                /__cov_\d+/
             ]
         },
         
@@ -582,6 +584,26 @@ Role('Siesta.Test.More', {
         },
         
         
+        /**
+         * This assertion passes, if supplied value is a Function.
+         * 
+         * @param {Mixed} value The value to check.
+         * @param {String} desc The description of the assertion
+         */
+        isFunction : function (value, desc) {
+            if (this.typeOf(value) == 'Function')
+                this.pass(desc, {
+                    descTpl     : '{value} is a function',
+                    value       : value
+                })
+            else
+                this.fail(desc, {
+                    got         : value,
+                    need        : "A function value"
+                })
+        },        
+        
+        
         is_deeply : function (obj1, obj2, desc) {
             this.isDeeply.apply(this, arguments)
         },
@@ -1034,6 +1056,8 @@ Role('Siesta.Test.More', {
     )
     
          *  
+         *  If step is presented with a `null` or `undefined` it is ignored.
+         *  
          *  @param {Function/Object/Array} step1 The function to execute or action configuration, or the array of such
          *  @param {Function/Object} step2 The function to execute or action configuration
          *  @param {Function/Object} stepN The function to execute or action configuration
@@ -1041,6 +1065,12 @@ Role('Siesta.Test.More', {
         chain : function () {
             // inline any arrays in the arguments into one array
             var steps       = Array.prototype.concat.apply([], arguments)
+            
+            var nonEmpty    = []
+            Joose.A.each(steps, function (step) { if (step) nonEmpty.push(step) })
+            
+            steps           = nonEmpty
+            
             var len         = steps.length
             
             // do nothing

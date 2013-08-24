@@ -1,16 +1,16 @@
 /*
 
-Siesta 1.2.1
+Siesta 2.0.1
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
 
 */
-Ext.Component.override({
+Ext.define('ExtX.Reference.Slot', {
+    override : 'Ext.Component',
 
     slot            : null,
     __COLLECTOR__   : null,
-
 
     onRemoved : function() {
         if (this.__COLLECTOR__) {
@@ -33,11 +33,11 @@ Ext.Component.override({
 })
 
 
+Ext.define('ExtX.Reference.Slot2', {
 
-Ext.Container.override({
+    override : 'Ext.Container',
 
     slots       : null,
-
 
     onAdd : function () {
     
@@ -50,7 +50,6 @@ Ext.Container.override({
             }
         })
     },
-
 
     initComponent : function () {
         if (this.slots) this.slots = {}

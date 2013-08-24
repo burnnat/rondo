@@ -1,6 +1,6 @@
 /*
 
-Siesta 1.2.1
+Siesta 2.0.1
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -149,7 +149,10 @@ Class('Siesta.Test', {
         originalSetTimeout          : { required : true },
         originalClearTimeout        : { required : true },
         
-        sourceLineForAllAssertions  : false
+        sourceLineForAllAssertions  : false,
+        
+        $passCount                  : null,
+        $failCount                  : null
     },
     
     
@@ -291,6 +294,9 @@ Class('Siesta.Test', {
             }
 
             this.getResults().push(result)
+            
+            // clear the cache
+            this.$passCount     = this.$failCount   = null
             
             /**
              * This event is fired when the individual test case receives new result (assertion or diagnostic message). 
@@ -1397,7 +1403,12 @@ Class('Siesta.Test', {
             
             // we only don't need to cleanup up when doing a self-testing or for sub-tests
             if (this.needToCleanup) {
-                scopeProvider.cleanupCallback = function () {
+                scopeProvider.beforeCleanupCallback = function () {
+                    // if scope cleanup happens most probably user has restarted the test and is not interested in the results
+                    // of previous launch
+                    // finalizing the previous test in such case
+                    if (!me.isFinished()) me.finalize(true)
+                    
                     if (me.overrideSetTimeout) {
                         global.setTimeout       = originalSetTimeout
                         global.clearTimeout     = originalClearTimeout
@@ -1582,14 +1593,17 @@ Class('Siesta.Test', {
         },
         
         
+        // cached method except the "includeTodo" case
         getPassCount : function (includeTodo) {
+            if (this.$passCount != null && !includeTodo) return this.$passCount
+            
             var passCount = 0
             
             this.eachAssertion(function (assertion) {
                 if (assertion.passed && (includeTodo || !assertion.isTodo)) passCount++
             })
             
-            return passCount
+            return includeTodo ? passCount : this.$passCount = passCount
         },
 
         getTodoPassCount : function () {
@@ -1613,14 +1627,17 @@ Class('Siesta.Test', {
         },
         
         
+        // cached method except the "includeTodo" case
         getFailCount : function (includeTodo) {
+            if (this.$failCount != null && !includeTodo) return this.$failCount
+            
             var failCount = 0
             
             this.eachAssertion(function (assertion) {
                 if (!assertion.passed && (includeTodo || !assertion.isTodo)) failCount++
             })
             
-            return failCount
+            return includeTodo ? failCount : this.$failCount = failCount
         },
         
         

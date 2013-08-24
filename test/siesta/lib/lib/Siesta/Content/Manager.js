@@ -1,6 +1,6 @@
 /*
 
-Siesta 1.2.1
+Siesta 2.0.1
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -12,12 +12,14 @@ Class('Siesta.Content.Manager', {
         disabled        : false,
         
         presets         : {
-            require     : true
+            required    : true
         },
         
         urls            : Joose.I.Object,
         
-        maxLoads        : 5
+        maxLoads        : 5,
+        
+        harness         : null
     },
     
     
@@ -34,9 +36,7 @@ Class('Siesta.Content.Manager', {
             var me      = this
             
             Joose.A.each(this.presets, function (preset) {
-                
                 preset.eachResource(function (resource) {
-                    
                     if (resource.url) urls[ resource.url ] = null
                 })
             })
@@ -44,14 +44,21 @@ Class('Siesta.Content.Manager', {
             var loadCount   = 0
             var errorCount  = 0
             
-            var total       = 0
             var urlsArray   = []
-            Joose.O.each(urls, function (value, url) { total++; urlsArray.push(url) })
+            
+            Joose.O.each(urls, function (value, url) {
+                // if some content has been already provided - skip it from caching
+                if (!me.hasContentOf(url)) urlsArray.push(url) 
+            })
+            
+            var total       = urlsArray.length
             
             if (total) {
                 
-                var loadSingle = function (url) {
-                    if (!url) return
+                var loadSingle = function () {
+                    if (!urlsArray.length) return
+                    
+                    var url     = urlsArray.shift()
                     
                     me.load(url, function (content) {
                         if (errorCount) return
@@ -61,14 +68,14 @@ Class('Siesta.Content.Manager', {
                         if (++loadCount == total) 
                             callback && callback()
                         else
-                            loadSingle(urlsArray.shift())
+                            loadSingle()
                     
                     }, ignoreErrors ? function () {
                         
                         if (++loadCount == total) 
                             callback && callback()
                         else
-                            loadSingle(urlsArray.shift())
+                            loadSingle()
                         
                     } : function () {
                         errorCount++
@@ -78,7 +85,7 @@ Class('Siesta.Content.Manager', {
                 }
                 
                 // running only `maxLoads` "loading threads" at the same time
-                for (var i = 0; i < this.maxLoads; i++) loadSingle(urlsArray.shift())
+                for (var i = 0; i < this.maxLoads; i++) loadSingle()
                 
             } else
                 callback && callback()
@@ -87,6 +94,11 @@ Class('Siesta.Content.Manager', {
         
         load : function (url, callback, errback) {
             throw "abstract method `load` called"
+        },
+        
+        
+        addContent : function (url, content) {
+            this.urls[ url ]    = content
         },
         
         

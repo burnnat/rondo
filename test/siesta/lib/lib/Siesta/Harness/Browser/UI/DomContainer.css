@@ -1,6 +1,6 @@
 /*
 
-Siesta 1.2.1
+Siesta 2.0.1
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -33,14 +33,7 @@ td.tr-td-vertical-align {
     left     : -10000px;
     top      : -10000px;
     overflow : auto;
-}
-
-.x-ie9 .tr-iframe-wrapper {
-    z-index : 1;
-}
-
-iframe.tr-iframe {
-    background-color : white;
+    z-index  : 6; /* Without this, the dom container Ext panel will be on top of the iframe (in IE10)*/
 }
 
 .tr-iframe-forced {
@@ -50,6 +43,7 @@ iframe.tr-iframe {
     -moz-border-radius    : 14px;
     -webkit-border-radius : 14px;
     border-radius         : 14px;
+    background-color      : white;
 }
 
 .tr-iframe-hidden {
@@ -57,18 +51,18 @@ iframe.tr-iframe {
     top  : -10000px !important;
 }
 
-.domcontainer-console {
-    height     : 0;
-    padding    : 3px;
-    transition : bottom, height 0.5s;
-    top        : auto !important;
-    bottom     : -4px;
+.siesta-domcontainer {
+    background    : #fff url(../images/domcontainer-bg.png) repeat;
+    box-shadow    : inset 3px 3px 4px #dfdfdf;
 }
 
-.inspection-mode .domcontainer-console
-{
-    height     : 30px;
-    bottom     : 0;
+.siesta-domcontainer .x-panel-body {
+    background : transparent;
+    border     : 0 none;
+}
+
+.domcontainer-console {
+    z-index    : 5;
 }
 
 .domcontainer-console input {
@@ -81,6 +75,6 @@ iframe.tr-iframe {
     background-size : 12px;
     line-height     : 19px;
     border          : 1px solid #ccc;
-    box-shadow    : 0 1px 3px 0 rgba(150, 150, 150, 0.2) inset, 0 1px 0 rgba(255, 255, 255, 0.2);
+    box-shadow      : 0 1px 3px 0 rgba(150, 150, 150, 0.2) inset, 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 

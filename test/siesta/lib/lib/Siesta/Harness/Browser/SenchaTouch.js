@@ -1,6 +1,6 @@
 /*
 
-Siesta 1.2.1
+Siesta 2.0.1
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -9,6 +9,7 @@ http://bryntum.com/products/siesta/license
 /**
 @class Siesta.Harness.Browser.SenchaTouch
 @extends Siesta.Harness.Browser 
+@mixin Siesta.Harness.Browser.ExtJSCore
 
 A Class representing the browser harness. This class provides a web-based UI and defines some additional configuration options.
 
@@ -116,7 +117,9 @@ Class('Siesta.Harness.Browser.SenchaTouch', {
             loaderPath          : null,
             
             isRunningOnMobile   : true,
-            useExtJSUI          : true
+            useExtJSUI          : true,
+            
+            contentManagerClass : Siesta.Content.Manager.Browser.ExtJSCore
         },
 
 
@@ -161,10 +164,12 @@ Class('Siesta.Harness.Browser.SenchaTouch', {
             },
 
             
-            showForcedIFrame : function (iframe, test) {
+            showForcedIFrame : function (test) {
                 $.rebindWindowContext(window);
+                
+                var wrapper     = test.scopeProvider.wrapper
 
-                $(iframe).setStyle({
+                $(wrapper).css({
                     'z-index'   : 100000
                 });
             },

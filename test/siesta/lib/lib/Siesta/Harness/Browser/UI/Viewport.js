@@ -1,6 +1,6 @@
 /*
 
-Siesta 1.2.1
+Siesta 2.0.1
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -14,6 +14,18 @@ Ext.define('Siesta.Harness.Browser.UI.Viewport', {
         'Siesta.Harness.Browser.UI.CanFillAssertionsStore'
     ],
 
+//    requires        : [
+//        'Ext.state.LocalStorageProvider',
+//        'Ext.state.CookieProvider',
+//
+//        'ExtX.Reference.Slot',
+//
+//        'Siesta.Harness.Browser.Model.TestTreeStore',
+//        'Siesta.Harness.Browser.UI.TestGrid',
+//        'Siesta.Harness.Browser.UI.ResultPanel',
+//        'Siesta.Harness.Browser.UI.MouseVisualizer',
+//        'Siesta.Harness.Browser.UI.Header'
+//    ],
 
     title           : null,
 
@@ -34,21 +46,7 @@ Ext.define('Siesta.Harness.Browser.UI.Viewport', {
     contextMenu     : null,
     mouseVisualizer : null,
 
-    verticalCenteredTpl     : new Ext.XTemplate(
-        '<div class="tr-vertical-align-helper-content {cls}">{text}</div>',
-        '<div class="tr-vertical-align-helper"></div>',
-        { 
-            compiled : true 
-        }
-    ),
-
-//    statusIndicatorEl   : null,
-    
-    header          : null,
-    headerClass     : 'Siesta.Harness.Browser.UI.Header',
-    
     collapsedNodes  : null,
-
 
     initComponent : function () {
         Ext.state.Manager.setProvider(Ext.supports.LocalStorage ? new Ext.state.LocalStorageProvider() : new Ext.state.CookieProvider())
@@ -56,9 +54,8 @@ Ext.define('Siesta.Harness.Browser.UI.Viewport', {
         this.selection      = {}
     
         if (this.harness.stateful) this.applyState(this.loadState())
-    
-    
-        var testsStore      = this.testsStore = new Siesta.Harness.Browser.Model.TestTreeStore({
+
+        var testsStore      = this.testsStore = new Siesta.Harness.Browser.Model.FilterableTreeStore({
             model           : 'Siesta.Harness.Browser.Model.TestFile',
         
             sortOnLoad      : false,
@@ -88,96 +85,107 @@ Ext.define('Siesta.Harness.Browser.UI.Viewport', {
         })
     
         testsStore.load()
-        
-        var header  = this.header = Ext.create(this.headerClass, {
-            viewport        : this,
-            stateConfig     : this.getState()
-        });       
-        
-        header.on({
-            optionchange            : this.onOptionChange,
-            beforesettingsmenushow  : this.onSettingsMenuBeforeShow,
-            buttonclick             : this.onHeaderButtonClick,
-            logoclick               : this.onLogoClick,
-            
-            scope                   : this
-        });
-        
-        
+
         Ext.apply(this, {
             mouseVisualizer : Ext.isIE ? undefined : new Siesta.Harness.Browser.UI.MouseVisualizer({ harness : this.harness }),
             slots           : true,
-            
-            contextMenu     : this.buildContextMenu(),
-        
-            layout  : 'border',
-            items   : [
-                header,
+            plugins         : new Siesta.Harness.Browser.UI.VersionChecker({ renderTo : 'update-ct'}),
+            layout          : 'border',
+
+            items           : [
                 {
                     region      : 'west',
-                        
+
                     xtype       : 'testgrid',
                     slot        : 'filesTree',
                     id          : this.harness.id + '-testTree',
-                        
+
                     iconCls     : 'tr-status-neutral-small',
-                        
-                    animate     : !Ext.isIE,    
-                    split       : true, 
-                    
+
+                    stateConfig : this.getState(),
+
+                    animate     : !Ext.isIE,
+                    split       : true,
+
                     filter          : this.filter,
                     filterGroups    : this.filterGroups,
-                        
+
                     listeners   : {
-                        selectionchange     : this.onSelectionChange, 
+                        selectionchange     : this.onSelectionChange,
                         checkchange         : this.onCheckChange,
-                            
+
                         itemcontextmenu     : this.onFilesContextMenu,
                         itemdblclick        : this.onTestFileDoubleClick,
-                        
-                        'filter-group-change'   : this.saveState,
-                        resize                  : function () {
+                        showcoverageinfo    : this.showCoverageReport,
+
+                        resize              : function () {
                             // preserve min width of the assertion grid
                             this.slots.resultPanel.ensureLayout()
                         },
-                            
-                        scope                   : this
+
+                        scope               : this
                     },
-                        
+
                     store       : testsStore
                 },
                 {
-                    xtype       : 'resultpanel',
-                    region      : 'center',
-                    slot        : 'resultPanel',
-                    cls         : 'resultPanel-panel',
-                    viewDOM     : this.getOption('viewDOM'),
-                    id          : this.harness.id + '-resultpanel',
-                    
-                    maintainViewportSize    : this.harness.maintainViewportSize,
+                    xtype           : 'container',
+                    slot            : 'center',
+                    region          : 'center',
+                    cls             : 'center-ct',
+                    layout          : {
+                        type            : 'card',
+                        deferredRender  : true
+                    },
+                    items           : [
+                        {
+                            xtype       : 'resultpanel',
+                            region      : 'center',
+                            slot        : 'resultPanel',
+                            cls         : 'resultPanel-panel',
+                            viewDOM     : this.getOption('viewDOM'),
+                            id          : this.harness.id + '-resultpanel',
 
-                    listeners       : {
-                        viewdomchange   : function(g, value) {
-                            this.setOption('viewDOM', value);
-                            this.saveState();
+                            maintainViewportSize    : this.harness.maintainViewportSize,
+
+                            listeners       : {
+                                viewdomchange       : function(g, value) {
+                                    this.setOption('viewDOM', value);
+                                    this.saveState();
+                                },
+
+                                rerun               : this.rerunTest,
+
+                                scope               : this
+                            }
                         },
-                
-                        rerun           : this.rerunTest,
-
-                        scope           : this
-                    }
-//                  items       : [{ xtype : 'centerpanel', slot : 'splashpanel' }]
-
+                        {
+                            xtype               : Ext.ClassManager.getByAlias('widget.coveragereport') ? 'coveragereport' : 'container',
+                            slot                : 'coverageReport',
+                            listeners           : {
+                                backtomainui    : this.showMainUI,
+                                scope           : this
+                            }
+                        }
+                    ]
                 }
-                // eof main content area
             ]
+            // eof main content area
         })
     
         this.callParent()
         
         // for some reason doesn't work, when specified as the "listeners" config in the "viewConfig" option above
         this.slots.filesTree.getView().on('viewready', this.onViewReady, this, { single : true })
-    
+
+        this.slots.filesTree.on({
+            optionchange            : this.onOptionChange,
+            beforesettingsmenushow  : this.onSettingsMenuBeforeShow,
+            buttonclick             : this.onMainButtonClick,
+
+            scope                   : this
+        });
+
         // delay is required to avoid recursive loop
         this.on('afterlayout', this.onAfterLayout, this, { single : true, delay : 1 })
         
@@ -189,6 +197,8 @@ Ext.define('Siesta.Harness.Browser.UI.Viewport', {
         })
         
         this.harness.on('testendbubbling', this.onEveryTestEnd, this)
+        this.harness.on('hassomecoverageinfo', this.onHasSomeCoverageInfo, this)
+        this.harness.on('nocoverageinfo', this.onNoCoverageInfo, this)
     },
 
     
@@ -249,19 +259,6 @@ Ext.define('Siesta.Harness.Browser.UI.Viewport', {
                         expanded        : true,
                         loaded          : true
                     }
-                    
-//                    ,
-//
-//                    // Prevent datachanged event from being fired by an eventStore add action
-//                    insert : function() {
-//                        var O = Ext.util.Observable;
-//                        O.capture(this, function(name) {
-//                            return name !== 'datachanged';
-//                        });
-//                        var result = this.self.prototype.insert.apply(this, arguments);
-//                        O.releaseCapture(this);
-//                        return result;
-//                    }
                 })
             })
         }
@@ -271,8 +268,6 @@ Ext.define('Siesta.Harness.Browser.UI.Viewport', {
 
 
     onAfterLayout : function () {
-//        this.statusIndicatorEl  = this.slots.title.el.down('.tr-status-indicator')
-    
         if (this.getOption('autoRun')) {
             var checked     = this.getChecked()
         
@@ -461,6 +456,8 @@ Ext.define('Siesta.Harness.Browser.UI.Viewport', {
 
     
     onTestSuiteStart : function (descriptors) {
+        Ext.getBody().addCls('testsuite-running');
+
         var harness             = this.harness
         var filesTree           = this.slots.filesTree
         var selModel            = filesTree.getSelectionModel()
@@ -493,16 +490,20 @@ Ext.define('Siesta.Harness.Browser.UI.Viewport', {
                 groupNode.updateFolderStatus()
             }
         })
-        
-        filesTree.setIconCls('tr-status-running-small')
-        filesTree.setTitle('Running...')
-        
+
         Ext.resumeLayouts();
     },
 
 
     onTestSuiteEnd : function (descriptors) {
-        this.updateStatusIndicator()
+        Ext.getBody().removeCls('testsuite-running');
+        
+        this.updateStatusIndicator();
+
+        if (this.slots.center.getLayout().getActiveItem() === this.slots.coverageReport) {
+            // Load new data into coverage report
+            this.slots.coverageReport.loadHtmlReport(this.harness.generateCoverageHtmlReport(false));
+        }
     },
     
 
@@ -528,6 +529,17 @@ Ext.define('Siesta.Harness.Browser.UI.Viewport', {
             resultPanel.showTest(test, testRecord.get('assertionsStore'))
         }
     },
+    
+    
+    // this method checks that test update, coming from given `test` is actual
+    // update may be not actual, if user has re-launched the test, so new test already presents
+    isTestUpdateActual : function (test, testRecord) {
+        testRecord          = testRecord || this.testsStore.getNodeById(test.url)
+        
+        var currentTest     = testRecord.get('test')
+        
+        return currentTest && currentTest.isFromTheSameGeneration(test)
+    },
 
 
     onTestUpdate : function (test, result, parentResult) {
@@ -535,7 +547,7 @@ Ext.define('Siesta.Harness.Browser.UI.Viewport', {
         
         // need to check that test record contains the same test instance as the test in arguments (or its sub-test)
         // test instance may change if user has restarted a test for example
-        if (testRecord.get('test').isFromTheSameGeneration(test)) {
+        if (this.isTestUpdateActual(test, testRecord)) {
             this.processNewResult(testRecord.get('assertionsStore'), test, result, parentResult)
             
             if (this.getOption('breakOnFail') && test.getFailCount() > 0) {
@@ -553,7 +565,7 @@ Ext.define('Siesta.Harness.Browser.UI.Viewport', {
         
         // need to check that test record contains the same test instance as the test in arguments (or its sub-test)
         // test instance may change if user has restarted a test for example
-        if (testRecord.get('test').isFromTheSameGeneration(test)) {
+        if (this.isTestUpdateActual(test, testRecord)) {
             testRecord.beginEdit()
     
             testRecord.set({
@@ -568,6 +580,8 @@ Ext.define('Siesta.Harness.Browser.UI.Viewport', {
         
             testRecord.parentNode && testRecord.parentNode.updateFolderStatus()
         }
+        
+        this.updateStatusIndicator()
     },
     
     
@@ -577,7 +591,7 @@ Ext.define('Siesta.Harness.Browser.UI.Viewport', {
         
         // need to check that test record contains the same test instance as the test in arguments (or its sub-test)
         // test instance may change if user has restarted a test for example
-        if (testRecord.get('test').isFromTheSameGeneration(test)) {
+        if (this.isTestUpdateActual(test, testRecord)) {
             this.processEveryTestEnd(testRecord.get('assertionsStore'), test)
         }
     },
@@ -588,7 +602,7 @@ Ext.define('Siesta.Harness.Browser.UI.Viewport', {
         
         // need to check that test record contains the same test instance as the test in arguments
         // test instance may change if user has restarted a test for example
-        if (testRecord.get('test').isFromTheSameGeneration(test) && !test.isTodo) {
+        if (this.isTestUpdateActual(test, testRecord) && !test.isTodo) {
             testRecord.set('isFailed', true)
         
             testRecord.parentNode && testRecord.parentNode.updateFolderStatus()
@@ -743,22 +757,18 @@ Ext.define('Siesta.Harness.Browser.UI.Viewport', {
             items       : [
                 {
                     text        : 'Uncheck others (and check this)',
-                
                     handler     : this.uncheckOthersHandler
                 },
                 {
                     text        : 'Uncheck all',
-                
                     handler     : this.uncheckAllHandler
                 },
                 {
                     text        : 'Check all',
-                
                     handler     : this.checkAllHandler
                 },
                 {
                     text        : 'Run this',
-                
                     handler     : this.runThisFileHandler
                 }
             ]
@@ -797,12 +807,16 @@ Ext.define('Siesta.Harness.Browser.UI.Viewport', {
 
     onFilesContextMenu : function (view, testFile, el, index, event) {
         this.currentFile    = testFile
-    
+
+        if (!this.contextMenu) {
+            this.contextMenu = this.buildContextMenu();
+        }
+
         this.contextMenu.setPagePosition(event.getX(), event.getY())
     
-        this.contextMenu.show()
+        this.contextMenu.show();
     
-        event.preventDefault()
+        event.preventDefault();
     },
 
 
@@ -838,57 +852,39 @@ Ext.define('Siesta.Harness.Browser.UI.Viewport', {
         this.harness.launch([ testFile.get('descriptor') ])
     },
 
+    
     updateStatusIndicator : function () {
         // can remain neutral if all files are missing for example
-        var isNeutral       = true
-        var allGreen        = true
-        var hasFailures     = false
+//        var isNeutral       = true
+//        var allGreen        = true
+//        var hasFailures     = false
     
         var totalPassed     = 0
         var totalFailed     = 0
     
-        Ext.each(this.testsStore.tree.flatten(), function (testFileRecord) {
+        Joose.O.each(this.testsStore.tree.nodeHash, function (testFileRecord) {
             var test        = testFileRecord.get('test')
         
             // if there's at least one test - state is not neutral
             if (test && test.isFinished()) {
-                isNeutral = false
+//                isNeutral       = false
             
-                allGreen        = allGreen      && test.isPassed()
-                hasFailures     = hasFailures   || test.isFailed()
+//                allGreen        = allGreen      && test.isPassed()
+//                hasFailures     = hasFailures   || test.isFailed()
             
                 totalPassed     += test.getPassCount()
                 totalFailed     += test.getFailCount()
             }
         })
-    
-//        var statusIndicatorEl   = this.statusIndicatorEl
-    
-//        statusIndicatorEl.removeCls([ 'tr-status-running', 'tr-status-allgreen', 'tr-status-bugs' ])
-    
-        Ext.suspendLayouts();
-        
-        var filesTree       = this.slots.filesTree
-    
-        filesTree.setTitle('Totals: ' + totalPassed + ' / ' + totalFailed)
-    
-//        if (isNeutral) return
-//        
-//        if (allGreen)       statusIndicatorEl.addCls('tr-status-allgreen')
-//        if (hasFailures)    statusIndicatorEl.addCls('tr-status-bugs')
-    
-        if (isNeutral)      filesTree.setIconCls('tr-status-neutral-small')
-        if (allGreen)       filesTree.setIconCls('tr-status-allgreen-small')
-        if (hasFailures)    filesTree.setIconCls('tr-status-bugs-small')
-        
-        Ext.resumeLayouts();
+
+        this.slots.filesTree.updateStatus(totalPassed, totalFailed);
     },
 
     onSettingsMenuBeforeShow : function(hdr, menu) {
         menu.down('[option=viewDOM]').setChecked(this.getOption('viewDOM'));
     },
 
-    onHeaderButtonClick : function(hdr, button, action) {
+    onMainButtonClick : function(hdr, button, action) {
         switch(action) {
             case 'run-checked':
                 this.runChecked();
@@ -905,18 +901,94 @@ Ext.define('Siesta.Harness.Browser.UI.Viewport', {
         }
     },
     
-    
-    onLogoClick : function () {
-        //this.slots.resultPanel. => setActiveItem(this.slots.splashpanel)
-    },
-
-    
     rerunTest : function () {
         var toRun = this.slots.filesTree.getSelectionModel().getSelection()[ 0 ];
         
         if (toRun) {
             this.launchTest(toRun);
         }
+    },
+
+    afterRender : function() {
+        this.callParent(arguments);
+
+        Ext.getBody().createChild([
+            {
+                tag     : 'a',
+                cls     : "logo-link",
+                href    : "#",
+                cn      : [{
+                    tag     : 'img',
+                    src     : Ext.BLANK_IMAGE_URL
+                },
+                {
+                    tag  : 'span',
+                    html : 'v.' + (Siesta.meta.VERSION || "1.0.0"),
+                    cls  : 'tr-version-indicator'
+                },
+                {
+                    tag  : 'div',
+                    cls  : 'tr-progress-indicator'
+                }]
+            },
+            {
+                tag     : 'ul',
+                cls     : "right-top-area",
+                cn      : [
+                    {
+                        tag     : 'li',
+                        id       : 'bryntum-logo',
+                        html      : '<a href="http://bryntum.com/" target="_blank" class="bryntum-logo"></a>'
+                    },
+                    {
+                        tag     : 'li',
+                        html    : '<a href="http://bryntum.com/docs/siesta" target="_blank">API Documentation</a>'
+                    }
+                ]
+            },
+
+            {
+                tag     : 'div',
+                id      : 'update-ct'
+            }
+        ]);
+
+        Ext.getBody().on({
+            keyup : function(e,t) {
+                if (e.getKey() === e.ENTER && e.ctrlKey) {
+                    // TODO
+                }
+            }
+        });
+    },
+    
+    onHasSomeCoverageInfo : function () {
+        this.slots.filesTree.enableCoverageButton();
+    },
+    
+    onNoCoverageInfo : function () {
+        this.slots.filesTree.disableCoverageButton()
+    },
+
+    showCoverageReport : function () {
+        var resultPanel                 = this.slots.resultPanel
+        var coverageReport              = this.slots.coverageReport
+        
+        coverageReport.loadHtmlReport(this.harness.generateCoverageHtmlReport(false));
+
+        if (this.slots.center.getLayout().getActiveItem() === this.slots.resultPanel) {
+            this.slots.resultPanel.hideIFrame()
+
+            this.slots.center.getLayout().setActiveItem(1)
+        } else {
+            this.showMainUI();
+        }
+    },
+
+    showMainUI: function () {
+        this.slots.center.getLayout().setActiveItem(0)
+        
+        this.slots.resultPanel.alignIFrame()
     }
 })
 //eof Siesta.Harness.Browser.UI.Viewport

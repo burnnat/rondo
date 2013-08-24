@@ -1,6 +1,6 @@
 /*
 
-Siesta 1.2.1
+Siesta 2.0.1
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -46,14 +46,15 @@ Class('Siesta.Content.Preset', {
                 config          = { content : desc.text }
                 
             } else {
-                if (desc.type != 'css' && desc.type != 'js' || !desc.url && !desc.content) throw "Incorrect preload descriptor:" + desc
+                if (!desc.url && !desc.content) throw "Incorrect preload descriptor:" + desc
                 
-                constructor     = desc.type == 'css' ? Siesta.Content.Resource.CSS : Siesta.Content.Resource.JavaScript
+                constructor     = desc.type && desc.type == 'css' || this.isCSS(desc.url) ? Siesta.Content.Resource.CSS : Siesta.Content.Resource.JavaScript
                 
                 config          = {}
                 
-                if (desc.url)       config.url      = desc.url
-                if (desc.content)   config.content  = desc.content
+                if (desc.url)           config.url          = desc.url
+                if (desc.content)       config.content      = desc.content
+                if (desc.instrument)    config.instrument   = desc.instrument
             }
             
             return new constructor(config)

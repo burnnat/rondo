@@ -1,6 +1,6 @@
 /*
 
-Siesta 1.2.1
+Siesta 2.0.1
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -608,7 +608,7 @@ Ext.define('Siesta.Harness.Browser.UI_Mobile.MainPanel', {
 
     
     rerunTest : function () {
-        this.launchTest(this.getResultList().testRecord);
+        this.launchTest(this.lastTests[ this.lastTests.length - 1 ]);
     }
 })
 //eof Siesta.Harness.Browser.UI_Mobile.MainPanel

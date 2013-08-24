@@ -1,6 +1,6 @@
 /*
 
-Siesta 1.2.1
+Siesta 2.0.1
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -9,6 +9,7 @@ http://bryntum.com/products/siesta/license
 /**
 @class Siesta.Harness.Browser.ExtJS
 @extends Siesta.Harness.Browser 
+@mixin Siesta.Harness.Browser.ExtJSCore
 
 Class, representing the browser harness. This class provides a web-based UI and defines some additional configuration options.
 
@@ -118,7 +119,7 @@ Class('Siesta.Harness.Browser.ExtJS', {
              *
              * This option can be also specified in the test file descriptor. 
              */
-            loaderPath          : null,
+            loaderPath              : null,
             
             extVersion              : null,
 
@@ -129,7 +130,9 @@ Class('Siesta.Harness.Browser.ExtJS', {
              */
             allowExtVersionChange   : false,
             
-            extVersionRegExp    : /ext(?:js)?-(\d\.\d+\.\d+.*?)\//
+            extVersionRegExp        : /ext(?:js)?-(\d\.\d+\.\d+.*?)\//,
+            
+            contentManagerClass     : Siesta.Content.Manager.Browser.ExtJSCore
         },
         
         

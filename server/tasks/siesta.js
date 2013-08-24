@@ -1,24 +1,18 @@
 var runner = require('../lib/sauce-runner.js');
 
 var siesta = function(browser, chain) {
-	var runButton = '.x-btn a[data-qtip="Run all"]';
-	var expandButton = '.x-region-collapsed-right-placeholder .x-tool-expand-left';
-	var complete = '.tr-testgrid .tr-status-bugs-small, .tr-testgrid .tr-status-allgreen-small';
+	var runButton = '.x-btn a[title="Run all"]';
 	
 	chain
 		.waitForElementByCss(runButton, 10000)
-		.elementByCss(expandButton, function(err, el) {
-			browser.next('moveTo', el);
-			browser.next('clickElement', el);
-		})
 		.elementByCss(runButton, function(err, el) {
 			browser.next('moveTo', el);
 			browser.next('clickElement', el);
 		})
-		.elementByCss('.tr-siesta-logo', function(err, el) {
+		.elementByCss('a.logo-link', function(err, el) {
 			browser.next('moveTo', el);
 		})
-		.waitForElementByCss(complete, 180000)
+		.waitForCondition('!!Siesta.my.activeHarness.endDate', 180000, 1000)
 		.safeEval("Siesta.REPORTER ? Siesta.my.activeHarness.generateReport() : null", function(err, obj) {
 			if (obj) {
 				browser.saucePassed = obj.passed;

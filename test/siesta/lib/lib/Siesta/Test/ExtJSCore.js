@@ -1,6 +1,6 @@
 /*
 
-Siesta 1.2.1
+Siesta 2.0.1
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -26,10 +26,14 @@ Role('Siesta.Test.ExtJSCore', {
         
         simulateEventsWith      : {
             is      : 'rw',
-            init    : function () {
-                var div = document.createElement('div')
+            lazy    : function () {
+                var isIE9           = navigator.userAgent.match(/MSIE 9.0;/)
+                var Ext             = this.global.Ext
+                var isBelowExt421   = Boolean(Ext && Ext.getVersion('extjs') && Ext.getVersion('extjs').isLessThan('4.2.1.883'))
                 
-                return div.attachEvent ? 'fireEvent' : 'dispatchEvent'
+                var div             = document.createElement('div')
+                
+                return div.attachEvent && (isIE9 || isBelowExt421) ? 'fireEvent' : 'dispatchEvent'
             }
         },
         
@@ -67,7 +71,7 @@ Role('Siesta.Test.ExtJSCore', {
         simulateMouseClick: function (el, callback, scope) {
             
             // Force check toggle for input checkboxes
-            if (this.simulateEventsWith === 'fireEvent' && (el.type === 'checkbox' || el.type === 'radio') && !el.disabled && !el.readOnly) {
+            if (this.getSimulateEventsWith() === 'fireEvent' && (el.type === 'checkbox' || el.type === 'radio') && !el.disabled && !el.readOnly) {
                 var oldState = el.checked;
 
                 if (callback) {
@@ -249,10 +253,10 @@ Role('Siesta.Test.ExtJSCore', {
 
             if (Ext && Ext.Component && el instanceof Ext.Component) {
                 el          = this.compToEl(el);
-                
-                if (this.isElementVisible(el)) {
+
+                if (this.isElementVisible(el) && this.elementIsTop(el, true)) {
                     var center  = this.findCenter(el);
-    
+
                     el          = this.elementFromPoint(center[0], center[1], false, el.dom);
                 }
             }
@@ -265,8 +269,8 @@ Role('Siesta.Test.ExtJSCore', {
         },
         
         
-        // this method generally has the same semantic as the "normalizeElement", its being used in 
-        // Siesta.Test.Action.Role.HasTarget to determine what to pass to next step
+        // this method generally has the same semantic as the "normalizeElement", it's being used in
+        // Siesta.Test.Action.Role.HasTarget to determine what to pass to the next step
         //
         // on the browser level the only possibility is DOM element
         // but on ExtJS level user can also use ComponentQuery and next step need to receive the 

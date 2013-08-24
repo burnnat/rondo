@@ -1,6 +1,6 @@
 /*
 
-Siesta 1.2.1
+Siesta 2.0.1
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -63,11 +63,12 @@ Class('Siesta.Test.Browser', {
             Joose.A.each([ 
                 'currentPosition', 
                 'actionDelay', 'afterActionDelay', 
-                'simulateEventsWith',
                 'dragDelay', 'moveCursorBetweenPoints', 'dragPrecision', 'overEls'
             ], function (name) {
                 res[ name ]     = me[ name ]
             })
+            
+            res.simulateEventsWith  = me.getSimulateEventsWith()
             
             return res
         },
@@ -152,7 +153,7 @@ Class('Siesta.Test.Browser', {
 
             var last = stops[stops.length-1];
 
-            if (last[0] !== to[0] || last[1] !== to[1]) {
+            if (stops.length > 0 && (last[0] !== to[0] || last[1] !== to[1])) {
                 stops.push(to);
             }
             return stops;

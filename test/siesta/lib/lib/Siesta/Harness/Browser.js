@@ -1,6 +1,6 @@
 /*
 
-Siesta 1.2.1
+Siesta 2.0.1
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -122,8 +122,8 @@ Class('Siesta.Harness.Browser', {
              * @cfg {Boolean} breakOnFail When set to `true`, harness will not start launching any further tests after detecting a failed assertion.
              * improving the speed of test. Default value is `false`.   
              */
-            breakOnFail         : false,
-            activateDebuggerOnFail : false,
+            breakOnFail             : false,
+            activateDebuggerOnFail  : false,
 
             contentManagerClass : Siesta.Content.Manager.Browser,
             scopeProvider       : 'Scope.Provider.IFrame',
@@ -385,10 +385,10 @@ Class('Siesta.Harness.Browser', {
                 
                 if (this.needUI && !this.viewport) {
                     var cb = function () {
-                        if (Ext.QuickTips) {
-                            Ext.QuickTips.init();
-                        }
-                        
+//                        if (Ext.QuickTips) {
+//                            Ext.QuickTips.init();
+//                        }
+//
                         me.viewport = me.createViewport({
                             title           : me.title,
                             harness         : me

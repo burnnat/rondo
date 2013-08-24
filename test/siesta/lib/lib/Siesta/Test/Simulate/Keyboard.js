@@ -1,6 +1,6 @@
 /*
 
-Siesta 1.2.1
+Siesta 2.0.1
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -190,35 +190,30 @@ Role('Siesta.Test.Simulate.Keyboard', {
         * The following events will be fired, in order: `keydown`, `keypress`, `textInput`(webkit only currently), `keyup`
         */
         keyPress: function (el, key, options) {
-            el = this.normalizeElement(el);
+            el                  = this.normalizeElement(el);
 
-            var KeyCodes = Siesta.Test.Simulate.KeyCodes().keys,
-                keyCode,
-                charCode;
+            var KeyCodes        = Siesta.Test.Simulate.KeyCodes().keys
+            var keyCode         = KeyCodes[ key.toUpperCase() ] || 0;
 
-            options = options || {};
+            options             = options || {};
 
             options.readableKey = key;
-            keyCode = KeyCodes[key.toUpperCase()] || 0;
+            
+            var isReadableKey   = this.isReadableKey(keyCode)
 
-            if(this.isReadableKey(keyCode)) {
-                charCode = key.charCodeAt(0);
-            } else {
-                charCode = 0;
-            }
+            var charCode        = isReadableKey ? key.charCodeAt(0) : 0
 
             var me              = this,
                 originalLength  = -1,
-                isReadableKey   = me.isReadableKey(keyCode),
                 isTextInput     = me.isTextInput(el);
-
+                
             if (isTextInput) {
-                originalLength = el.value.length;
+                originalLength  = el.value.length;
             }
 
             me.simulateEvent(el, 'keydown', $.extend({ charCode : 0, keyCode : keyCode }, options), true);
 
-            var event           = me.simulateEvent(el, 'keypress', $.extend({ charCode : charCode, keyCode : this.isReadableKey(keyCode) ? 0 : keyCode }, options), false);
+            var event           = me.simulateEvent(el, 'keypress', $.extend({ charCode : charCode, keyCode : isReadableKey ? 0 : keyCode }, options), false);
             var prevented       = typeof event.defaultPrevented === 'boolean' ? event.defaultPrevented : event.returnValue === false;
 
             var supports        = Siesta.Harness.Browser.FeatureSupport().supports
@@ -237,30 +232,33 @@ Role('Siesta.Test.Simulate.Keyboard', {
                     if (maxLength != null) maxLength    = Number(maxLength)
 
                     // If the entered char had no impact on the textfield - manually put it there
-                    if (!supports.canSimulateKeyCharacters || (originalLength === el.value.length && originalLength !== maxLength)) {
+                    if (!supports.canSimulateKeyCharacters && originalLength === el.value.length && originalLength !== maxLength) {
                         el.value = el.value + options.readableKey;
                     }
                 }
 
                 // Manually delete one char off the end if backspace simulation is not supported by the browser
                 if (keyCode === KeyCodes.BACKSPACE && !supports.canSimulateBackspace && el.value.length > 0) {
-                    el.value = el.value.substring(0, el.value.length - 1);
+                    el.value    = el.value.substring(0, el.value.length - 1);
                 }
 
                 if (keyCode === KeyCodes.ENTER && !supports.enterSubmitsForm) {
-                    var form = this.$(el).closest('form');
+                    var form    = this.$(el).closest('form');
 
-                    if (form.length) {
-                        form.submit();
-                    }
+                    if (form.length) form.submit();
                 }
             }
 
-            if (!isTextInput && keyCode === KeyCodes.ENTER && !supports.enterOnAnchorTriggersClick) {
-                me.simulateEvent(el, 'click', null, true);
+            // somehow "node.nodeName" is empty sometimes in IE10
+            var nodeName        = el.nodeName && el.nodeName.toLowerCase()
+            
+            if ((nodeName == 'a' || nodeName == 'button') && keyCode === KeyCodes.ENTER && !supports.enterOnAnchorTriggersClick) {
+                // this "click" should not update the current cursor position its merely for activating "click" listeners
+                me.simulateEvent(el, 'click', { doNotUpdateCurrentPosition : true }, true);
             }
             me.simulateEvent(el, 'keyup', $.extend({ charCode : 0, keyCode : keyCode }, options), true);
         },
+        
 
         isTextInput : function(node) {
             // somehow "node.nodeName" is empty sometimes in IE10

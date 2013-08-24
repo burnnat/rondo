@@ -1,6 +1,6 @@
 /*
 
-Siesta 1.2.1
+Siesta 2.0.1
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -18,6 +18,8 @@ Ext.define('Siesta.Harness.Browser.UI.DomContainer', {
 
     canManageDOM            : true,
     suspendAfterLayoutAlign : false,
+    padding                 : 10,
+    title                   : 'DOM Panel',
 
     initComponent : function() {
         this.testListeners  = []
@@ -34,17 +36,13 @@ Ext.define('Siesta.Harness.Browser.UI.DomContainer', {
             collapsible     : true,
             animCollapse    : false,
 
-            dockedItems     : {
-                xtype : 'component',
-                dock : 'bottom',
-                cls  : 'domcontainer-console',
-                autoEl : {
-                    tag : 'div',
-                    children : {
-                        tag         : 'input'
-                    }
-                }
-            }
+            dockedItems     : this.consoleCt = new Ext.Component({
+                dock        : 'bottom',
+                hidden      : true,
+                height      : 20,
+                cls         : 'domcontainer-console',
+                renderTpl : '<div><input type="text" /></div>'
+            })
         });
 
         this.callParent()
@@ -82,10 +80,8 @@ Ext.define('Siesta.Harness.Browser.UI.DomContainer', {
                         if (console) {
                             console.log(retVal);
                         }
-//                        field.clearInvalid();
                     } catch(e) {
                         console.log(e.message);
-//                        field.markInvalid(e.message);
                     }
                 }
             },
@@ -135,17 +131,12 @@ Ext.define('Siesta.Harness.Browser.UI.DomContainer', {
         Ext.fly(wrapper).removeCls('tr-iframe-hidden')
         Ext.fly(wrapper).removeCls('tr-iframe-forced')
 
-        var box     = this.el.getBox()
-
-//        box.x       += 5
-//        box.y       += 0
-//        box.width   -= 5
-//        box.height  -= 0
+        var box     = this.body.getBox()
 
         Ext.fly(wrapper).setBox(box)
 
         if (!this.maintainViewportSize) {
-            Ext.fly(this.getIFrame()).setSize(this.el.getSize())
+            Ext.fly(this.getIFrame()).setSize(this.body.getSize())
         }
 
         var test        = this.test
@@ -261,6 +252,7 @@ Ext.define('Siesta.Harness.Browser.UI.DomContainer', {
             }
         });
 
+        this.consoleCt.show();
         this.toggleMouseMoveListener(true);
 
         _Ext.getBody().on('click', this.onInspectionClick, this);
@@ -280,6 +272,8 @@ Ext.define('Siesta.Harness.Browser.UI.DomContainer', {
         this.boxIndicator = null;
 
         this.removeCls('inspection-mode');
+
+        this.consoleCt.hide();
 
         wrap.un('mouseout', this.onMouseLeave, this);
 

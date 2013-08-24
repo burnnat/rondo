@@ -1,6 +1,6 @@
 /*
 
-Siesta 1.2.1
+Siesta 2.0.1
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -67,7 +67,7 @@ Role('Siesta.Test.Simulate.Mouse', {
             var event;
             var global      = this.global
             
-            options = $.extend({
+            options         = $.extend({
                 bubbles     : type !== 'mouseenter' && type !== 'mouseleave', 
                 cancelable  : type != "mousemove", 
                 view        : global, 
@@ -87,9 +87,9 @@ Role('Siesta.Test.Simulate.Mouse', {
             }, options);
 
             if (!("clientX" in options) || !("clientY" in options)) {
-                var center = this.findCenter(el);
+                var center  = this.findCenter(el);
 
-                options = $.extend({
+                options     = $.extend({
                     clientX: center[0],
                     clientY: center[1]
                 }, options);
@@ -103,11 +103,11 @@ Role('Siesta.Test.Simulate.Mouse', {
                 });
             }
 
-            var doc = el.ownerDocument;
+            var doc         = el.ownerDocument;
 
             // use W3C standard when available and allowed by "simulateEventsWith" option
             if (doc.createEvent && this.getSimulateEventsWith() == 'dispatchEvent') {
-                event = doc.createEvent("MouseEvents");
+                event       = doc.createEvent("MouseEvents");
 
                 event.initMouseEvent(
                     type, options.bubbles, options.cancelable, options.view, options.detail,
@@ -118,7 +118,7 @@ Role('Siesta.Test.Simulate.Mouse', {
                 
                 
             } else if (doc.createEventObject) {
-                event = doc.createEventObject();
+                event       = doc.createEventObject();
 
                 $.extend(event, options);
 
@@ -138,9 +138,11 @@ Role('Siesta.Test.Simulate.Mouse', {
                     cursorX     += offsets.left;
                     cursorY     += offsets.top;
                 }
-
-                this.currentPosition[ 0 ]   = cursorX;
-                this.currentPosition[ 1 ]   = cursorY;
+                
+                if (!options.doNotUpdateCurrentPosition) {
+                    this.currentPosition[ 0 ]   = cursorX;
+                    this.currentPosition[ 1 ]   = cursorY;
+                }
             }
 
             return event;
@@ -327,6 +329,9 @@ Role('Siesta.Test.Simulate.Mouse', {
 
                 // If element isn't visible, try to bring it into view
                 if (!this.elementIsTop(normalized, true)) {
+                    // Required to handle the case where the body is scrolled
+                    normalized.scrollIntoView();
+
                     this.$(normalized).scrollintoview({ duration : 0 });
                 }
             }
@@ -513,7 +518,10 @@ Role('Siesta.Test.Simulate.Mouse', {
         // private
         simulateRightClick: function (el, callback, scope, options) {
             var me          = this;
-            
+
+            options = options || {};
+            options.button = 2;
+
             var queue       = new Siesta.Util.Queue({
                 deferer         : this.originalSetTimeout,
                 deferClearer    : this.originalClearTimeout,
@@ -566,14 +574,14 @@ Role('Siesta.Test.Simulate.Mouse', {
                 }
             })
             
-            queue.addStep([ el, "mousedown", options, false ])
+            queue.addStep([ el, "mousedown", options, true ])
             queue.addStep([ el, "mouseup", options, true ])
             
             queue.addStep({
                 processor       : function () {
                     me.focus(el)
                     
-                    me.simulateEvent(el, "click", options, false);
+                    me.simulateEvent(el, "click", options);
                 }
             })
             

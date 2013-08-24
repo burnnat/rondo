@@ -1,6 +1,6 @@
 /*
 
-Siesta 1.2.1
+Siesta 2.0.1
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -132,9 +132,9 @@ Class('Siesta.Test.Action.Drag', {
             var normalizedTarget    = test.normalizeActionTarget(target)
             
             if (this.to) {
-                test.dragTo(normalizedTarget, this.getTo(), function() { next(normalizedTarget); }, null, this.options, this.dragOnly)
+                test.dragTo(target, this.getTo(), function() { next(normalizedTarget); }, null, this.options, this.dragOnly)
             } else {
-                test.dragBy(normalizedTarget, this.getBy(), function() { next(normalizedTarget); }, null, this.options, this.dragOnly)
+                test.dragBy(target, this.getBy(), function() { next(normalizedTarget); }, null, this.options, this.dragOnly)
             }
         }
     }

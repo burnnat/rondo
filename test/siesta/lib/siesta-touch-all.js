@@ -1,6 +1,6 @@
 /*
 
-Siesta 1.2.1
+Siesta 2.0.1
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -744,8 +744,15 @@ Joose.Managed.Property.MethodModifier = new Joose.Proto.Class('Joose.Managed.Pro
         
         methodWrapper.__CONTAIN__   = this.value
         methodWrapper.__METHOD__    = this
+        this.value.displayName      = this.getDisplayName(target)
+        methodWrapper.displayName   = 'internal wrapper' 
         
         targetProto[name] = methodWrapper
+    },
+    
+    
+    getDisplayName : function (target) {
+        return target.meta.name + '[' + this.name + ']'
     },
     
     
@@ -817,6 +824,10 @@ Joose.Managed.Property.MethodModifier.Override = new Joose.Proto.Class('Joose.Ma
         override.IS_OVERRIDE = true
         
         return override
+    },
+    
+    getDisplayName : function (target) {
+        return target.meta.name + '[override ' + this.name + ']'
     }
     
     
@@ -831,6 +842,10 @@ Joose.Managed.Property.MethodModifier.Put = new Joose.Proto.Class('Joose.Managed
         if (params.isOwn) throw "Method [" + params.name + "] is applying over something [" + params.originalCall + "] in class [" + params.target + "]"
         
         return Joose.Managed.Property.MethodModifier.Put.superClass.prepareWrapper.call(this, params)
+    },
+    
+    getDisplayName : function (target) {
+        return target.meta.name + '[' + this.name + ']'
     }
     
     
@@ -850,8 +865,11 @@ Joose.Managed.Property.MethodModifier.After = new Joose.Proto.Class('Joose.Manag
             modifier.apply(this, arguments)
             return res
         }
-    }    
-
+    },
+    
+    getDisplayName : function (target) {
+        return target.meta.name + '[after ' + this.name + ']'
+    }
     
 }).c;
 Joose.Managed.Property.MethodModifier.Before = new Joose.Proto.Class('Joose.Managed.Property.MethodModifier.Before', {
@@ -868,6 +886,10 @@ Joose.Managed.Property.MethodModifier.Before = new Joose.Proto.Class('Joose.Mana
             modifier.apply(this, arguments)
             return originalCall.apply(this, arguments)
         }
+    },
+    
+    getDisplayName : function (target) {
+        return target.meta.name + '[before ' + this.name + ']'
     }
     
 }).c;
@@ -894,6 +916,10 @@ Joose.Managed.Property.MethodModifier.Around = new Joose.Proto.Class('Joose.Mana
             
             return modifier.apply(this, boundArr)
         }
+    },
+    
+    getDisplayName : function (target) {
+        return target.meta.name + '[around ' + this.name + ']'
     }
     
 }).c;
@@ -942,6 +968,10 @@ Joose.Managed.Property.MethodModifier.Augment = new Joose.Proto.Class('Joose.Man
         AUGMENT.IS_AUGMENT  = true
         
         return AUGMENT
+    },
+    
+    getDisplayName : function (target) {
+        return target.meta.name + '[augment ' + this.name + ']'
     }
     
 }).c;
@@ -1812,9 +1842,11 @@ Joose.Managed.Builder = new Joose.Proto.Class('Joose.Managed.Builder', {
         targetMeta.meta.extend({
             doesnot : info
         })
+    },
+    
+    name : function (targetMeta, name) {
+        targetMeta.name     = name
     }
-    
-    
     
 }).c;
 Joose.Managed.Class = new Joose.Proto.Class('Joose.Managed.Class', {
@@ -2294,7 +2326,7 @@ Joose.Managed.Attribute = new Joose.Managed.Class('Joose.Managed.Attribute', {
             
             this.publicName = name.replace(/^_+/, '')
             
-            this.slot = this.isPrivate ? '$$' + name : name
+            this.slot = this.isPrivate ? '$' + name : name
             
             this.setterName = this.setterName || this.getSetterName()
             this.getterName = this.getterName || this.getGetterName()
@@ -2518,21 +2550,22 @@ Joose.Managed.My = new Joose.Managed.Role('Joose.Managed.My', {
     
     methods : {
         createMy : function (extend) {
-            var thisMeta = this.meta
-            var isRole = this instanceof Joose.Managed.Role
+            var thisMeta        = this.meta
+            var isRole          = this instanceof Joose.Managed.Role
             
-            var myExtend = extend.my || {}
+            var myExtend        = extend.my || {}
             delete extend.my
             
             // Symbiont will generally have the same meta class as its hoster, excepting the cases, when the superclass also have the symbiont. 
             // In such cases, the meta class for symbiont will be inherited (unless explicitly specified)
-            
             var superClassMy    = this.superClass.meta.myClass
             
             if (!isRole && !myExtend.isa && superClassMy) myExtend.isa = superClassMy
             
 
             if (!myExtend.meta && !myExtend.isa) myExtend.meta = this.constructor
+            
+            myExtend.name       = this.name + '.my'
             
             var createdClass    = this.myClass = Class(myExtend)
             
@@ -3307,7 +3340,7 @@ Class('Scope.Provider', {
         },
         
         
-        cleanup : function () {
+        cleanup : function (callback) {
             throw "Abstract method `cleanup` of Scope.Provider called"
         },
         
@@ -3343,7 +3376,7 @@ Role('Scope.Provider.Role.WithDOM', {
         attachToOnError : function () {
             
             // returns the value of the attribute
-            return function (window, scopeId, handler) {
+            return function (window, scopeId, handler, preventDefault) {
                 
                 var prevHandler         = window.onerror
                 if (prevHandler && prevHandler.__SP_MANAGED__) return
@@ -3361,7 +3394,7 @@ Role('Scope.Provider.Role.WithDOM', {
                     handler.__CALLING__ = false
                     
                     // in FF/IE need to return `true` to prevent default action
-                    return window.WebKitPoint ? false : true 
+                    if (preventDefault !== false) return window.WebKitPoint ? false : true 
                 }
                 
                 window.onerror.__SP_MANAGED__ = true
@@ -3375,20 +3408,27 @@ Role('Scope.Provider.Role.WithDOM', {
     },
     
     
-    before : {
+    override : {
         
         cleanup : function () {
-            this.scope.onerror = null
+            this.scope.onerror  = null
             
-            var scopeProvider = this.parentWindow.Scope.Provider
+            this.SUPERARG(arguments)
             
-            delete scopeProvider.__ONLOAD__[ this.scopeId ]
-            delete scopeProvider.__ONERROR__[ this.scopeId ]
+            this.scope          = null
         }
     },
     
-        
+    
     methods : {
+        
+        cleanupHanlders : function () {
+            var scopeProvider   = this.parentWindow.Scope.Provider
+            
+            delete scopeProvider.__ONLOAD__[ this.scopeId ]
+            delete scopeProvider.__ONERROR__[ this.scopeId ]
+        },
+        
         
         getHead : function () {
             return this.getDocument().getElementsByTagName('head')[ 0 ]
@@ -3402,7 +3442,7 @@ Role('Scope.Provider.Role.WithDOM', {
         },
         
         
-        addOnErrorHandler : function (handler) {
+        addOnErrorHandler : function (handler, preventDefault) {
             handler.__SP_MANAGED__  = true
             
             if (this.cachedOnError && this.cachedOnError != handler) throw "Can only install one on error handler" 
@@ -3412,7 +3452,7 @@ Role('Scope.Provider.Role.WithDOM', {
             
             this.parentWindow.Scope.Provider.__ONERROR__[ scopeId ] = handler
             
-            var attachToOnError = ';(' + this.attachToOnError.toString() + ')(window, ' + scopeId + ', (window.opener || window.parent).Scope.Provider.__ONERROR__[ ' + scopeId + ' ]);'
+            var attachToOnError = ';(' + this.attachToOnError.toString() + ')(window, ' + scopeId + ', (window.opener || window.parent).Scope.Provider.__ONERROR__[ ' + scopeId + ' ], ' + preventDefault + ');'
             
             if (this.isAlreadySetUp()) 
                 this.runCode(attachToOnError)
@@ -3862,7 +3902,6 @@ Class('Scope.Provider.IFrame', {
         cleanup : function () {
             var wrapper     = this.wrapper || this.iframe
             var iframe      = this.iframe
-            var win         = this.scope
             var me          = this
             
             wrapper.style.display    = 'none'
@@ -3893,9 +3932,10 @@ Class('Scope.Provider.IFrame', {
                     
                     wrapper     = null
                     iframe      = null
-                    win         = null
                     
                     me.parentEl = null
+                    
+                    me.cleanupHanlders()
                     
                     if (me.cleanupCallback) me.cleanupCallback()
                     
@@ -4108,6 +4148,8 @@ Class('Scope.Provider.Window', {
             this.popupWindow.close()
             
             this.popupWindow = null
+            
+            this.cleanupHanlders()
             
             if (this.cleanupCallback) this.cleanupCallback()
         }
@@ -4666,7 +4708,7 @@ Class('JooseX.Observable.Channel', {
         removeListener : function (listenerToRemove) {
             var eventListeners      = this.listeners[ listenerToRemove.eventName ]
             
-            Joose.A.each(eventListeners, function (listener, index) {
+            eventListeners && Joose.A.each(eventListeners, function (listener, index) {
                 
                 if (listener == listenerToRemove) {
                     
@@ -4681,7 +4723,7 @@ Class('JooseX.Observable.Channel', {
         removeListenerByHandler : function (eventName, func, scope) {
             var eventListeners      = this.listeners[ eventName ]
             
-            Joose.A.each(eventListeners, function (listener, index) {
+            eventListeners && Joose.A.each(eventListeners, function (listener, index) {
                 
                 if (listener.func == func && listener.scope == scope) {
                     
@@ -6081,6 +6123,7 @@ Class('Siesta.Content.Resource.JavaScript', {
     isa     : Siesta.Content.Resource,
     
     has     : {
+        instrument          : false
     },
     
     
@@ -6146,14 +6189,15 @@ Class('Siesta.Content.Preset', {
                 config          = { content : desc.text }
                 
             } else {
-                if (desc.type != 'css' && desc.type != 'js' || !desc.url && !desc.content) throw "Incorrect preload descriptor:" + desc
+                if (!desc.url && !desc.content) throw "Incorrect preload descriptor:" + desc
                 
-                constructor     = desc.type == 'css' ? Siesta.Content.Resource.CSS : Siesta.Content.Resource.JavaScript
+                constructor     = desc.type && desc.type == 'css' || this.isCSS(desc.url) ? Siesta.Content.Resource.CSS : Siesta.Content.Resource.JavaScript
                 
                 config          = {}
                 
-                if (desc.url)       config.url      = desc.url
-                if (desc.content)   config.content  = desc.content
+                if (desc.url)           config.url          = desc.url
+                if (desc.content)       config.content      = desc.content
+                if (desc.instrument)    config.instrument   = desc.instrument
             }
             
             return new constructor(config)
@@ -6199,12 +6243,14 @@ Class('Siesta.Content.Manager', {
         disabled        : false,
         
         presets         : {
-            require     : true
+            required    : true
         },
         
         urls            : Joose.I.Object,
         
-        maxLoads        : 5
+        maxLoads        : 5,
+        
+        harness         : null
     },
     
     
@@ -6221,9 +6267,7 @@ Class('Siesta.Content.Manager', {
             var me      = this
             
             Joose.A.each(this.presets, function (preset) {
-                
                 preset.eachResource(function (resource) {
-                    
                     if (resource.url) urls[ resource.url ] = null
                 })
             })
@@ -6231,14 +6275,21 @@ Class('Siesta.Content.Manager', {
             var loadCount   = 0
             var errorCount  = 0
             
-            var total       = 0
             var urlsArray   = []
-            Joose.O.each(urls, function (value, url) { total++; urlsArray.push(url) })
+            
+            Joose.O.each(urls, function (value, url) {
+                // if some content has been already provided - skip it from caching
+                if (!me.hasContentOf(url)) urlsArray.push(url) 
+            })
+            
+            var total       = urlsArray.length
             
             if (total) {
                 
-                var loadSingle = function (url) {
-                    if (!url) return
+                var loadSingle = function () {
+                    if (!urlsArray.length) return
+                    
+                    var url     = urlsArray.shift()
                     
                     me.load(url, function (content) {
                         if (errorCount) return
@@ -6248,14 +6299,14 @@ Class('Siesta.Content.Manager', {
                         if (++loadCount == total) 
                             callback && callback()
                         else
-                            loadSingle(urlsArray.shift())
+                            loadSingle()
                     
                     }, ignoreErrors ? function () {
                         
                         if (++loadCount == total) 
                             callback && callback()
                         else
-                            loadSingle(urlsArray.shift())
+                            loadSingle()
                         
                     } : function () {
                         errorCount++
@@ -6265,7 +6316,7 @@ Class('Siesta.Content.Manager', {
                 }
                 
                 // running only `maxLoads` "loading threads" at the same time
-                for (var i = 0; i < this.maxLoads; i++) loadSingle(urlsArray.shift())
+                for (var i = 0; i < this.maxLoads; i++) loadSingle()
                 
             } else
                 callback && callback()
@@ -6274,6 +6325,11 @@ Class('Siesta.Content.Manager', {
         
         load : function (url, callback, errback) {
             throw "abstract method `load` called"
+        },
+        
+        
+        addContent : function (url, content) {
+            this.urls[ url ]    = content
         },
         
         
@@ -6294,6 +6350,46 @@ Class('Siesta.Content.Manager', {
 
 ;
 ;
+Class('Siesta', {
+    /*PKGVERSION*/VERSION : '2.0.1',
+
+    // "my" should been named "static"
+    my : {
+        
+        has : {
+            config          : null,
+            activeHarness   : null
+        },
+        
+        methods : {
+        
+            getConfigForTestScript : function (text) {
+                try {
+                    eval(text)
+                    
+                    return this.config
+                } catch (e) {
+                    return null
+                }
+            },
+            
+            
+            StartTest : function (arg1, arg2) {
+                if (typeof arg1 == 'object') 
+                    this.config = arg1
+                else if (typeof arg2 == 'object')
+                    this.config = arg2
+                else
+                    this.config = null
+            }
+        }
+    }
+})
+
+// fake StartTest function to extract test configs
+if (typeof StartTest == 'undefined') StartTest = Siesta.StartTest
+if (typeof startTest == 'undefined') startTest = Siesta.StartTest
+if (typeof describe == 'undefined') describe = Siesta.StartTest;
 ;(function () {
     
 var ID = 0
@@ -6845,7 +6941,9 @@ Role('Siesta.Test.More', {
                 'setTimeout',
                 'clearTimeout',
                 'requestAnimationFrame',
-                'cancelAnimationFrame'
+                'cancelAnimationFrame',
+                '__coverage__',
+                /__cov_\d+/
             ]
         },
         
@@ -7387,6 +7485,26 @@ Role('Siesta.Test.More', {
         },
         
         
+        /**
+         * This assertion passes, if supplied value is a Function.
+         * 
+         * @param {Mixed} value The value to check.
+         * @param {String} desc The description of the assertion
+         */
+        isFunction : function (value, desc) {
+            if (this.typeOf(value) == 'Function')
+                this.pass(desc, {
+                    descTpl     : '{value} is a function',
+                    value       : value
+                })
+            else
+                this.fail(desc, {
+                    got         : value,
+                    need        : "A function value"
+                })
+        },        
+        
+        
         is_deeply : function (obj1, obj2, desc) {
             this.isDeeply.apply(this, arguments)
         },
@@ -7839,6 +7957,8 @@ Role('Siesta.Test.More', {
     )
     
          *  
+         *  If step is presented with a `null` or `undefined` it is ignored.
+         *  
          *  @param {Function/Object/Array} step1 The function to execute or action configuration, or the array of such
          *  @param {Function/Object} step2 The function to execute or action configuration
          *  @param {Function/Object} stepN The function to execute or action configuration
@@ -7846,6 +7966,12 @@ Role('Siesta.Test.More', {
         chain : function () {
             // inline any arrays in the arguments into one array
             var steps       = Array.prototype.concat.apply([], arguments)
+            
+            var nonEmpty    = []
+            Joose.A.each(steps, function (step) { if (step) nonEmpty.push(step) })
+            
+            steps           = nonEmpty
+            
             var len         = steps.length
             
             // do nothing
@@ -8418,6 +8544,19 @@ Role('Siesta.Test.BDD', {
         
         
         /**
+         * This is an "exclusive" version of the regular {@link #describe} suite. When such suites presents in some test file,
+         * the other regular suites at the same level will not be executed, only "exclusive" ones.
+         * 
+         * @param {String} name The name or description of the suite
+         * @param {Function} code The code function for this suite. It will receive a test instance as the first argument which should be used for all assertion methods.
+         * @param {Number} [timeout] A maximum duration for this suite. If not provided {@link Siesta.Harness#subTestTimeout} value is used.
+         */
+        ddescribe : function (name, code, timeout) {
+            this.describe(name, code, timeout, true)
+        },
+        
+        
+        /**
          * This is a no-op method, allowing you to quickly ignore some suites. 
          */
         xdescribe : function () {
@@ -8442,17 +8581,21 @@ Role('Siesta.Test.BDD', {
             })
         })
     })
+         *
+         * See also {@link #xdescribe}, {@link #ddescribe}
          * 
          * @param {String} name The name or description of the suite
          * @param {Function} code The code function for this suite. It will receive a test instance as the first argument which should be used for all assertion methods.
          * @param {Number} [timeout] A maximum duration for this suite. If not provided {@link Siesta.Harness#subTestTimeout} value is used.
          */
-        describe : function (name, code, timeout) {
+        describe : function (name, code, timeout, isExclusive) {
             this.checkSpecFunction(code, 'describe', name)
             
             var subTest     = this.getSubTest({
                 name            : name,
                 run             : code,
+                
+                isExclusive     : isExclusive,
                 
                 specType        : 'describe',
                 timeout         : timeout
@@ -8461,6 +8604,20 @@ Role('Siesta.Test.BDD', {
             if (this.codeProcessed) this.scheduleSpecsLaunch()
             
             this.sequentialSubTests.push(subTest)
+        },
+        
+        
+        /**
+         * This is an "exclusive" version of the regular {@link #it} spec. When such specs presents in some suite,
+         * the other regular specs at the same level will not be executed, only "exclusive" ones. Note, that even "regular" suites (`t.describe`) sections
+         * will be ignored, if they are on the same level with the exclusive `iit` section.
+         * 
+         * @param {String} name The name or description of the spec
+         * @param {Function} code The code function for this spec. It will receive a test instance as the first argument which should be used for all assertion methods.
+         * @param {Number} [timeout] A maximum duration for this spec. If not provided {@link Siesta.Harness#subTestTimeout} value is used.
+         */
+        iit : function (name, code, timeout) {
+            this.it(name, code, timeout, true)
         },
         
         
@@ -8487,17 +8644,21 @@ Role('Siesta.Test.BDD', {
             ...
         })
     })
+         *
+         * See also {@link #xit}, {@link #iit}
          * 
          * @param {String} name The name or description of the spec
          * @param {Function} code The code function for this spec. It will receive a test instance as the first argument which should be used for all assertion methods.
          * @param {Number} [timeout] A maximum duration for this spec. If not provided {@link Siesta.Harness#subTestTimeout} value is used.
          */
-        it : function (name, code, timeout) {
+        it : function (name, code, timeout, isExclusive) {
             this.checkSpecFunction(code, 'it', name)
             
             var subTest     = this.getSubTest({
                 name            : name,
                 run             : code,
+                
+                isExclusive     : isExclusive,
                 
                 specType        : 'it',
                 timeout         : timeout
@@ -8594,7 +8755,13 @@ Role('Siesta.Test.BDD', {
             // hackish way to pass a config to `t.chain`
             this.chain.actionDelay  = 0
             
-            this.chain(sequentialSubTests)
+            var exclusiveSubTests   = []
+            
+            Joose.A.each(sequentialSubTests, function (subTest) {
+                if (subTest.isExclusive) exclusiveSubTests.push(subTest)
+            })
+            
+            this.chain(exclusiveSubTests.length ? exclusiveSubTests : sequentialSubTests)
         }
     },
     
@@ -8615,6 +8782,7 @@ Role('Siesta.Test.BDD', {
 Role('Siesta.Test.Sub', {
     
     has : {
+        isExclusive         : false,
         parent              : { required : true }
     },
     
@@ -8782,7 +8950,10 @@ Class('Siesta.Test', {
         originalSetTimeout          : { required : true },
         originalClearTimeout        : { required : true },
         
-        sourceLineForAllAssertions  : false
+        sourceLineForAllAssertions  : false,
+        
+        $passCount                  : null,
+        $failCount                  : null
     },
     
     
@@ -8924,6 +9095,9 @@ Class('Siesta.Test', {
             }
 
             this.getResults().push(result)
+            
+            // clear the cache
+            this.$passCount     = this.$failCount   = null
             
             /**
              * This event is fired when the individual test case receives new result (assertion or diagnostic message). 
@@ -10030,7 +10204,12 @@ Class('Siesta.Test', {
             
             // we only don't need to cleanup up when doing a self-testing or for sub-tests
             if (this.needToCleanup) {
-                scopeProvider.cleanupCallback = function () {
+                scopeProvider.beforeCleanupCallback = function () {
+                    // if scope cleanup happens most probably user has restarted the test and is not interested in the results
+                    // of previous launch
+                    // finalizing the previous test in such case
+                    if (!me.isFinished()) me.finalize(true)
+                    
                     if (me.overrideSetTimeout) {
                         global.setTimeout       = originalSetTimeout
                         global.clearTimeout     = originalClearTimeout
@@ -10215,14 +10394,17 @@ Class('Siesta.Test', {
         },
         
         
+        // cached method except the "includeTodo" case
         getPassCount : function (includeTodo) {
+            if (this.$passCount != null && !includeTodo) return this.$passCount
+            
             var passCount = 0
             
             this.eachAssertion(function (assertion) {
                 if (assertion.passed && (includeTodo || !assertion.isTodo)) passCount++
             })
             
-            return passCount
+            return includeTodo ? passCount : this.$passCount = passCount
         },
 
         getTodoPassCount : function () {
@@ -10246,14 +10428,17 @@ Class('Siesta.Test', {
         },
         
         
+        // cached method except the "includeTodo" case
         getFailCount : function (includeTodo) {
+            if (this.$failCount != null && !includeTodo) return this.$failCount
+            
             var failCount = 0
             
             this.eachAssertion(function (assertion) {
                 if (!assertion.passed && (includeTodo || !assertion.isTodo)) failCount++
             })
             
-            return failCount
+            return includeTodo ? failCount : this.$failCount = failCount
         },
         
         
@@ -11021,6 +11206,24 @@ Class('Siesta.Harness', {
         }
     )
     
+         * When using the code coverage feature, one need to explicitly mark the JavaScript files that needs to be instrumented with the "instrument : true".
+         * See {@link Siesta.Harness.Browser#enableCodeCoverage} for details.
+         * 
+
+    Harness.configure({
+        preload         : [
+            {
+                type        : 'js',
+                url         : 'some_file.js',
+                instrument  : true
+            }
+        ],
+        ...
+    })
+
+
+         *     
+         *     
          */
         preload                 : Joose.I.Array,
         
@@ -11106,9 +11309,9 @@ Class('Siesta.Harness', {
         
         /**
          * @cfg {Boolean} overrideSetTimeout When set to `true`, the tests will override the native "setTimeout" from the context of each test
-         * for asynchronous code tracking. If setting it to false, you will need to use `beginAsync/endAsync` calls to indicate that test is still running.
+         * for asynchronous code tracking. If setting it to `false`, you will need to use `beginAsync/endAsync` calls to indicate that test is still running.
          * 
-         * This option can be also specified in the test file descriptor. Defaults to false.
+         * This option can be also specified in the test file descriptor. Defaults to `false`.
          */
         overrideSetTimeout      : false,
         
@@ -11228,7 +11431,7 @@ Class('Siesta.Harness', {
         },
         
         
-        onTestSuiteEnd : function () {
+        onTestSuiteEnd : function (descriptors, contentManager) {
             this.endDate    = new Date()
             
             /**
@@ -11470,6 +11673,7 @@ Class('Siesta.Harness', {
             
             // cache either everything (this.cachePreload) or only the test files (to be able to show missing files / show content) 
             var contentManager  = new this.contentManagerClass({
+                harness         : this,
                 presets         : [ testScriptsPreset ].concat(this.cachePreload ? presets : [])
             })
             
@@ -11479,15 +11683,17 @@ Class('Siesta.Harness', {
             
             //console.time('caching')
             
-            me.onTestSuiteStart(descriptors)
+            me.onTestSuiteStart(descriptors, contentManager)
             
             contentManager.cache(function () {
                 
                 //console.timeEnd('caching')
                 
-                Joose.A.each(flattenDescriptors, function (desc) { 
-                    if (contentManager.hasContentOf(desc.url)) {
-                        var testConfig  = desc.testConfig = Siesta.getConfigForTestScript(contentManager.getContentOf(desc.url))
+                Joose.A.each(flattenDescriptors, function (desc) {
+                    var url             = desc.url
+                    
+                    if (contentManager.hasContentOf(url)) {
+                        var testConfig  = desc.testConfig = Siesta.getConfigForTestScript(contentManager.getContentOf(url))
                         
                         // if testConfig contains the "preload" or "alsoPreload" key - then we need to update the preset of the descriptor
                         if (testConfig && (testConfig.preload || testConfig.alsoPreload)) desc.preset = me.getDescriptorPreset(desc)
@@ -11825,6 +12031,19 @@ Class('Siesta.Harness', {
         },
         
         
+        canUseCachedContent : function (resource) {
+            return this.cachePreload && resource instanceof Siesta.Content.Resource.JavaScript
+        },
+        
+        
+        addCachedResourceToPreloads : function (scopeProvider, contentManager, resource) {
+            scopeProvider.addPreload({
+                type        : 'js',
+                content     : contentManager.getContentOf(resource)
+            })
+        },
+        
+        
         processURL : function (desc, index, contentManager, urlOptions, callback) {
             var me      = this
             var url     = desc.url
@@ -11863,13 +12082,11 @@ Class('Siesta.Harness', {
 //            })
             
             desc.preset.eachResource(function (resource) {
+                var hasConent       = contentManager.hasContentOf(resource)
                 
-                if (me.cachePreload && contentManager.hasContentOf(resource))
-                    scopeProvider.addPreload({
-                        type        : (resource instanceof Siesta.Content.Resource.CSS) ? 'css' : 'js', 
-                        content     : contentManager.getContentOf(resource)
-                    })
-                else {
+                if (hasConent && me.canUseCachedContent(resource)) {
+                    me.addCachedResourceToPreloads(scopeProvider, contentManager, resource)
+                } else {
                     var resourceDesc    = resource.asDescriptor()
                     
                     if (resourceDesc.url) resourceDesc.url = me.resolveURL(resourceDesc.url, scopeProvider, desc)
@@ -11894,6 +12111,14 @@ Class('Siesta.Harness', {
             
             scopeProvider.setup(function () {
                 me.onAfterScopePreload(scopeProvider, url)
+                
+                // scope provider has been cleaned up while setting up? (may be user has restarted the test)
+                // then do nothing
+                if (!scopeProvider.scope) {
+                    callback()
+                    
+                    return
+                }
                 
                 var startTestAnchor     = scopeProvider.scope.StartTest
                 
@@ -11949,8 +12174,13 @@ Class('Siesta.Harness', {
             scopeProvider.scope.setTimeout(function() {
                 //console.timeEnd('launch')
                 
+                me.fireEvent('beforeteststart', test)
+                
                 // start the test after slight delay - to run it already *after* onload (in browsers)
-                test.start(options.preloadErrors[ 0 ])
+                // in the edge case, test can be already finished before its even started :)
+                // this happens if user re-launch the test during these 10ms - test will be 
+                // finalized forcefully in the "deleteTestByUrl" method
+                if (!test.isFinished()) test.start(options.preloadErrors[ 0 ])
             }, 10);
         },
         
@@ -12197,7 +12427,7 @@ Role('Siesta.Role.ConsoleReporter', {
                 } else if (result.isTodo) {
                     text        = this.styled(text, result.passed ? 'magenta' : 'yellow')
                     
-                    if (result.passed) needToShow = true
+                    if (result.passed && !result.isWaitFor) needToShow = true
                     
                 } else {
                     text        = this.styled(text, result.passed ? 'green' : 'red')
@@ -21869,6 +22099,61 @@ Siesta.Test.ActionRegistry().registerAction('doubleclick', Siesta.Test.Action.Do
 ;
 /**
 
+@class Siesta.Test.Action.RightClick
+@extends Siesta.Test.Action
+@mixin Siesta.Test.Action.Role.HasTarget
+
+This action will perform a {@link Siesta.Test.Browser#rightClick right click} on the provided {@link #target}. 
+
+This action can be included in the `t.chain` call with "rightclick" or "rightClick" shortcuts:
+
+    t.chain(
+        {
+            action      : 'rightclick',
+            target      : someDOMElement,
+            options     : { shiftKey : true } // Optionally hold shiftkey
+        },
+        // or
+        {
+            rightclick  : someDOMElement,
+            options     : { shiftKey : true } // Optionally hold shiftkey
+        }
+    )
+
+
+*/
+Class('Siesta.Test.Action.RightClick', {
+    
+    isa         : Siesta.Test.Action,
+    
+    does        : Siesta.Test.Action.Role.HasTarget,
+        
+    has : {
+        requiredTestMethod  : 'rightClick',
+
+        /**
+         * @cfg {Object} options
+         *
+         * Any options that will be used when simulating the event. For information about possible
+         * config options, please see: https://developer.mozilla.org/en-US/docs/DOM/event.initMouseEvent
+         */
+        options : null
+    },
+
+    
+    methods : {
+        
+        process : function () {
+            this.test.rightClick(this.getTarget(), this.next)
+        }
+    }
+});
+
+
+Siesta.Test.ActionRegistry().registerAction('rightclick', Siesta.Test.Action.RightClick)
+;
+/**
+
 @class Siesta.Test.Action.Type
 @extends Siesta.Test.Action
 @mixin Siesta.Test.Action.Role.HasTarget
@@ -22061,9 +22346,9 @@ Class('Siesta.Test.Action.Drag', {
             var normalizedTarget    = test.normalizeActionTarget(target)
             
             if (this.to) {
-                test.dragTo(normalizedTarget, this.getTo(), function() { next(normalizedTarget); }, null, this.options, this.dragOnly)
+                test.dragTo(target, this.getTo(), function() { next(normalizedTarget); }, null, this.options, this.dragOnly)
             } else {
-                test.dragBy(normalizedTarget, this.getBy(), function() { next(normalizedTarget); }, null, this.options, this.dragOnly)
+                test.dragBy(target, this.getBy(), function() { next(normalizedTarget); }, null, this.options, this.dragOnly)
             }
         }
     }
@@ -22277,7 +22562,7 @@ Role('Siesta.Test.Simulate.Mouse', {
             var event;
             var global      = this.global
             
-            options = $.extend({
+            options         = $.extend({
                 bubbles     : type !== 'mouseenter' && type !== 'mouseleave', 
                 cancelable  : type != "mousemove", 
                 view        : global, 
@@ -22297,9 +22582,9 @@ Role('Siesta.Test.Simulate.Mouse', {
             }, options);
 
             if (!("clientX" in options) || !("clientY" in options)) {
-                var center = this.findCenter(el);
+                var center  = this.findCenter(el);
 
-                options = $.extend({
+                options     = $.extend({
                     clientX: center[0],
                     clientY: center[1]
                 }, options);
@@ -22313,11 +22598,11 @@ Role('Siesta.Test.Simulate.Mouse', {
                 });
             }
 
-            var doc = el.ownerDocument;
+            var doc         = el.ownerDocument;
 
             // use W3C standard when available and allowed by "simulateEventsWith" option
             if (doc.createEvent && this.getSimulateEventsWith() == 'dispatchEvent') {
-                event = doc.createEvent("MouseEvents");
+                event       = doc.createEvent("MouseEvents");
 
                 event.initMouseEvent(
                     type, options.bubbles, options.cancelable, options.view, options.detail,
@@ -22328,7 +22613,7 @@ Role('Siesta.Test.Simulate.Mouse', {
                 
                 
             } else if (doc.createEventObject) {
-                event = doc.createEventObject();
+                event       = doc.createEventObject();
 
                 $.extend(event, options);
 
@@ -22348,9 +22633,11 @@ Role('Siesta.Test.Simulate.Mouse', {
                     cursorX     += offsets.left;
                     cursorY     += offsets.top;
                 }
-
-                this.currentPosition[ 0 ]   = cursorX;
-                this.currentPosition[ 1 ]   = cursorY;
+                
+                if (!options.doNotUpdateCurrentPosition) {
+                    this.currentPosition[ 0 ]   = cursorX;
+                    this.currentPosition[ 1 ]   = cursorY;
+                }
             }
 
             return event;
@@ -22537,6 +22824,9 @@ Role('Siesta.Test.Simulate.Mouse', {
 
                 // If element isn't visible, try to bring it into view
                 if (!this.elementIsTop(normalized, true)) {
+                    // Required to handle the case where the body is scrolled
+                    normalized.scrollIntoView();
+
                     this.$(normalized).scrollintoview({ duration : 0 });
                 }
             }
@@ -22723,7 +23013,10 @@ Role('Siesta.Test.Simulate.Mouse', {
         // private
         simulateRightClick: function (el, callback, scope, options) {
             var me          = this;
-            
+
+            options = options || {};
+            options.button = 2;
+
             var queue       = new Siesta.Util.Queue({
                 deferer         : this.originalSetTimeout,
                 deferClearer    : this.originalClearTimeout,
@@ -22776,14 +23069,14 @@ Role('Siesta.Test.Simulate.Mouse', {
                 }
             })
             
-            queue.addStep([ el, "mousedown", options, false ])
+            queue.addStep([ el, "mousedown", options, true ])
             queue.addStep([ el, "mouseup", options, true ])
             
             queue.addStep({
                 processor       : function () {
                     me.focus(el)
                     
-                    me.simulateEvent(el, "click", options, false);
+                    me.simulateEvent(el, "click", options);
                 }
             })
             
@@ -23438,35 +23731,30 @@ Role('Siesta.Test.Simulate.Keyboard', {
         * The following events will be fired, in order: `keydown`, `keypress`, `textInput`(webkit only currently), `keyup`
         */
         keyPress: function (el, key, options) {
-            el = this.normalizeElement(el);
+            el                  = this.normalizeElement(el);
 
-            var KeyCodes = Siesta.Test.Simulate.KeyCodes().keys,
-                keyCode,
-                charCode;
+            var KeyCodes        = Siesta.Test.Simulate.KeyCodes().keys
+            var keyCode         = KeyCodes[ key.toUpperCase() ] || 0;
 
-            options = options || {};
+            options             = options || {};
 
             options.readableKey = key;
-            keyCode = KeyCodes[key.toUpperCase()] || 0;
+            
+            var isReadableKey   = this.isReadableKey(keyCode)
 
-            if(this.isReadableKey(keyCode)) {
-                charCode = key.charCodeAt(0);
-            } else {
-                charCode = 0;
-            }
+            var charCode        = isReadableKey ? key.charCodeAt(0) : 0
 
             var me              = this,
                 originalLength  = -1,
-                isReadableKey   = me.isReadableKey(keyCode),
                 isTextInput     = me.isTextInput(el);
-
+                
             if (isTextInput) {
-                originalLength = el.value.length;
+                originalLength  = el.value.length;
             }
 
             me.simulateEvent(el, 'keydown', $.extend({ charCode : 0, keyCode : keyCode }, options), true);
 
-            var event           = me.simulateEvent(el, 'keypress', $.extend({ charCode : charCode, keyCode : this.isReadableKey(keyCode) ? 0 : keyCode }, options), false);
+            var event           = me.simulateEvent(el, 'keypress', $.extend({ charCode : charCode, keyCode : isReadableKey ? 0 : keyCode }, options), false);
             var prevented       = typeof event.defaultPrevented === 'boolean' ? event.defaultPrevented : event.returnValue === false;
 
             var supports        = Siesta.Harness.Browser.FeatureSupport().supports
@@ -23485,30 +23773,33 @@ Role('Siesta.Test.Simulate.Keyboard', {
                     if (maxLength != null) maxLength    = Number(maxLength)
 
                     // If the entered char had no impact on the textfield - manually put it there
-                    if (!supports.canSimulateKeyCharacters || (originalLength === el.value.length && originalLength !== maxLength)) {
+                    if (!supports.canSimulateKeyCharacters && originalLength === el.value.length && originalLength !== maxLength) {
                         el.value = el.value + options.readableKey;
                     }
                 }
 
                 // Manually delete one char off the end if backspace simulation is not supported by the browser
                 if (keyCode === KeyCodes.BACKSPACE && !supports.canSimulateBackspace && el.value.length > 0) {
-                    el.value = el.value.substring(0, el.value.length - 1);
+                    el.value    = el.value.substring(0, el.value.length - 1);
                 }
 
                 if (keyCode === KeyCodes.ENTER && !supports.enterSubmitsForm) {
-                    var form = this.$(el).closest('form');
+                    var form    = this.$(el).closest('form');
 
-                    if (form.length) {
-                        form.submit();
-                    }
+                    if (form.length) form.submit();
                 }
             }
 
-            if (!isTextInput && keyCode === KeyCodes.ENTER && !supports.enterOnAnchorTriggersClick) {
-                me.simulateEvent(el, 'click', null, true);
+            // somehow "node.nodeName" is empty sometimes in IE10
+            var nodeName        = el.nodeName && el.nodeName.toLowerCase()
+            
+            if ((nodeName == 'a' || nodeName == 'button') && keyCode === KeyCodes.ENTER && !supports.enterOnAnchorTriggersClick) {
+                // this "click" should not update the current cursor position its merely for activating "click" listeners
+                me.simulateEvent(el, 'click', { doNotUpdateCurrentPosition : true }, true);
             }
             me.simulateEvent(el, 'keyup', $.extend({ charCode : 0, keyCode : keyCode }, options), true);
         },
+        
 
         isTextInput : function(node) {
             // somehow "node.nodeName" is empty sometimes in IE10
@@ -23563,7 +23854,7 @@ Role('Siesta.Test.Simulate.Event', {
          * 
          * Valid values are "dispatchEvent" and "fireEvent".
          * 
-         * The framework specific adapters chooses the most appropriate value automatically (unless explicitly configured). 
+         * The framework specific adapters choose the most appropriate value automatically (unless explicitly configured).
          */
         simulateEventsWith      : {
             is          : 'rw',
@@ -23695,10 +23986,14 @@ Role('Siesta.Test.ExtJSCore', {
         
         simulateEventsWith      : {
             is      : 'rw',
-            init    : function () {
-                var div = document.createElement('div')
+            lazy    : function () {
+                var isIE9           = navigator.userAgent.match(/MSIE 9.0;/)
+                var Ext             = this.global.Ext
+                var isBelowExt421   = Boolean(Ext && Ext.getVersion('extjs') && Ext.getVersion('extjs').isLessThan('4.2.1.883'))
                 
-                return div.attachEvent ? 'fireEvent' : 'dispatchEvent'
+                var div             = document.createElement('div')
+                
+                return div.attachEvent && (isIE9 || isBelowExt421) ? 'fireEvent' : 'dispatchEvent'
             }
         },
         
@@ -23736,7 +24031,7 @@ Role('Siesta.Test.ExtJSCore', {
         simulateMouseClick: function (el, callback, scope) {
             
             // Force check toggle for input checkboxes
-            if (this.simulateEventsWith === 'fireEvent' && (el.type === 'checkbox' || el.type === 'radio') && !el.disabled && !el.readOnly) {
+            if (this.getSimulateEventsWith() === 'fireEvent' && (el.type === 'checkbox' || el.type === 'radio') && !el.disabled && !el.readOnly) {
                 var oldState = el.checked;
 
                 if (callback) {
@@ -23918,10 +24213,10 @@ Role('Siesta.Test.ExtJSCore', {
 
             if (Ext && Ext.Component && el instanceof Ext.Component) {
                 el          = this.compToEl(el);
-                
-                if (this.isElementVisible(el)) {
+
+                if (this.isElementVisible(el) && this.elementIsTop(el, true)) {
                     var center  = this.findCenter(el);
-    
+
                     el          = this.elementFromPoint(center[0], center[1], false, el.dom);
                 }
             }
@@ -23934,8 +24229,8 @@ Role('Siesta.Test.ExtJSCore', {
         },
         
         
-        // this method generally has the same semantic as the "normalizeElement", its being used in 
-        // Siesta.Test.Action.Role.HasTarget to determine what to pass to next step
+        // this method generally has the same semantic as the "normalizeElement", it's being used in
+        // Siesta.Test.Action.Role.HasTarget to determine what to pass to the next step
         //
         // on the browser level the only possibility is DOM element
         // but on ExtJS level user can also use ComponentQuery and next step need to receive the 
@@ -25071,6 +25366,190 @@ Role('Siesta.Test.ExtJS.Component', {
             this.pass(description, {
                 descTpl     : 'All passed components were destroyed ok'
             })
+        }
+    }
+});
+;
+/**
+@class Siesta.Test.ExtJS.Grid
+
+This is a mixin, with helper methods for testing functionality relating to ExtJS grids. This mixin is being consumed by {@link Siesta.Test.ExtJS}
+
+*/
+Role('Siesta.Test.ExtJS.Grid', {
+    
+    requires        : [ 'waitFor', 'pass', 'fail', 'typeOf' ],
+    
+    
+    methods : {
+        /**
+         * Waits for the rows of a gridpanel or tree panel to render and then calls the supplied callback. Please note, that if the store of the grid has no records,
+         * the condition for this waiter will never be fullfilled.
+         * 
+         * @param {Ext.panel.Table/String} panel The panel or a ComponentQuery matching a panel
+         * @param {Function} callback A function to call when the condition has been met.
+         * @param {Object} scope The scope for the callback
+         * @param {Int} timeout The maximum amount of time to wait for the condition to be fulfilled. Defaults to the {@link Siesta.Test.ExtJS#waitForTimeout} value. 
+         */
+        waitForRowsVisible : function(panel, callback, scope, timeout) {
+            if (typeof panel === 'function') {
+                timeout = scope;
+                scope = callback;
+                callback = panel;
+                panel = this.cq1('tablepanel');
+            }
+
+            var cmp = this.normalizeComponent(panel, true);
+            var me = this;
+
+            if (!cmp && typeof panel === 'string') {
+                // Make sure CQ returns a result first
+                this.waitForCQ(panel, function(result) { this.waitForRowsVisible(result[0], callback, scope, timeout); }, this);
+            } else {
+                var checkerFn;
+
+                // Handle case of locking grid
+                if(cmp.normalGrid) {
+                    var selector = cmp.normalGrid.getView().itemSelector;
+                    checkerFn = function() {
+                        if (!cmp.rendered || !cmp.normalGrid.rendered || !cmp.lockedGrid.rendered) return;
+                         
+                        var lockedResult = this.$(selector, cmp.lockedGrid.el.dom); 
+                        var normalResult = this.$(selector, cmp.normalGrid.el.dom); 
+                        
+                        if (lockedResult.length > 0 && normalResult.length > 0) {
+                            return {
+                                lockedRows : lockedResult,
+                                normalRows : normalResult
+                            };
+                        }
+                    }
+                } else {
+                    var selector = cmp.getView().itemSelector;
+                    checkerFn = function() {
+                        if (!cmp.rendered) return;
+                         
+                        var result = this.$(selector, cmp.el.dom); 
+                        
+                        if (result.length > 0) {
+                            return result;
+                        }
+                    }
+                }
+
+
+                this.waitFor({
+                    method          : checkerFn, 
+                    callback        : callback,
+                    scope           : scope,
+                    timeout         : timeout,
+                    assertionName   : 'waitForRowsVisible',
+                    description     : ' rows to show for panel with id "' + cmp.id + '"'
+                });
+            }
+        },
+
+        /**
+         * Utility method which returns the first grid row element.
+         * 
+         * @param {Ext.panel.Table/String} panel The panel or a ComponentQuery matching a panel
+         * @return {Ext.Element} The element of first row of grid.
+         */
+        getFirstRow : function(grid) {
+            grid = this.normalizeComponent(grid);
+            var Ext = this.getExt();
+            return grid.el.select(grid.getView().itemSelector).item(0);
+        },
+
+        /**
+         * Utility method which returns the first grid cell element.
+         * 
+         * @param {Ext.panel.Table/String} panel The panel or a ComponentQuery matching a panel
+         * 
+         * @return {HTMLElement} The element of first cell of grid.
+         */
+        getFirstCell : function(panel) {
+            panel = this.normalizeComponent(panel);
+            return this.getCell(panel, 0, 0);
+        },
+
+        /**
+         * Utility method which returns a grid row element.
+         * 
+         * @param {Ext.panel.Table/String} panel The panel or a ComponentQuery matching a panel
+         * @param {Int} index The row index
+         */
+        getRow : function(grid, index) {
+            grid = this.normalizeComponent(grid);
+            var Ext = this.global.Ext;
+            return grid.el.select(grid.getView().itemSelector).item(index);
+        },
+
+        /**
+         * Utility method which returns the cell at the supplied row and col position.
+         * 
+         * @param {Ext.panel.Table/String} panel The panel or a ComponentQuery matching a panel
+         * @param {Int} row The row index
+         * @param {Int} column The column index
+         * 
+         * @return {HTMLElement} The element of the grid cell at specified position.
+         */
+        getCell : function(grid, row, col) {
+            grid = this.normalizeComponent(grid);
+            var rowEl = this.getRow(grid, row);
+            return rowEl.child('td:nth-child(' + String(col+1) + ')');
+        },
+
+        /**
+         * Utility method which returns the last cell for the supplied row.
+         * 
+         * @param {Ext.panel.Table/String} panel The panel or a ComponentQuery matching a panel
+         * @param {Int} row The row index
+         * 
+         * @return {HTMLElement} The element of the grid cell at specified position.
+         */
+        getLastCellInRow : function(grid, row) {
+            grid = this.normalizeComponent(grid);
+            return this.getCell(grid, row, grid.headerCt.getColumnCount() - 1);
+        },
+
+        /**
+         * This assertion passes if the passed string is found in the passed grid's cell element.
+         * 
+         * @param {Ext.panel.Table/String} panel The panel or a ComponentQuery matching a panel
+         * @param {Int} row The row index
+         * @param {Int} column The column index
+         * @param {String/RegExp} string The string to find or RegExp to match
+         * @param {String} [description] The description for the assertion
+         */
+        matchGridCellContent : function(grid, rowIndex, colIndex, string, description) {
+            grid = this.normalizeComponent(grid);
+            
+            var view = grid.getView(),
+                cell = this.getCell(grid, rowIndex, colIndex).child('div');
+
+            var isRegExp    = this.typeOf(string) == 'RegExp';
+            var content     = cell.dom.innerHTML;
+                
+            if (isRegExp ? string.test(content) : content.indexOf(string) != -1) {
+                this.pass(description, {
+                    descTpl     : isRegExp ? 'Cell content {content} matches regexp {string}' : 'Cell content {content} has a string {string}',
+                    content     : content,
+                    string      : string
+                });
+            } else {
+                this.fail(description, {
+                    assertionName   : 'matchGridCellContent',
+                    
+                    got         : cell.dom.innerHTML,
+                    gotDesc     : 'Cell content',
+                    
+                    need        : string,
+                    needDesc    : 'String matching',
+                    
+                    annotation  : 'Row index: ' + rowIndex + ', column index: ' + colIndex
+                });
+            }
         }
     }
 });
@@ -26589,11 +27068,12 @@ Class('Siesta.Test.Browser', {
             Joose.A.each([ 
                 'currentPosition', 
                 'actionDelay', 'afterActionDelay', 
-                'simulateEventsWith',
                 'dragDelay', 'moveCursorBetweenPoints', 'dragPrecision', 'overEls'
             ], function (name) {
                 res[ name ]     = me[ name ]
             })
+            
+            res.simulateEventsWith  = me.getSimulateEventsWith()
             
             return res
         },
@@ -26678,7 +27158,7 @@ Class('Siesta.Test.Browser', {
 
             var last = stops[stops.length-1];
 
-            if (last[0] !== to[0] || last[1] !== to[1]) {
+            if (stops.length > 0 && (last[0] !== to[0] || last[1] !== to[1])) {
                 stops.push(to);
             }
             return stops;
@@ -27141,7 +27621,315 @@ Class('Siesta.Test.Browser', {
 });
 ;
 /**
- * 
+ *
+@class Siesta.Test.ExtJS
+@extends Siesta.Test.Browser
+@mixin Siesta.Test.ExtJSCore
+@mixin Siesta.Test.ExtJS.Ajax
+@mixin Siesta.Test.ExtJS.Observable
+@mixin Siesta.Test.ExtJS.FormField
+@mixin Siesta.Test.ExtJS.Component
+@mixin Siesta.Test.ExtJS.Element
+@mixin Siesta.Test.ExtJS.Store
+@mixin Siesta.Test.ExtJS.DataView
+@mixin Siesta.Test.ExtJS.Grid
+
+A base class for testing browser and ExtJS applications. It inherit from {@link Siesta.Test.Browser}
+and adds various ExtJS specific assertions.
+
+This file is a reference only, for a getting start guide and manual, please refer to <a href="#!/guide/siesta_getting_started">Getting Started Guide</a>.
+
+*/
+Class('Siesta.Test.ExtJS', {
+
+    isa         : Siesta.Test.Browser,
+
+    does        :  [
+        Siesta.Test.ExtJSCore,
+        Siesta.Test.ExtJS.Component,
+        Siesta.Test.ExtJS.Element,
+        Siesta.Test.ExtJS.FormField,
+        Siesta.Test.ExtJS.Observable,
+        Siesta.Test.ExtJS.Store,
+        Siesta.Test.ExtJS.Grid,
+        Siesta.Test.ExtJS.DataView,
+		Siesta.Test.ExtJS.Ajax
+    ],
+
+    
+    has : {
+        globalExtOverrides      : null
+    },
+    
+    methods : {
+
+        getExtBundlePath : function() {
+            var path;
+            var testDescriptor      = this.harness.getScriptDescriptor(this.url)
+
+            while (testDescriptor && !path) {
+                if (testDescriptor.preload) {
+                    Joose.A.each(testDescriptor.preload, function (url) {
+                        if (url.match && url.match(/ext(?:js)?-\d\.\d+(?:\.\d+)?.*?\/ext-all(?:-debug)?\.js/)) {
+                            path = url;
+                            return false;
+                        }
+                    });
+                }
+                testDescriptor = testDescriptor.parent;
+            }
+
+            return path;
+        },
+
+
+        getExtBundleFolder : function() {
+            var folder;
+            var testDescriptor      = this.harness.getScriptDescriptor(this.url)
+
+            while (testDescriptor && !folder) {
+                if (testDescriptor.preload) {
+                    Joose.A.each(testDescriptor.preload, function (url) {
+                        var regex = /(.*ext(?:js)?-\d\.\d+(?:\.\d+)?.*?)\/ext-all(?:-debug)?\.js/;
+                        var match = regex.exec(url);
+
+                        if (match) {
+                           folder = match[1];
+                        }
+                    });
+                }
+                testDescriptor = testDescriptor.parent;
+            }
+
+            return folder;
+        },
+        
+        
+        getNumberOfGlobalExtOverrides : function (callback) {
+            var globalExtOverrides  = this.globalExtOverrides;
+            
+            if (globalExtOverrides != null) 
+                callback && callback.call(this, globalExtOverrides.length, globalExtOverrides)
+            else {
+                var me              = this;
+                var Ext             = this.getExt();
+                var extjsBundleURL  = me.getExtBundlePath()
+    
+                if (!extjsBundleURL) {
+                    me.fail("Can'me find ExtJS bundle url");
+                    callback && callback.call(me, null, null)
+                    return;
+                }
+
+                // For IE
+                this.expectGlobal('0');
+
+                var frame           = Ext.core.DomHelper.append(Ext.getBody(), { 
+                    tag     : "iframe",
+                    style   : 'display:none'
+                }, false);
+                
+                var freshWin        = frame.contentWindow;
+    
+                freshWin.document.open();
+    
+                freshWin.document.write(
+                    '<html><head><script type="text/javascript" src="' + extjsBundleURL + '"></script></head><body></body></html>'
+                );
+    
+                freshWin.document.close();
+                
+                var resolveObject   = function (hostObj, nameSpace) {
+                    var parts   = nameSpace.split('.');
+                    var p       = hostObj
+    
+                    for (var i = 0; i < parts.length; i++) {
+                        p       = p[ parts[ i ] ];
+                    };
+    
+                    return p;
+                }
+    
+                var ignore          = function (name) {
+                    return name.match(/Ext\.data\.Store\.ImplicitModel|collectorThreadId/);
+                }
+                
+                var getObjectDifferences    = function (cleanObj, dirtyObj, ns) {
+                    var diff    = []
+
+                    for (var p in dirtyObj) {
+                        try {
+                            if (dirtyObj.hasOwnProperty(p)) {
+                                // Check if the object exists on the clean window and also do a string comparison
+                                // in case a builtin method has been overridden
+                                if (
+                                    (!cleanObj.hasOwnProperty(p) && typeof cleanObj[p] == 'undefined' ) ||
+                                        (typeof dirtyObj[p] == 'function' && cleanObj[p].toString() !== dirtyObj[p].toString()) ||
+                                        (Ext.isPrimitive(dirtyObj[p]) && dirtyObj[p].toString() !== cleanObj[p].toString())
+                                ) {
+                                    if (!ignore(ns + '.' + p)) diff.push(ns + '.' + p);
+                                }
+                            }
+                        } catch (e) {
+                            // Just continue
+                        }
+                    }
+                    return diff;
+                }
+                
+                me.waitFor(
+                    function () { return freshWin.Ext && freshWin.Ext.isReady; }, 
+                    function () {
+                        var dirtyWin    = me.global,
+                            overrides   = [];
+        
+                        // Check for native class augmentations
+                        Ext.iterate(Ext.ClassManager.classes, function (item) {
+                            if (!item.match(/^Ext\./)) return;
+        
+                            var freshItem   = resolveObject(freshWin, item);
+                            var dirtyItem   = resolveObject(dirtyWin, item);
+        
+                            if (freshItem && typeof dirtyItem !== 'undefined') {
+                                var staticDiff = getObjectDifferences(freshItem,  dirtyItem, item);
+                                    
+                                overrides.push.apply(overrides, staticDiff);
+        
+                                // Prototype properties
+                                if (dirtyItem.prototype) {
+                                    var prototypeDiff = getObjectDifferences(freshItem.prototype, dirtyItem.prototype, item + '.prototype');
+                                    
+                                    overrides.push.apply(overrides, prototypeDiff);
+                                }
+                            }
+                        });
+                        
+                        me.globalExtOverrides   = overrides
+                        
+                        callback && callback.call(me, overrides.length, overrides)
+                    }
+                )
+                // eof waitFor
+            }
+        },
+        
+
+        /**
+         * This assertion passes if no global Ext JS overrides exist. It creates a fresh iframe window where a new, fresh copy
+         * of Ext JS w/o any overrides is loaded and then a comparison is made against the copy of Ext JS loaded in the test.
+         * 
+         * A global ExtJS override is some change, made in the core class, for example like this:
+         * 
+
+    Ext.data.Store.override({
+        removeAll       : function () {
+            // my fix
+            ...
+        }
+    })
+
+         * While such overrides are often seems as the only possible solution (usually for some bug in Ext) they should be 
+         * avoided as much as possible, because it a very bad practice. For example, in the previous case, a better approach
+         * would be to create a new subclass of the Ext.data.Store with the desired changed.
+         * 
+         * See also {@link #assertMaxNumberOfGlobalExtOverrides} assertion. 
+         *
+         * @param {String} [description] The description for the assertion
+         */
+        assertNoGlobalExtOverrides : function (description) {
+            this.getNumberOfGlobalExtOverrides(function (length, overrides) {
+                if (length == null) {
+                    this.fail("Was not able to find the ExtJS bundle URL in the `assertNoGlobalExtOverrides` assertion")
+                    return
+                }
+                
+                if (length) {
+                    this.fail(description, {
+                        assertionName   : 'assertNoGlobalExtOverrides',
+                        descTpl         : 'No global Ext overrides found',
+                        
+                        got             : length,
+                        gotDesc         : "Number of overrides found",
+                        
+                        annotation      : "Found overrides for: `" + overrides.join('`, `') + '`'
+                    })
+                } else
+                    this.pass(description, {
+                        descTpl             : 'No global Ext overrides found'
+                    })
+            })
+        },
+
+        
+        /**
+         * This assertion passes if the number of global overrides does not exceed the given number.
+         * 
+         * For example, you can add this assertion in your existing codebase (assuming you have 3 overrides your application
+         * cannot function without):
+         * 
+         *      t.assertMaxNumberOfGlobalExtOverrides(3, "Ideally should be none of these")
+         *      
+         * and catch all the cases when someone adds a new global override.
+         * 
+         * @param {Number} maxNumber The maximum number of Ext JS overrides allowed
+         * @param {String} [description] The description for the assertion
+         */
+        assertMaxNumberOfGlobalExtOverrides : function (maxNumber, description) {
+            this.getNumberOfGlobalExtOverrides(function (length, overrides) {
+                if (length == null) {
+                    this.fail("Was not able to find the ExtJS bundle URL in the `assertMaxNumberOfGlobalExtOverrides` assertion")
+                    return
+                }
+                
+                if (length > maxNumber) {
+                    this.fail(description, {
+                        assertionName   : 'assertNoGlobalExtOverrides',
+                        descTpl         : 'Found less or equal than ' + maxNumber + ' ext global overrides',
+                        
+                        got             : length,
+                        gotDesc         : "Number of overrides found",
+                        
+                        annotation      : "Found overrides for: `" + overrides.join('`, `') + '`'
+                    })
+                } else
+                    this.pass(description, {
+                        descTpl             : 'Found less or equal than ' + maxNumber + ' ext global overrides',
+                        annotation          : "Number of overrides found: " + length
+                    })
+            })
+        },
+
+        /**
+         * A helper method returning the total number of Ext JS container layouts that have been performed since the beginning of the page lifecycle.
+         * @return {Int} The number of layouts
+         */
+        getTotalLayoutCounter : function () {
+            var count       = 0
+
+            this.Ext().each(this.cq('container'), function(c) { count += c.layoutCounter });
+
+            return count;
+        },
+
+        /**
+         * This assertion passes if no Ext JS layout cycles are performed as a result of running the passed function. This
+         * function will query all containers on the page and measure the number of layouts performed before and after the function call.
+         *
+         * @param {Function} fn The function to call
+         * @param {Object} scope The 'thisObject' to use for the function call
+         * @param {String} [description] The description for the assertion
+         */
+        assertNoLayoutTriggered : function(fn, scope, description) {
+            var countBefore = this.getTotalLayoutCounter();
+
+            fn.call(scope || this);
+
+            this.is(this.getTotalLayoutCounter(), countBefore, description);
+        }
+    }
+})
+;
+/**
 @class Siesta.Test.SenchaTouch
 @extends Siesta.Test.Browser
 @mixin Siesta.Test.ExtJSCore
@@ -27201,14 +27989,15 @@ Class('Siesta.Test.SenchaTouch', {
             
             if (!Ext) return
             
+            // calling SUPER to setup the loader paths, Ext.setup() will already do Ext.require
+            this.SUPERARG(arguments)
+            
             // execute "Ext.setup()" for top-level tests only 
             if (this.performSetup && !this.parent) Ext.setup({
                 onReady : function () {
                     me.isSTSetupDone    = true
                 }
             })
-            
-            this.SUPERARG(arguments)
         }
     },
     
@@ -27705,6 +28494,11 @@ Class('Siesta.Content.Manager.Browser', {
 })
 
 ;
+Class('Siesta.Content.Manager.Browser.ExtJSCore', {
+    isa     : Siesta.Content.Manager.Browser
+})
+
+;
 /**
 @class Siesta.Harness.Browser
 @extends Siesta.Harness 
@@ -27821,8 +28615,8 @@ Class('Siesta.Harness.Browser', {
              * @cfg {Boolean} breakOnFail When set to `true`, harness will not start launching any further tests after detecting a failed assertion.
              * improving the speed of test. Default value is `false`.   
              */
-            breakOnFail         : false,
-            activateDebuggerOnFail : false,
+            breakOnFail             : false,
+            activateDebuggerOnFail  : false,
 
             contentManagerClass : Siesta.Content.Manager.Browser,
             scopeProvider       : 'Scope.Provider.IFrame',
@@ -28084,10 +28878,10 @@ Class('Siesta.Harness.Browser', {
                 
                 if (this.needUI && !this.viewport) {
                     var cb = function () {
-                        if (Ext.QuickTips) {
-                            Ext.QuickTips.init();
-                        }
-                        
+//                        if (Ext.QuickTips) {
+//                            Ext.QuickTips.init();
+//                        }
+//
                         me.viewport = me.createViewport({
                             title           : me.title,
                             harness         : me
@@ -28482,12 +29276,480 @@ Singleton('Siesta.Harness.Browser.FeatureSupport', {
     }
 })
 ;
+/**
+@class Siesta.Harness.Browser.ExtJS
+@extends Siesta.Harness.Browser 
+@mixin Siesta.Harness.Browser.ExtJSCore
+
+Class, representing the browser harness. This class provides a web-based UI and defines some additional configuration options.
+
+The default value of the `testClass` configuration option in this class is {@link Siesta.Test.ExtJS}, which inherits from 
+{@link Siesta.Test.Browser} and contains various ExtJS-specific assertions. So, use this harness class, when testing an ExtJS application.
+
+This file is for reference only, for a getting start guide and manual, please refer to <a href="#!/guide/siesta_getting_started">Getting Started Guide</a>.
+
+Synopsys
+========
+
+    var Harness = Siesta.Harness.Browser.ExtJS;
+    
+    Harness.configure({
+        title     : 'Awesome ExtJS Application Test Suite',
+        
+        transparentEx       : true,
+        
+        autoCheckGlobals    : true,
+        expectedGlobals     : [
+            'Ext',
+            'Sch'
+        ],
+        
+        preload : [
+            "http://cdn.sencha.io/ext-4.0.2a/ext-all-debug.js",
+            "../awesome-project-all.js",
+            {
+                text    : "console.log('preload completed')"
+            }
+        ]
+    })
+    
+    
+    Harness.start(
+        // simple string - url relative to harness file
+        'sanity.t.js',
+        
+        // test file descriptor with own configuration options
+        {
+            url     : 'basic.t.js',
+            
+            // replace `preload` option of harness
+            preload : [
+                "http://cdn.sencha.io/ext-4.0.6/ext-all-debug.js",
+                "../awesome-project-all.js"
+            ]
+        },
+        
+        // groups ("folders") of test files (possibly with own options)
+        {
+            group       : 'Sanity',
+            
+            autoCheckGlobals    : false,
+            
+            items       : [
+                'data/crud.t.js',
+                ...
+            ]
+        },
+        ...
+    )
+
+
+*/
+
+Class('Siesta.Harness.Browser.ExtJS', {
+    
+    isa     : Siesta.Harness.Browser,
+    
+    // pure static class, no need to instantiate it
+    my : {
+        
+        has     : {
+            /**
+             * @cfg {Class} testClass The test class which will be used for creating test instances, defaults to {@link Siesta.Test.ExtJS}.
+             * You can subclass {@link Siesta.Test.ExtJS} and provide a new class. 
+             * 
+             * This option can be also specified in the test file descriptor. 
+             */
+            testClass           : Siesta.Test.ExtJS,
+            
+            /**
+             * @cfg {Boolean} waitForExtReady
+             * 
+             * By default the `StartTest` function will be executed after `Ext.onReady`. Set to `false` to launch `StartTest` immediately.  
+             * 
+             * This option can be also specified in the test file descriptor. 
+             */
+            waitForExtReady     : true,
+            
+            /**
+             * @cfg {Boolean} waitForAppReady
+             * 
+             * Setting this configuration option to "true" will cause Siesta to wait until the ExtJS MVC application on the test page will become ready,
+             * before starting the test. More precisely it will wait till the first "launch" event from any instance of `Ext.app.Application` class on the page.
+             *   
+             * This option can (and probably should) be also specified in the test file descriptor. 
+             */
+            waitForAppReady     : false,
+            
+
+            /**
+             * @cfg {Object} loaderPath
+             * 
+             * The path used to configure the Ext.Loader, for dynamic loading of Ext JS classes.
+             *
+             * This option can be also specified in the test file descriptor. 
+             */
+            loaderPath              : null,
+            
+            extVersion              : null,
+
+            /**
+             * @cfg {Boolean} allowExtVersionChange
+             * 
+             * True to show a version picker to swiftly change which Ext JS version is used in the test suite.
+             */
+            allowExtVersionChange   : false,
+            
+            extVersionRegExp        : /ext(?:js)?-(\d\.\d+\.\d+.*?)\//,
+            
+            contentManagerClass     : Siesta.Content.Manager.Browser.ExtJSCore
+        },
+        
+        
+        methods : {
+            createViewport       : function(config) {
+               return Ext.create("Siesta.Harness.Browser.UI.ExtViewport", config);
+            },
+            
+            setup : function (callback) {
+                var me      = this
+                
+                this.SUPER(function () {
+                    if (me.allowExtVersionChange) me.extVersion = me.findExtVersion()
+                    
+                    callback()
+                })
+            },
+            
+        
+            getNewTestConfiguration : function (desc, scopeProvider, contentManager, options, runFunc) {
+                var config          = this.SUPERARG(arguments)
+                
+                config.waitForExtReady  = this.getDescriptorConfig(desc, 'waitForExtReady')
+                config.waitForAppReady  = this.getDescriptorConfig(desc, 'waitForAppReady')
+                config.loaderPath       = this.getDescriptorConfig(desc, 'loaderPath')
+                
+                return config
+            },
+            
+            
+            setExtVersion : function (newVersion) {
+                if (!this.allowExtVersionChange || newVersion == this.extVersion) return
+                
+                this.extVersion         = newVersion
+                
+                var me                  = this
+                var allDescriptors      = this.flattenDescriptors(this.descriptors)
+                var mainPreset          = this.mainPreset
+                
+                this.setExtVersionForPreset(mainPreset, newVersion)
+                
+                Joose.A.each(allDescriptors, function (desc) {
+                    if (desc.preset != mainPreset) me.setExtVersionForPreset(desc.preset, newVersion)
+                })
+            },
+            
+            
+            setExtVersionForPreset : function (preset, newVersion) {
+                var me      = this
+                
+                preset.eachResource(function (resource) {
+                    var url     = resource.url
+                    
+                    if (url && url.match(me.extVersionRegExp)) resource.url = url.replace(me.extVersionRegExp, 'ext-' + newVersion + '/')
+                })
+            },
+            
+            
+            findExtVersion : function () {
+                var me      = this
+                
+                var found
+                
+                this.mainPreset.eachResource(function (resource) {
+                    var match   = me.extVersionRegExp.exec(resource.url)
+                    
+                    if (match) {
+                        found   = match[ 1 ]
+                        
+                        return false
+                    }
+                })
+                
+                return found
+            }
+        }
+    }
+})
+
+
+;
+/**
+@class Siesta.Harness.Browser.SenchaTouch
+@extends Siesta.Harness.Browser 
+@mixin Siesta.Harness.Browser.ExtJSCore
+
+A Class representing the browser harness. This class provides a web-based UI and defines some additional configuration options.
+
+The default value of the `testClass` configuration option in this class is {@link Siesta.Test.SenchaTouch}, which inherits from 
+{@link Siesta.Test.Browser} and contains various Sencha Touch-specific assertions. Use this harness class when testing Sencha Touch applications.
+
+* **Note** Make sure, you've checked the {@link #performSetup} configuration option. 
+
+This file is for reference only, for a getting start guide and manual, please refer to <a href="#!/guide/siesta_getting_started">Getting Started Guide</a>.
+
+Synopsys
+========
+
+    var Harness = Siesta.Harness.Browser.SenchaTouch;
+        
+    Harness.configure({
+        title           : 'Awesome Sencha Touch Application Test Suite',
+                
+        transparentEx   : true,
+                
+        preload         : [
+            "http://cdn.sencha.io/ext-4.0.2a/ext-all-debug.js",
+            "../awesome-project-all.js"
+        ]
+    })
+        
+        
+    Harness.start(
+        // simple string - url relative to harness file
+        'sanity.t.js',
+                
+        // test file descriptor with own configuration options
+        {
+            url     : 'basic.t.js',
+                        
+            // replace `preload` option of harness
+            preload : [
+                "http://cdn.sencha.io/ext-4.0.6/ext-all-debug.js",
+                "../awesome-project-all.js"
+            ]
+        },
+                
+        // groups ("folders") of test files (possibly with own options)
+        {
+            group       : 'Sanity',
+                        
+            autoCheckGlobals    : false,
+                        
+            items       : [
+                'data/crud.t.js',
+                ...
+            ]
+        },
+        ...
+    )
+
+
+*/
+
+Class('Siesta.Harness.Browser.SenchaTouch', {
+
+    isa: Siesta.Harness.Browser,
+
+    // pure static class, no need to instantiate it
+    my: {
+
+        has: {
+            /**
+            * @cfg {Class} testClass The test class which will be used for creating test instances, defaults to {@link Siesta.Test.SenchaTouch}.
+            * You can subclass {@link Siesta.Test.SenchaTouch} and provide a new class. 
+            * 
+            * This option can be also specified in the test file descriptor. 
+            */
+            testClass           : Siesta.Test.SenchaTouch,
+
+            /**
+             * @cfg {Boolean} transparentEx
+             */
+            transparentEx       : true,
+            keepResults         : false,
+            keepNLastResults    : 0,
+            
+            /**
+             * @cfg {Boolean} performSetup When set to `true`, Siesta will perform a `Ext.setup()` call, so you can safely assume there's a viewport for example.
+             * If, however your test code, performs `Ext.setup()` itself, you need to disable this option.
+             * 
+             * If this option is not explicitly specified in the test descritor, but instead inherited, it will be automatically disabled if test has {@link #hostPageUrl} value.
+             * 
+             * This option can be also specified in the test file descriptor.
+             */
+            performSetup        : true,
+            
+            /**
+             * @cfg {String} runCore
+             */
+            runCore             : 'sequential',
+
+            /**
+            * @cfg {Object} loaderPath
+            * 
+            * The path used to configure the Ext.Loader with, for dynamic loading of Ext JS classes.
+            *
+            * This option can be also specified in the test file descriptor. 
+            */
+            loaderPath          : null,
+            
+            isRunningOnMobile   : true,
+            useExtJSUI          : true,
+            
+            contentManagerClass : Siesta.Content.Manager.Browser.ExtJSCore
+        },
+
+
+        methods: {
+            
+            setup : function () {
+                // TODO fix proper mobile detection, since Ext may be absent in "no-ui" harness
+                this.isRunningOnMobile = typeof Ext !== 'undefined' && Ext.getVersion && Ext.getVersion('touch')
+                
+                if (!this.isRunningOnMobile) this.keepNLastResults = 2
+                
+                this.SUPERARG(arguments)
+            },
+
+
+            getNewTestConfiguration: function (desc, scopeProvider, contentManager, options, runFunc) {
+                var config = this.SUPERARG(arguments)
+
+                var hostPageUrl = this.getDescriptorConfig(desc, 'hostPageUrl');
+                
+                if (!desc.hasOwnProperty('performSetup') && hostPageUrl) {
+                    config.performSetup = false;
+                } else {
+                    config.performSetup = this.getDescriptorConfig(desc, 'performSetup')
+                }
+                
+                config.loaderPath       = this.getDescriptorConfig(desc, 'loaderPath')
+
+                return config
+            },
+
+
+
+            createViewport: function (config) {
+                if (!this.isRunningOnMobile && this.useExtJSUI) return Ext.create("Siesta.Harness.Browser.UI.ExtViewport", config);
+                
+                var mainPanel = Ext.create('Siesta.Harness.Browser.UI_Mobile.MainPanel', config);
+                
+                Ext.Viewport.add(mainPanel);
+                
+                return mainPanel;
+            },
+
+            
+            showForcedIFrame : function (test) {
+                $.rebindWindowContext(window);
+                
+                var wrapper     = test.scopeProvider.wrapper
+
+                $(wrapper).css({
+                    'z-index'   : 100000
+                });
+            },
+
+            
+            onBeforeScopePreload : function (scopeProvider, url) {
+                var setupEventTranslation = function () {
+                    if (Ext.feature.has.Touch) {
+                        if (Ext.getVersion('touch').isGreaterThanOrEqual('2.2.0')) {
+                            Ext.event.publisher.TouchGesture.prototype.handledEvents.push('mousedown', 'mousemove', 'mouseup');
+                        } else {
+                            Ext.event.publisher.TouchGesture.override({
+                                moveEventName: 'mousemove',
+
+                                map: {
+                                    mouseToTouch: {
+                                        mousedown: 'touchstart',
+                                        mousemove: 'touchmove',
+                                        mouseup: 'touchend'
+                                    },
+
+                                    touchToMouse: {
+                                        touchstart: 'mousedown',
+                                        touchmove: 'mousemove',
+                                        touchend: 'mouseup'
+                                    }
+                                },
+
+                                attachListener: function(eventName) {
+                                    eventName = this.map.touchToMouse[eventName];
+
+                                    if (!eventName) {
+                                        return;
+                                    }
+
+                                    return this.callOverridden([eventName]);
+                                },
+
+                                lastEventType: null,
+
+                                onEvent: function(e) {
+                                    if ('button' in e && e.button !== 0) {
+                                        return;
+                                    }
+
+                                    var type = e.type,
+                                        touchList = [e];
+
+                                    // Temporary fix for a recent Chrome bugs where events don't seem to bubble up to document
+                                    // when the element is being animated
+                                    // with webkit-transition (2 mousedowns without any mouseup)
+                                    if (type === 'mousedown' && this.lastEventType && this.lastEventType !== 'mouseup') {
+                                        var fixedEvent = document.createEvent("MouseEvent");
+                                            fixedEvent.initMouseEvent('mouseup', e.bubbles, e.cancelable,
+                                                document.defaultView, e.detail, e.screenX, e.screenY, e.clientX,
+                                                e.clientY, e.ctrlKey, e.altKey, e.shiftKey, e.metaKey, e.metaKey,
+                                                e.button, e.relatedTarget);
+
+                                        this.onEvent(fixedEvent);
+                                    }
+
+                                    if (type !== 'mousemove') {
+                                        this.lastEventType = type;
+                                    }
+
+                                    e.identifier = 1;
+                                    e.touches = (type !== 'mouseup') ? touchList : [];
+                                    e.targetTouches = (type !== 'mouseup') ? touchList : [];
+                                    e.changedTouches = touchList;
+
+                                    return this.callOverridden([e]);
+                                },
+
+                                processEvent: function(e) {
+                                    this.eventProcessors[this.map.mouseToTouch[e.type]].call(this, e);
+                                }
+                            });
+                        }
+                    }
+                };
+
+                // Need to tell ST to convert mouse events to their touch counterpart
+                scopeProvider.addPreload({
+                    type        : 'js', 
+                    content     : '(' + setupEventTranslation.toString() + ')();'
+                })
+                 
+                this.SUPERARG(arguments)
+            }
+        }
+    }
+})
+
+
+;
+;
 if (typeof Ext !== "undefined") {;
-Ext.Component.override({
+Ext.define('ExtX.Reference.Slot', {
+    override : 'Ext.Component',
 
     slot            : null,
     __COLLECTOR__   : null,
-
 
     onRemoved : function() {
         if (this.__COLLECTOR__) {
@@ -28510,11 +29772,11 @@ Ext.Component.override({
 })
 
 
+Ext.define('ExtX.Reference.Slot2', {
 
-Ext.Container.override({
+    override : 'Ext.Container',
 
     slots       : null,
-
 
     onAdd : function () {
     
@@ -28527,7 +29789,6 @@ Ext.Container.override({
             }
         })
     },
-
 
     initComponent : function () {
         if (this.slots) this.slots = {}
@@ -28829,12 +30090,23 @@ Ext.define('Siesta.Harness.Browser.UI.MouseVisualizer', {
     currentContainer            : null,
     
     hideTimer                   : null,
+    supportsTransitions         : null,
+
+    clickEvents                 : {
+        click       : 0,
+        dblclick    : 0,
+        touchstart  : 0,
+        touchend    : 0,
+        mousedown   : 0,
+        contextmenu : 0
+    },
 
     constructor : function (config) {
         config      = config || {}
         
         Ext.apply(this, config)
-        
+        this.supportsTransitions = (Ext.supports && Ext.supports.Transitions) || (Ext.feature && Ext.feature.has.CssTransitions);
+
         delete this.harness
         
         this.setHarness(config.harness)
@@ -28964,21 +30236,9 @@ Ext.define('Siesta.Harness.Browser.UI.MouseVisualizer', {
                 y               = test.currentPosition[1];
                 
             this.updateGhostCursor(type, x, y);
-             
-            // Touch vs Ext
-            if ((Ext.supports && Ext.supports.Transitions) || (Ext.feature && Ext.feature.has.CssTransitions)) {
 
-                if ( 
-                    type === 'click'        || 
-                    type === 'dblclick'     || 
-                    type === 'touchstart'   || 
-                    type === 'touchend'     || 
-                    type === 'mousedown'    || 
-                    type === 'mouseup'      || 
-                    type === 'contextmenu'
-                ) {
-                    this.showClickIndicator(type, x, y);
-                }
+            if (this.supportsTransitions && type in this.clickEvents) {
+                this.showClickIndicator(type, x, y);
             }
         }
     },
@@ -28986,11 +30246,10 @@ Ext.define('Siesta.Harness.Browser.UI.MouseVisualizer', {
     // This method shows a fading circle at the position of click/dblclick/mousedown/contextmenu
     showClickIndicator : function(type, x, y) {
         var clickCircle = Ext.fly(this.currentContainer).createChild({
-            tag     : 'div',
             cls     : 'ghost-cursor-click-indicator ' ,
             style   : 'left:' + x + 'px;top:' + y + 'px'
         });
-        
+
         // need to a delay to make it work in FF
         setTimeout(function() {
             clickCircle.addCls('ghost-cursor-click-indicator-big');
@@ -29000,13 +30259,14 @@ Ext.define('Siesta.Harness.Browser.UI.MouseVisualizer', {
     
     // This method updates the ghost cursor position and appearance
     updateGhostCursor: function (type, x, y) {
-        var cursorEl        = this.getCursorEl()
+        var cursorEl        = this.getCursorEl(),
+            translate3d     = 'translate3d(' + (x - 5) + 'px, ' + y + 'px, 0px)';
         
         cursorEl.setStyle({
-            '-webkit-transform' : 'translate3d(' + (x - 5) + 'px, ' + y + 'px, 0px)',
-            '-moz-transform'    : 'translate3d(' + (x - 5) + 'px, ' + y + 'px, 0px)',
-            '-o-transform'      : 'translate3d(' + (x - 5) + 'px, ' + y + 'px, 0px)',
-            'transform'         : 'translate3d(' + (x - 5) + 'px, ' + y + 'px, 0px)'
+            '-webkit-transform' : translate3d,
+            '-moz-transform'    : translate3d,
+            '-o-transform'      : translate3d,
+            'transform'         : translate3d
         })
         
         switch(type) {
@@ -29634,7 +30894,7 @@ Ext.define('Siesta.Harness.Browser.UI_Mobile.MainPanel', {
 
     
     rerunTest : function () {
-        this.launchTest(this.getResultList().testRecord);
+        this.launchTest(this.lastTests[ this.lastTests.length - 1 ]);
     }
 })
 //eof Siesta.Harness.Browser.UI_Mobile.MainPanel
@@ -29930,298 +31190,4 @@ Ext.define('Siesta.Harness.Browser.UI_Mobile.ResultSummaryButton', {
 })
 ;
 };
-/**
-@class Siesta.Harness.Browser.SenchaTouch
-@extends Siesta.Harness.Browser 
-
-A Class representing the browser harness. This class provides a web-based UI and defines some additional configuration options.
-
-The default value of the `testClass` configuration option in this class is {@link Siesta.Test.SenchaTouch}, which inherits from 
-{@link Siesta.Test.Browser} and contains various Sencha Touch-specific assertions. Use this harness class when testing Sencha Touch applications.
-
-* **Note** Make sure, you've checked the {@link #performSetup} configuration option. 
-
-This file is for reference only, for a getting start guide and manual, please refer to <a href="#!/guide/siesta_getting_started">Getting Started Guide</a>.
-
-Synopsys
-========
-
-    var Harness = Siesta.Harness.Browser.SenchaTouch;
-        
-    Harness.configure({
-        title           : 'Awesome Sencha Touch Application Test Suite',
-                
-        transparentEx   : true,
-                
-        preload         : [
-            "http://cdn.sencha.io/ext-4.0.2a/ext-all-debug.js",
-            "../awesome-project-all.js"
-        ]
-    })
-        
-        
-    Harness.start(
-        // simple string - url relative to harness file
-        'sanity.t.js',
-                
-        // test file descriptor with own configuration options
-        {
-            url     : 'basic.t.js',
-                        
-            // replace `preload` option of harness
-            preload : [
-                "http://cdn.sencha.io/ext-4.0.6/ext-all-debug.js",
-                "../awesome-project-all.js"
-            ]
-        },
-                
-        // groups ("folders") of test files (possibly with own options)
-        {
-            group       : 'Sanity',
-                        
-            autoCheckGlobals    : false,
-                        
-            items       : [
-                'data/crud.t.js',
-                ...
-            ]
-        },
-        ...
-    )
-
-
-*/
-
-Class('Siesta.Harness.Browser.SenchaTouch', {
-
-    isa: Siesta.Harness.Browser,
-
-    // pure static class, no need to instantiate it
-    my: {
-
-        has: {
-            /**
-            * @cfg {Class} testClass The test class which will be used for creating test instances, defaults to {@link Siesta.Test.SenchaTouch}.
-            * You can subclass {@link Siesta.Test.SenchaTouch} and provide a new class. 
-            * 
-            * This option can be also specified in the test file descriptor. 
-            */
-            testClass           : Siesta.Test.SenchaTouch,
-
-            /**
-             * @cfg {Boolean} transparentEx
-             */
-            transparentEx       : true,
-            keepResults         : false,
-            keepNLastResults    : 0,
-            
-            /**
-             * @cfg {Boolean} performSetup When set to `true`, Siesta will perform a `Ext.setup()` call, so you can safely assume there's a viewport for example.
-             * If, however your test code, performs `Ext.setup()` itself, you need to disable this option.
-             * 
-             * If this option is not explicitly specified in the test descritor, but instead inherited, it will be automatically disabled if test has {@link #hostPageUrl} value.
-             * 
-             * This option can be also specified in the test file descriptor.
-             */
-            performSetup        : true,
-            
-            /**
-             * @cfg {String} runCore
-             */
-            runCore             : 'sequential',
-
-            /**
-            * @cfg {Object} loaderPath
-            * 
-            * The path used to configure the Ext.Loader with, for dynamic loading of Ext JS classes.
-            *
-            * This option can be also specified in the test file descriptor. 
-            */
-            loaderPath          : null,
-            
-            isRunningOnMobile   : true,
-            useExtJSUI          : true
-        },
-
-
-        methods: {
-            
-            setup : function () {
-                // TODO fix proper mobile detection, since Ext may be absent in "no-ui" harness
-                this.isRunningOnMobile = typeof Ext !== 'undefined' && Ext.getVersion && Ext.getVersion('touch')
-                
-                if (!this.isRunningOnMobile) this.keepNLastResults = 2
-                
-                this.SUPERARG(arguments)
-            },
-
-
-            getNewTestConfiguration: function (desc, scopeProvider, contentManager, options, runFunc) {
-                var config = this.SUPERARG(arguments)
-
-                var hostPageUrl = this.getDescriptorConfig(desc, 'hostPageUrl');
-                
-                if (!desc.hasOwnProperty('performSetup') && hostPageUrl) {
-                    config.performSetup = false;
-                } else {
-                    config.performSetup = this.getDescriptorConfig(desc, 'performSetup')
-                }
-                
-                config.loaderPath       = this.getDescriptorConfig(desc, 'loaderPath')
-
-                return config
-            },
-
-
-
-            createViewport: function (config) {
-                if (!this.isRunningOnMobile && this.useExtJSUI) return Ext.create("Siesta.Harness.Browser.UI.ExtViewport", config);
-                
-                var mainPanel = Ext.create('Siesta.Harness.Browser.UI_Mobile.MainPanel', config);
-                
-                Ext.Viewport.add(mainPanel);
-                
-                return mainPanel;
-            },
-
-            
-            showForcedIFrame : function (iframe, test) {
-                $.rebindWindowContext(window);
-
-                $(iframe).setStyle({
-                    'z-index'   : 100000
-                });
-            },
-
-            
-            onBeforeScopePreload : function (scopeProvider, url) {
-                var setupEventTranslation = function () {
-                    if (Ext.feature.has.Touch) {
-                        if (Ext.getVersion('touch').isGreaterThanOrEqual('2.2.0')) {
-                            Ext.event.publisher.TouchGesture.prototype.handledEvents.push('mousedown', 'mousemove', 'mouseup');
-                        } else {
-                            Ext.event.publisher.TouchGesture.override({
-                                moveEventName: 'mousemove',
-
-                                map: {
-                                    mouseToTouch: {
-                                        mousedown: 'touchstart',
-                                        mousemove: 'touchmove',
-                                        mouseup: 'touchend'
-                                    },
-
-                                    touchToMouse: {
-                                        touchstart: 'mousedown',
-                                        touchmove: 'mousemove',
-                                        touchend: 'mouseup'
-                                    }
-                                },
-
-                                attachListener: function(eventName) {
-                                    eventName = this.map.touchToMouse[eventName];
-
-                                    if (!eventName) {
-                                        return;
-                                    }
-
-                                    return this.callOverridden([eventName]);
-                                },
-
-                                lastEventType: null,
-
-                                onEvent: function(e) {
-                                    if ('button' in e && e.button !== 0) {
-                                        return;
-                                    }
-
-                                    var type = e.type,
-                                        touchList = [e];
-
-                                    // Temporary fix for a recent Chrome bugs where events don't seem to bubble up to document
-                                    // when the element is being animated
-                                    // with webkit-transition (2 mousedowns without any mouseup)
-                                    if (type === 'mousedown' && this.lastEventType && this.lastEventType !== 'mouseup') {
-                                        var fixedEvent = document.createEvent("MouseEvent");
-                                            fixedEvent.initMouseEvent('mouseup', e.bubbles, e.cancelable,
-                                                document.defaultView, e.detail, e.screenX, e.screenY, e.clientX,
-                                                e.clientY, e.ctrlKey, e.altKey, e.shiftKey, e.metaKey, e.metaKey,
-                                                e.button, e.relatedTarget);
-
-                                        this.onEvent(fixedEvent);
-                                    }
-
-                                    if (type !== 'mousemove') {
-                                        this.lastEventType = type;
-                                    }
-
-                                    e.identifier = 1;
-                                    e.touches = (type !== 'mouseup') ? touchList : [];
-                                    e.targetTouches = (type !== 'mouseup') ? touchList : [];
-                                    e.changedTouches = touchList;
-
-                                    return this.callOverridden([e]);
-                                },
-
-                                processEvent: function(e) {
-                                    this.eventProcessors[this.map.mouseToTouch[e.type]].call(this, e);
-                                }
-                            });
-                        }
-                    }
-                };
-
-                // Need to tell ST to convert mouse events to their touch counterpart
-                scopeProvider.addPreload({
-                    type        : 'js', 
-                    content     : '(' + setupEventTranslation.toString() + ')();'
-                })
-                 
-                this.SUPERARG(arguments)
-            }
-        }
-    }
-})
-
-
 ;
-;
-Class('Siesta', {
-    /*PKGVERSION*/VERSION : '1.2.1',
-
-    // "my" should been named "static"
-    my : {
-        
-        has : {
-            config          : null,
-            activeHarness   : null
-        },
-        
-        methods : {
-        
-            getConfigForTestScript : function (text) {
-                try {
-                    eval(text)
-                    
-                    return this.config
-                } catch (e) {
-                    return null
-                }
-            },
-            
-            
-            StartTest : function (arg1, arg2) {
-                if (typeof arg1 == 'object') 
-                    this.config = arg1
-                else if (typeof arg2 == 'object')
-                    this.config = arg2
-                else
-                    this.config = null
-            }
-        }
-    }
-})
-
-// fake StartTest function to extract test configs
-if (typeof StartTest == 'undefined') StartTest = Siesta.StartTest
-if (typeof startTest == 'undefined') startTest = Siesta.StartTest
-if (typeof describe == 'undefined') describe = Siesta.StartTest;

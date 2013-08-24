@@ -1,6 +1,6 @@
 /*
 
-Siesta 1.2.1
+Siesta 2.0.1
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -43,6 +43,19 @@ Role('Siesta.Test.BDD', {
         
         
         /**
+         * This is an "exclusive" version of the regular {@link #describe} suite. When such suites presents in some test file,
+         * the other regular suites at the same level will not be executed, only "exclusive" ones.
+         * 
+         * @param {String} name The name or description of the suite
+         * @param {Function} code The code function for this suite. It will receive a test instance as the first argument which should be used for all assertion methods.
+         * @param {Number} [timeout] A maximum duration for this suite. If not provided {@link Siesta.Harness#subTestTimeout} value is used.
+         */
+        ddescribe : function (name, code, timeout) {
+            this.describe(name, code, timeout, true)
+        },
+        
+        
+        /**
          * This is a no-op method, allowing you to quickly ignore some suites. 
          */
         xdescribe : function () {
@@ -67,17 +80,21 @@ Role('Siesta.Test.BDD', {
             })
         })
     })
+         *
+         * See also {@link #xdescribe}, {@link #ddescribe}
          * 
          * @param {String} name The name or description of the suite
          * @param {Function} code The code function for this suite. It will receive a test instance as the first argument which should be used for all assertion methods.
          * @param {Number} [timeout] A maximum duration for this suite. If not provided {@link Siesta.Harness#subTestTimeout} value is used.
          */
-        describe : function (name, code, timeout) {
+        describe : function (name, code, timeout, isExclusive) {
             this.checkSpecFunction(code, 'describe', name)
             
             var subTest     = this.getSubTest({
                 name            : name,
                 run             : code,
+                
+                isExclusive     : isExclusive,
                 
                 specType        : 'describe',
                 timeout         : timeout
@@ -86,6 +103,20 @@ Role('Siesta.Test.BDD', {
             if (this.codeProcessed) this.scheduleSpecsLaunch()
             
             this.sequentialSubTests.push(subTest)
+        },
+        
+        
+        /**
+         * This is an "exclusive" version of the regular {@link #it} spec. When such specs presents in some suite,
+         * the other regular specs at the same level will not be executed, only "exclusive" ones. Note, that even "regular" suites (`t.describe`) sections
+         * will be ignored, if they are on the same level with the exclusive `iit` section.
+         * 
+         * @param {String} name The name or description of the spec
+         * @param {Function} code The code function for this spec. It will receive a test instance as the first argument which should be used for all assertion methods.
+         * @param {Number} [timeout] A maximum duration for this spec. If not provided {@link Siesta.Harness#subTestTimeout} value is used.
+         */
+        iit : function (name, code, timeout) {
+            this.it(name, code, timeout, true)
         },
         
         
@@ -112,17 +143,21 @@ Role('Siesta.Test.BDD', {
             ...
         })
     })
+         *
+         * See also {@link #xit}, {@link #iit}
          * 
          * @param {String} name The name or description of the spec
          * @param {Function} code The code function for this spec. It will receive a test instance as the first argument which should be used for all assertion methods.
          * @param {Number} [timeout] A maximum duration for this spec. If not provided {@link Siesta.Harness#subTestTimeout} value is used.
          */
-        it : function (name, code, timeout) {
+        it : function (name, code, timeout, isExclusive) {
             this.checkSpecFunction(code, 'it', name)
             
             var subTest     = this.getSubTest({
                 name            : name,
                 run             : code,
+                
+                isExclusive     : isExclusive,
                 
                 specType        : 'it',
                 timeout         : timeout
@@ -219,7 +254,13 @@ Role('Siesta.Test.BDD', {
             // hackish way to pass a config to `t.chain`
             this.chain.actionDelay  = 0
             
-            this.chain(sequentialSubTests)
+            var exclusiveSubTests   = []
+            
+            Joose.A.each(sequentialSubTests, function (subTest) {
+                if (subTest.isExclusive) exclusiveSubTests.push(subTest)
+            })
+            
+            this.chain(exclusiveSubTests.length ? exclusiveSubTests : sequentialSubTests)
         }
     },
     
