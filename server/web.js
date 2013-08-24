@@ -11,6 +11,10 @@ var options = {
 	port: process.env.PORT || 8080,
 	secret: process.env.APP_SECRET || 'insecure',
 	appDomain: process.env.APP_DOMAIN,
+	
+	facebookID: process.env.FACEBOOK_ID,
+	facebookSecret: process.env.FACEBOOK_SECRET,
+	
 	databaseURL: process.env.MONGOHQ_URL || 'localhost',
 	databaseRetry: 5,
 	databaseMaxAttempts: 10

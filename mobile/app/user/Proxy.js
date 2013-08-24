@@ -73,7 +73,38 @@ Ext.define('Rondo.user.Proxy', {
 		
 		try {
 			success = true;
-			response.responseText = frame.contentDocument.body.textContent;
+			
+			var doc = frame.contentDocument;
+			var params = Ext.Object.fromQueryString(doc.location.search);
+			
+			if (params.returnHash) {
+				var url = params.returnHash;
+				delete params.returnHash;
+				
+				Ext.Ajax.request({
+					headers: this.getHeaders(),
+					timeout: this.getTimeout(),
+					method: 'GET',
+					
+					url: url,
+					params: Ext.apply(
+						params,
+						Ext.Object.fromQueryString(
+							doc.location.hash.replace(/^#/, '')
+						)
+					),
+					
+					callback: callback,
+					proxy: this,
+					
+					useDefaultXhrHeader: this.getUseDefaultXhrHeader()
+				});
+				
+				Ext.removeNode(frame);
+				return;
+			}
+			
+			response.responseText = doc.body.textContent;
 		}
 		catch (e) {
 			success = false;
