@@ -3,7 +3,13 @@ var User = require("./user");
 
 module.exports = {
 	init: function(app, provider, options) {
+		var name = provider.name;
 		provider = provider.init(options);
+		
+		if (!provider) {
+			console.warn("Ignoring authentication provider: " + name);
+			return;
+		}
 		
 		var strategy = 
 			new provider.strategy(

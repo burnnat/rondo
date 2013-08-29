@@ -2,14 +2,20 @@ var querystring = require('querystring');
 var passport = require("passport");
 var FacebookStrategy = require('passport-facebook').Strategy;
 
-var name = 'facebook';
-
 module.exports = {
+	name: 'facebook',
+	
 	init: function(options) {
+		var name = this.name;
 		var callback = options.appDomain + '/auth/' + name + '/return';
+		
+		if (!options.facebookID && !options.facebookSecret) {
+			return null;
+		}
 		
 		return {
 			name: name,
+			
 			strategy: FacebookStrategy,
 			strategyConfig: {
 				clientID: options.facebookID,

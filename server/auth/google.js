@@ -1,10 +1,12 @@
 var passport = require("passport");
 var GoogleStrategy = require('passport-google').Strategy;
 
-var name = 'google';
-
 module.exports = {
+	name: 'google',
+	
 	init: function(options) {
+		var name = this.name;
+		
 		return {
 			name: name,
 			strategy: GoogleStrategy,
