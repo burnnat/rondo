@@ -1,7 +1,8 @@
 /build
 /archive
 /node_modules
-/local.properties
+/.c9revisions
+local.properties
 *.pyc
 *.log
 *.log.*
