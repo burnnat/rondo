@@ -1,5 +1,6 @@
-/build
 /archive
+/build
+/bundle
 /node_modules
 /.c9revisions
 local.properties

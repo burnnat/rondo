@@ -4,12 +4,7 @@ node_js:
 services:
 - mongodb
 before_install:
-- mkdir bundle
-- curl -o bundle/sencha-cmd.run.zip http://cdn.sencha.com/cmd/3.1.2.342/SenchaCmd-3.1.2.342-linux-x64.run.zip
-- unzip -p bundle/sencha-cmd.run.zip > bundle/sencha-cmd.run
-- chmod +x bundle/sencha-cmd.run
-- bundle/sencha-cmd.run --mode unattended --prefix bundle
-- git clone git://github.com/burnnat/vexflow.git bundle/vexflow
+- ./setup.sh travis
 script:
 - ant -Dcmd.dir=$TRAVIS_BUILD_DIR/bundle/Sencha/Cmd/3.1.2.342 -Dvexflow.dir=$TRAVIS_BUILD_DIR/bundle/vexflow
 - npm test
