@@ -14,6 +14,15 @@ module.exports = {
 			});
 		});
 		
+		app.all('/api/*', function(req, res, next) {
+			if (req.user) {
+				next();
+			}
+			else {
+				res.send(403, { success: false });
+			}
+		});
+		
 		if (app.get('env') != 'production') {
 			app.post('/api/reset', function(req, res) {
 				async.parallel(
