@@ -8,7 +8,7 @@ module.exports = {
 		var _ = grunt.util._;
 		
 		var logError = function(message, error) {
-			var message = message + ': ' + error.message;
+			message = message + ': ' + error.message;
 			
 			if (error.data) {
 				var data = JSON.parse(error.data);
@@ -22,8 +22,14 @@ module.exports = {
 		};
 		
 		var queue = grunt.util.async.queue(
-			function(browserConfig, browserCallback) {
+			function(browserConfig, rootCallback) {
 				var browser = webdriver.remote(driverConfig);
+				
+				var browserCallback = browserConfig.callback
+					? function(err) {
+						browserConfig.callback(err, browser, rootCallback)
+					}
+					: rootCallback;
 				
 				if (options.logging) {
 					browser.on('status', function(info){
@@ -47,7 +53,7 @@ module.exports = {
 						grunt.log.ok('Script run completed.');
 					}
 					
-					browserCallback(err, browser);
+					browserCallback(err);
 				};
 				
 				var chain = browser.chain({
@@ -136,18 +142,14 @@ module.exports = {
 				browserConfig['tunnel-identifier'] = tunnelId;
 			}
 			
-			var afterBrowser = browserConfig.callback || options.callback;
+			browserConfig.callback = browserConfig.callback || options.callback;
 			
 			queue.push(
 				browserConfig,
-				function(err, browser) {
+				function(err) {
 					if (err) {
 						failures = failures || {};
 						failures[browserId] = err;
-					}
-					
-					if (afterBrowser) {
-						afterBrowser(err, browser);
 					}
 				}
 			);
@@ -170,81 +172,54 @@ module.exports = {
 		}
 		
 		if (!options.local) {
-			var me = this;
-			var tunnel = new SauceTunnel(
-				options.username,
-				options.key,
-				options.identifier,
-				true,
-				options.tunnelTimeout
-			);
-			
-			var methods = ['write', 'writeln', 'error', 'ok', 'debug'];
-			methods.forEach(function (method) {
-				tunnel.on('log:' + method, function (text) {
-					grunt.log[method](text);
-				});
+			if (options.tunneled) {
+				var me = this;
+				var tunnel = new SauceTunnel(
+					options.username,
+					options.key,
+					options.identifier,
+					true,
+					options.tunnelTimeout
+				);
 				
-				tunnel.on('verbose:' + method, function (text) {
-					grunt.verbose[method](text);
-				});
-			});
-			
-			grunt.log.writeln("=> Connecting to Saucelabs ...");
-			
-			tunnel.start(function(created) {
-				if (!created) {
-					grunt.log.error('Failed to create SauceConnect tunnel.');
-					done(false);
-				}
-				
-				grunt.log.ok("Connected to Saucelabs.");
-				
-				options['tunnel-identifier'] = tunnel.identifier;
-				
-				var sauce = new SauceLabs({
-					username: options.username,
-					password: options.key
-				});
-				
-				// Update SauceLabs job status as browser run completes.
-				options.callback = function(err, browser) {
-					var job = browser.sessionID;
+				var methods = ['write', 'writeln', 'error', 'ok', 'debug'];
+				methods.forEach(function (method) {
+					tunnel.on('log:' + method, function (text) {
+						grunt.log[method](text);
+					});
 					
-					sauce.updateJob(
-						job,
-						{
-							passed: !err && browser.saucePassed !== false,
-							'custom-data': browser.sauceData
-						},
+					tunnel.on('verbose:' + method, function (text) {
+						grunt.verbose[method](text);
+					});
+				});
+				
+				grunt.log.writeln("=> Connecting to Saucelabs ...");
+				
+				tunnel.start(function(created) {
+					if (!created) {
+						grunt.log.error('Failed to create SauceConnect tunnel.');
+						done(false);
+					}
+					
+					grunt.log.ok("Connected to Saucelabs.");
+					
+					options['tunnel-identifier'] = tunnel.identifier;
+					
+					me.runRemote(
+						grunt,
+						options,
 						function(err) {
-							if (err) {
-								grunt.log.error('Error updating SauceLabs status for job ' + job + ': ' + err);
-							}
-							else {
-								grunt.log.verbose.writeln('Updated SauceLabs status for job: ' + job);
-							}
+							tunnel.stop(function() {
+								grunt.log.writeln('Tunnel connection closed.');
+								done(!err);
+							});
 						}
 					);
-				};
-				
-				me.drive(
-					grunt,
-					{
-						host: 'ondemand.saucelabs.com',
-						port: 80,
-						username: options.username,
-						accessKey: options.key
-					},
-					options,
-					function(err) {
-						tunnel.stop(function() {
-							grunt.log.writeln('Tunnel connection closed.');
-							done(!err);
-						});
-					}
-				);
-			})
+				})
+			}
+			else {
+				this.runRemote(grunt, options, done);
+			}
 		}
 		else {
 			grunt.log.writeln("=> Starting local WebDriver ...");
@@ -286,5 +261,47 @@ module.exports = {
 				}
 			);
 		}
+	},
+	
+	runRemote: function(grunt, options, done) {
+		var sauce = new SauceLabs({
+			username: options.username,
+			password: options.key
+		});
+		
+		// Update SauceLabs job status as browser run completes.
+		options.callback = function(err, browser, next) {
+			var job = browser.sessionID;
+			
+			sauce.updateJob(
+				job,
+				{
+					passed: !err && browser.saucePassed !== false,
+					'custom-data': browser.sauceData
+				},
+				function(err) {
+					if (err) {
+						grunt.log.error('Error updating SauceLabs status for job ' + job + ': ' + err);
+					}
+					else {
+						grunt.log.verbose.writeln('Updated SauceLabs status for job: ' + job);
+					}
+					
+					next(err);
+				}
+			);
+		};
+		
+		this.drive(
+			grunt,
+			{
+				host: 'ondemand.saucelabs.com',
+				port: 80,
+				username: options.username,
+				accessKey: options.key
+			},
+			options,
+			done
+		);
 	}
 }

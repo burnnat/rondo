@@ -7,7 +7,23 @@ var tests = require('./server/lib/tests.js');
 module.exports = function(grunt) {
 	var _ = grunt.util._;
 	
+	var propFile = 'local.properties';
+	
+	var local = {
+		'server.port': '8080',
+		'deploy.dir': 'build/deploy'
+	};
+	
+	if (fs.existsSync(propFile)) {
+		_.extend(
+			local,
+			properties.read(propFile)
+		);
+	}
+	
 	var mobileOptions = {
+		username: local['sauce.user'] || process.env.SAUCE_USERNAME,
+		key: local['sauce.key'] || process.env.SAUCE_ACCESS_KEY,
 		browsers: [
 //			{
 //				browserName: 'android',
@@ -20,6 +36,7 @@ module.exports = function(grunt) {
 				platform: 'Windows 7'
 			}
 		],
+		tunneled: local['sauce.tunnel'] !== 'false',
 		tunnelTimeout: 5,
 		build: process.env.TRAVIS_JOB_ID,
 		concurrency: 3,
@@ -31,7 +48,7 @@ module.exports = function(grunt) {
 	
 	// Add tags for user-initiated and automated tests.
 	mobileOptions.tags.push(
-		process.env.SAUCE_USERNAME === "rondo"
+		mobileOptions.username === "rondo"
 			? "automated"
 			: "user"
 	);
@@ -47,22 +64,9 @@ module.exports = function(grunt) {
 		);
 	};
 	
-	var propFile = 'local.properties';
-	
-	var local = {
-		'server.port': '8080',
-		'deploy.dir': 'build/deploy'
-	};
-	
-	if (fs.existsSync(propFile)) {
-		_.extend(
-			local,
-			properties.read('local.properties')
-		);
-	}
-	
 	grunt.initConfig({
 		
+		domain: local['app.domain'] || 'http://127.0.0.1:<%= port %>',
 		port: parseInt(local['server.port']),
 		deployTarget: local['deploy.dir'],
 		
@@ -136,7 +140,7 @@ module.exports = function(grunt) {
 		'saucelabs-jasmine': {
 			mobile: {
 				options: sauceOptions({
-					urls: ['http://127.0.0.1:<%= port %>/test/jasmine/mobile.html'],
+					urls: ['<%= domain %>/test/jasmine/mobile.html'],
 					testname: "mobile unit tests",
 					tags: ["unit"]
 				})
@@ -146,7 +150,7 @@ module.exports = function(grunt) {
 		'saucelabs-siesta': {
 			mobile: {
 				options: sauceOptions({
-					url: 'http://127.0.0.1:<%= port %>/test/siesta/mobile.html',
+					url: '<%= domain %>/test/siesta/mobile.html',
 					local: grunt.option('local'),
 					testname: "mobile component tests",
 					tags: ["component"]
@@ -157,8 +161,12 @@ module.exports = function(grunt) {
 		'saucelabs-selenium': {
 			mobile: {
 				options: sauceOptions({
-					url: 'http://127.0.0.1:<%= port %>/build/rondo-mobile/production/',
-					script: require('./test/selenium/mobile.js'),
+					url: '<%= domain %>/mobile/',
+					script: require('./test/selenium/mobile.js')
+						.init(
+							local['facebook.user.email'],
+							local['facebook.user.password']
+						),
 					local: grunt.option('local') || grunt.option('human'),
 					slow: grunt.option('human'),
 					autoclose: !grunt.option('human'),

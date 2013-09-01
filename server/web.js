@@ -7,13 +7,24 @@ if (args.length > 0) {
 var express = require("express");
 var mongoose = require("mongoose");
 
+var app = express();
+var env = app.get('env');
+
+console.log('Loading server for environment: ' + env);
+
+var locals = {};
+
+if (env != 'production') {
+	locals = require('properties-parser').read('local.properties');
+}
+
 var options = {
 	port: process.env.PORT || 8080,
 	secret: process.env.APP_SECRET || 'insecure',
-	appDomain: process.env.APP_DOMAIN,
+	appDomain: locals['app.domain'] || process.env.APP_DOMAIN,
 	
-	facebookID: process.env.FACEBOOK_ID,
-	facebookSecret: process.env.FACEBOOK_SECRET,
+	facebookID: locals['facebook.id'] || process.env.FACEBOOK_ID,
+	facebookSecret: locals['facebook.secret'] || process.env.FACEBOOK_SECRET,
 	
 	databaseURL: process.env.MONGOHQ_URL || 'localhost',
 	databaseRetry: 5,
@@ -23,11 +34,6 @@ var options = {
 if (!options.appDomain) {
 	options.appDomain = 'http://localhost:' + options.port;
 }
-
-var app = express();
-var env = app.get('env');
-
-console.log('Loading server for environment: ' + env);
 
 app.use(express.cookieParser());
 app.use(express.bodyParser());
@@ -60,20 +66,20 @@ else if (env == 'development' || env == 'staging') {
 		});
 	
 	var dirs = isStaging
-		? [
-			'build',
-			'test'
-		]
-		: [
-			'common',
-			'desktop',
-			'mobile',
-			'test'
-		];
+		? {
+			'mobile': 'build/rondo-mobile/production',
+			'test': 'test'
+		}
+		: {
+			'common': 'common',
+			'desktop': 'desktop',
+			'mobile': 'mobile',
+			'test': 'test'
+		};
 	
-	dirs.forEach(function(dir) {
-		app.use('/' + dir, express.static(dir))
-	});
+	for (var key in dirs) {
+		app.use('/' + key, express.static(dirs[key]));
+	}
 }
 else {
 	console.error('Unknown environment type');
@@ -119,6 +125,6 @@ db.once('open', function() {
 });
 
 app.listen(options.port, function() {
-	console.log("Listening on port " + options.port);
+	console.log("Listening on port " + options.port + " using host: " + options.appDomain);
 });
 
