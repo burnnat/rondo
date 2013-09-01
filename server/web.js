@@ -4,6 +4,7 @@ if (args.length > 0) {
 	process.env.NODE_ENV = args[0];
 }
 
+var fs = require("fs");
 var express = require("express");
 var mongoose = require("mongoose");
 
@@ -15,7 +16,11 @@ console.log('Loading server for environment: ' + env);
 var locals = {};
 
 if (env != 'production') {
-	locals = require('properties-parser').read('local.properties');
+	var propFile = 'local.properties';
+	
+	if (fs.existsSync(propFile)) {
+		locals = require('properties-parser').read(propFile);
+	}
 }
 
 var options = {
