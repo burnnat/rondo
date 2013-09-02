@@ -45,22 +45,51 @@ module.exports = {
 		
 		app.get(
 			'/auth/' + provider.name,
-			provider.launcher
-				? provider.launcher(strategy)
-				: passport.authenticate(provider.name)
+			function(req, res, next) {
+				var immediate = req.query.immediate;
+				
+				if (immediate) {
+					provider.launchImmediate(strategy, res);
+				}
+				else {
+					passport.authenticate(name)(req, res, next);
+				}
+			}
 		);
 		
 		app.get(
 			'/auth/' + provider.name + '/return',
-			provider.finalizer
-				? provider.finalizer(strategy)
-				: passport.authenticate(
-					provider.name,
-					{
-						successRedirect: '/',
-						failureRedirect: '/'
+			function(req, res, next) {
+				var immediate = req.query.immediate;
+				var redirect = immediate ? '/auth/user' : '/';
+				
+				if (immediate && !provider.isValid(req)) {
+					// failed, don't bother verification ... just redirect to failure
+					if (provider.finalizeInvalid) {
+						provider.finalizeInvalid(res, redirect);
 					}
-				)
+					else {
+						res.redirect(redirect);
+					}
+				}
+				else {
+					if (provider.preVerify) {
+						provider.preVerify(strategy, immediate);
+					}
+					
+					passport.authenticate(
+						name,
+						{
+							successRedirect: redirect,
+							failureRedirect: redirect
+						}
+					)(req, res, next);
+					
+					if (provider.postVerify) {
+						provider.postVerify(strategy, immediate);
+					}
+				}
+			}
 		);
 	}
 }

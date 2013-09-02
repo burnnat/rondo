@@ -8,6 +8,7 @@ module.exports = {
 	init: function(options) {
 		var name = this.name;
 		var callback = options.appDomain + '/auth/' + name + '/return';
+		var immediateCallback = callback + '?immediate=true&returnHash=true';
 		
 		if (!options.facebookID && !options.facebookSecret) {
 			return null;
@@ -33,64 +34,35 @@ module.exports = {
 				};
 			},
 			
-			launcher: function(strategy) {
-				return function(req, res, next) {
-					var immediate = req.query.immediate;
-					
-					if (immediate) {
-						res.redirect(
-							'https://www.facebook.com/connect/ping?'
-								+ querystring.stringify({
-									client_id: options.facebookID,
-									domain: options.appDomain,
-									redirect_uri: callback + '?immediate=true',
-									origin: 1,
-									response_type: 'code'
-								})
-						);
-					}
-					else {
-						passport.authenticate(name)(req, res, next);
-					}
-				};
+			launchImmediate: function(strategy, res) {
+				res.redirect(
+					'https://www.facebook.com/connect/ping?'
+						+ querystring.stringify({
+							client_id: options.facebookID,
+							domain: options.appDomain,
+							redirect_uri: immediateCallback,
+							origin: 1,
+							response_type: 'code'
+						})
+				);
 			},
 			
-			finalizer: function(strategy) {
-				return function(req, res, next) {
-					var immediate = req.query.immediate;
-					var redirect = immediate ? '/auth/user' : '/';
-					
-					if (immediate) {
-						if (!req.query.code) {
-							res.redirect(
-								redirect
-									+ (req.query.error
-										? ''
-										: '?'
-											+ querystring.stringify({
-												immediate: true,
-												returnHash: callback
-											})
-										)
-							);
-							
-							return;
-						}
-						else {
-							strategy._callbackURL = callback + '?immediate=true';
-						}
-					}
-					
-					passport.authenticate(
-						name,
-						{
-							successRedirect: redirect,
-							failureRedirect: redirect
-						}
-					)(req, res, next);
-					
-					strategy._callbackURL = callback;
-				};
+			isValid: function(req) {
+				return req.query.code;
+			},
+			
+			finalizeInvalid: function(res) {
+				res.send({ success: true });
+			},
+			
+			preVerify: function(strategy, immediate) {
+				if (immediate) {
+					strategy._callbackURL = immediateCallback;
+				}
+			},
+			
+			postVerify: function(strategy) {
+				strategy._callbackURL = callback;
 			}
 		};
 	}

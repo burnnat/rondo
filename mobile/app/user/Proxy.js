@@ -75,10 +75,12 @@ Ext.define('Rondo.user.Proxy', {
 			success = true;
 			
 			var doc = frame.contentDocument;
-			var params = Ext.Object.fromQueryString(doc.location.search);
+			var loc = doc.location;
+			
+			var params = Ext.Object.fromQueryString(loc.search);
 			
 			if (params.returnHash) {
-				var url = params.returnHash;
+				var url = loc.protocol + '//' + loc.host + loc.pathname;
 				delete params.returnHash;
 				
 				Ext.Ajax.request({
