@@ -2,10 +2,7 @@ var _ = require("lodash");
 var passport = require("passport");
 
 var User = require("./auth/user");
-
 var provider = require("./auth/provider");
-var google = require("./auth/google");
-var facebook = require("./auth/facebook");
 
 module.exports = {
 	init: function(app, options) {
@@ -15,7 +12,7 @@ module.exports = {
 		app.get('/auth/logout', function(req, res) {
 			req.logout();
 			res.redirect('/auth/user');
-		})
+		});
 		
 		app.get('/auth/user', function(req, res) {
 			var user = req.user;
@@ -55,7 +52,11 @@ module.exports = {
 			);
 		});
 		
-		provider.init(app, google, options);
-		provider.init(app, facebook, options);
+		provider.init(app, require("./auth/google"), options);
+		provider.init(app, require("./auth/facebook"), options);
+		
+		if (app.get('env') != 'production') {
+			provider.init(app, require("./auth/dummy"), options);
+		}
 	}
 };

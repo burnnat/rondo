@@ -4,6 +4,7 @@ var User = require("./user");
 module.exports = {
 	init: function(app, provider, options) {
 		var name = provider.name;
+		
 		provider = provider.init(options);
 		
 		if (!provider) {
@@ -21,7 +22,7 @@ module.exports = {
 					
 					User.findOne(
 						{
-							'providers._id': provider.name,
+							'providers._id': name,
 							'providers.remoteID': identifier
 						},
 						function(err, user) {
@@ -31,7 +32,7 @@ module.exports = {
 							
 							user.set(profile);
 							user.providers.addToSet({
-								_id: provider.name,
+								_id: name,
 								remoteID: identifier
 							});
 							
@@ -43,53 +44,67 @@ module.exports = {
 		
 		passport.use(strategy);
 		
-		app.get(
-			'/auth/' + provider.name,
-			function(req, res, next) {
-				var immediate = req.query.immediate;
-				
-				if (immediate) {
-					provider.launchImmediate(strategy, res);
-				}
-				else {
-					passport.authenticate(name)(req, res, next);
-				}
-			}
-		);
-		
-		app.get(
-			'/auth/' + provider.name + '/return',
-			function(req, res, next) {
-				var immediate = req.query.immediate;
-				var redirect = immediate ? '/auth/user' : '/';
-				
-				if (immediate && !provider.isValid(req)) {
-					// failed, don't bother verification ... just redirect to failure
-					if (provider.finalizeInvalid) {
-						provider.finalizeInvalid(res, redirect);
+		if (provider.simple === true) {
+			app.get(
+				'/auth/' + name,
+				passport.authenticate(
+					name,
+					{
+						successRedirect: '/auth/user',
+						failureRedirect: '/auth/user'
+					}
+				)
+			);
+		}
+		else {
+			app.get(
+				'/auth/' + name,
+				function(req, res, next) {
+					var immediate = req.query.immediate;
+					
+					if (immediate) {
+						provider.launchImmediate(strategy, res);
 					}
 					else {
-						res.redirect(redirect);
+						passport.authenticate(name)(req, res, next);
 					}
 				}
-				else {
-					if (provider.preVerify) {
-						provider.preVerify(strategy, immediate);
-					}
+			);
+			
+			app.get(
+				'/auth/' + name + '/return',
+				function(req, res, next) {
+					var immediate = req.query.immediate;
+					var redirect = immediate ? '/auth/user' : '/';
 					
-					passport.authenticate(
-						name,
-						{
-							successRedirect: redirect,
-							failureRedirect: redirect
+					if (immediate && !provider.isValid(req)) {
+						// failed, don't bother verification ... just redirect to failure
+						if (provider.finalizeInvalid) {
+							provider.finalizeInvalid(res, redirect);
 						}
-					)(req, res, next);
-					
-					if (provider.postVerify) {
-						provider.postVerify(strategy, immediate);
+						else {
+							res.redirect(redirect);
+						}
+					}
+					else {
+						if (provider.preVerify) {
+							provider.preVerify(strategy, immediate);
+						}
+						
+						passport.authenticate(
+							name,
+							{
+								successRedirect: redirect,
+								failureRedirect: redirect
+							}
+						)(req, res, next);
+						
+						if (provider.postVerify) {
+							provider.postVerify(strategy, immediate);
+						}
 					}
 				}
-			}
-		);
+			);
+		}
 	}
 }
