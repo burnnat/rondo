@@ -1,13 +1,24 @@
 var request = require('supertest');
-var app = request('http://localhost:8080');
+var info = require('../../../package.json');
+
+var app = request.agent('http://localhost:' + (process.env.PORT || 8080));
 
 app.reset = function(done) {
-	this.post('/api/reset')
+	app.post('/api')
+		.send({ reset: true })
 		.expect(
 			200,
-			{ success: true },
+			{
+				success: true,
+				version: info.version
+			},
 			done
 		);
+};
+
+app.login = function(done) {
+	app.get('/auth/dummy')
+		.end(done);
 };
 
 before(function(done) {

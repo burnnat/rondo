@@ -14,6 +14,40 @@ module.exports = {
 			});
 		});
 		
+		if (app.get('env') != 'production') {
+			app.post('/api', function(req, res) {
+				var finalize = function(err) {
+					res.send({
+						success: !err,
+						version: info.version
+					});
+				};
+				
+				if (req.body.reset === true) {
+					async.parallel(
+						[
+							sketches.reset
+						],
+						function(err) {
+							req.logout();
+							finalize(err);
+						}
+					);
+				}
+				else if (req.body.close === true) {
+					console.log("Closing database connection");
+					
+					mongoose.disconnect(function() {
+						console.log("Database connection closed");
+						finalize();
+					});
+				}
+				else {
+					finalize();
+				}
+			});
+		}
+		
 		app.all('/api/*', function(req, res, next) {
 			if (req.user) {
 				next();
@@ -22,33 +56,6 @@ module.exports = {
 				res.send(403, { success: false });
 			}
 		});
-		
-		if (app.get('env') != 'production') {
-			app.post('/api/reset', function(req, res) {
-				async.parallel(
-					[
-						sketches.reset
-					],
-					function(err) {
-						res.send({
-							success: !err
-						});
-					}
-				);
-			});
-			
-			app.post('/api/close', function(req, res) {
-				console.log("Closing database connection");
-				
-				mongoose.disconnect(function() {
-				console.log("Database connection closed");
-					
-					res.send({
-						success: true
-					});
-				});
-			});
-		}
 		
 		sketches.init(app);
 	}
