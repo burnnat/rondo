@@ -4,9 +4,8 @@ var app = require('../lib/app.js');
 
 describe('Sketches API', function() {
 	
-	before(function(done) {
-		app.reset(done);
-	});
+	before(app.reset);
+	before(app.login);
 	
 	it('fetches sketches', function(done) {
 		app.get('/api/sketches')

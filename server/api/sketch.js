@@ -1,31 +1,49 @@
 var _ = require("lodash");
 var mongoose = require("mongoose");
+var Schema = mongoose.Schema;
 
 var fields = {
 	title: {
 		type: String,
 		required: true
+	},
+	
+	owner: {
+		type: Schema.Types.ObjectId,
+		required: true
 	}
 };
 
-var Model = mongoose.model('Sketch', new mongoose.Schema(fields));
+var Model = mongoose.model('Sketch', new Schema(fields));
 
 module.exports = {
 	init: function(app) {
 		var me = this;
 		
 		app.get('/api/sketches', function(req, res) {
-			return Model.find(function(err, records) {
-				return err
-					? me.failure(res, err)
-					: me.success(res, {
-						records: records
-					});
-			});
+			return Model.find(
+				{
+					owner: req.user._id
+				},
+				function(err, records) {
+					return err
+						? me.failure(res, err)
+						: me.success(res, {
+							records: records
+						});
+				}
+			);
 		});
 		
 		app.post('/api/sketches', function(req, res) {
-			var record = new Model(me.getData(req.body));
+			var record = new Model(
+				_.assign(
+					me.getData(req.body),
+					{
+						owner: req.user._id
+					}
+				)
+			);
 			
 			return record.save(function(err) {
 				return err
@@ -83,6 +101,8 @@ module.exports = {
 		if (record._id) {
 			data.id = record._id;
 		}
+		
+		delete data.owner;
 		
 		return data;
 	},
