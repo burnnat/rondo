@@ -80,7 +80,7 @@ module.exports = {
 					if (immediate && !provider.isValid(req)) {
 						// failed, don't bother verification ... just redirect to failure
 						if (provider.finalizeInvalid) {
-							provider.finalizeInvalid(res, redirect);
+							provider.finalizeInvalid(req, res, redirect);
 						}
 						else {
 							res.redirect(redirect);

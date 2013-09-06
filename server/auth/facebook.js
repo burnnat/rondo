@@ -51,8 +51,15 @@ module.exports = {
 				return req.query.code;
 			},
 			
-			finalizeInvalid: function(res) {
-				res.send({ success: true });
+			finalizeInvalid: function(req, res, redirect) {
+				if (req.query.returnHash) {
+					// If we need the URL hash, don't redirect, as
+					// it causes Safari to drop the URL fragment.
+					res.send({ success: true });
+				}
+				else {
+					res.redirect(redirect);
+				}
 			},
 			
 			preVerify: function(strategy, immediate) {
