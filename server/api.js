@@ -3,7 +3,10 @@ var mongoose = require("mongoose");
 var async = require("async");
 
 var info = require('../package.json');
+
+var object = require('./api/object');
 var sketches = require("./api/sketch");
+var measures = require("./api/measure");
 
 module.exports = {
 	init: function(app) {
@@ -26,7 +29,8 @@ module.exports = {
 				if (req.body.reset === true) {
 					async.parallel(
 						[
-							sketches.reset
+							sketches.reset,
+							measures.reset
 						],
 						function(err) {
 							req.logout();
@@ -57,6 +61,7 @@ module.exports = {
 			}
 		});
 		
-		sketches.init(app);
+		object.init(app, sketches);
+		object.init(app, measures);
 	}
 };
