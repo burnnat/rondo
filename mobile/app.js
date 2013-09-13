@@ -24,6 +24,7 @@ Ext.application({
 		'Ext.NavigationView',
 		
 		'TouchOverrides.data.Store',
+		'TouchOverrides.navigation.Bar',
 		
 		'Rondo.User',
 		'Rondo.login.Toggler'
