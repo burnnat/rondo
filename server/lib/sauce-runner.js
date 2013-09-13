@@ -8,7 +8,7 @@ module.exports = {
 		var _ = grunt.util._;
 		
 		var logError = function(message, error) {
-			message = message + ': ' + error.message;
+			message = message + ': ' + (_.isObject(error) ? error.message : error);
 			
 			if (error.data) {
 				var data = JSON.parse(error.data);
@@ -109,17 +109,21 @@ module.exports = {
 					browserConfig,
 					function(err) {
 						if (err) {
-							if (err) {
-								logError('Unable to initialize browser', err);
-							}
-							
+							logError('Unable to initialize browser', err);
 							browserCallback(err);
 						}
 						else {
 							chain.get(options.url);
-							options.script(browser, chain);
 							
-							chain[options.autoclose ? 'quit' : 'status'](scriptCallback);
+							var scriptErr = options.script(browser, chain);
+							
+							if (scriptErr) {
+								logError('Unable to initialize test script', scriptErr);
+								browserCallback(scriptErr);
+							}
+							else {
+								chain[options.autoclose ? 'quit' : 'status'](scriptCallback);
+							}
 						}
 					}
 				);

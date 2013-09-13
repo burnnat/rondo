@@ -5,6 +5,14 @@ var xpath = require('./xpath.js');
 module.exports = {
 	init: function(username, password) {
 		return function(browser, chain) {
+			if (!username) {
+				return 'No username supplied';
+			}
+			
+			if (!password) {
+				return 'No password supplied';
+			}
+			
 			chain.log = function(message) {
 				this.queueAddAsync(function(next) {
 					browser.emit('log', message);
