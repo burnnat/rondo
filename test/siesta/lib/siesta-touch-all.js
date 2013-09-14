@@ -1,6 +1,6 @@
 /*
 
-Siesta 2.0.1
+Siesta 2.0.3
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -6057,6 +6057,111 @@ Class('Siesta.Util.XMLNode', {
     }
 })
 ;
+Class('Siesta.Util.Rect', {
+    
+    has     : {
+        left            : null,
+        top             : null,
+        width           : null,
+        height          : null,
+        
+        right           : null,
+        bottom          : null
+    },
+    
+    
+    methods : {
+        
+        initialize : function () {
+            var left        = this.left
+            var width       = this.width
+            var right       = this.right
+            
+            if (right == null && left != null && width != null) this.right = left + width - 1
+            
+            if (width == null && left != null && right != null) this.width = right - left + 1
+            
+            var top         = this.top
+            var height      = this.height
+            var bottom      = this.bottom
+            
+            if (bottom == null && top != null && height != null) this.bottom = top + height - 1
+            
+            if (height == null && top != null && bottom != null) this.height = bottom - top + 1
+        },
+        
+        
+        isEmpty : function () {
+            return this.left == null
+        },
+        
+        
+        intersect : function (rect) {
+            if (
+                rect.isEmpty() || this.isEmpty()
+                    ||
+                rect.left > this.right || rect.right < this.left
+                    ||
+                rect.top > this.bottom || rect.bottom < this.top
+            ) return this.my.getEmpty()
+            
+            return new this.constructor({
+                left        : Math.max(this.left, rect.left),
+                right       : Math.min(this.right, rect.right),
+                top         : Math.max(this.top, rect.top),
+                bottom      : Math.min(this.bottom, rect.bottom)
+            })
+        },
+        
+        
+        contains : function (left, top) {
+            return this.left <= left && left <= this.right 
+                    && 
+                this.top <= top && top <= this.bottom
+        },
+        
+        
+        cropLeftRight : function (rect) {
+            return this.intersect(new this.constructor({
+                left        : rect.left,
+                right       : rect.right,
+                top         : this.top,
+                bottom      : this.bottom
+            }))
+        },
+        
+        
+        cropTopBottom : function (rect) {
+            return this.intersect(new this.constructor({
+                left        : this.left,
+                right       : this.right,
+                top         : rect.top,
+                bottom      : rect.bottom
+            }))
+        },
+        
+        
+        equalsTo : function (rect) {
+            return this.left == rect.left && this.right == rect.right && this.top == rect.top && this.bottom == rect.bottom
+        }
+    },
+    
+    
+    // static methods/props
+    my : {
+        has : {
+            HOST        : null
+        }, 
+        
+        methods : {
+            
+            getEmpty : function () {
+                return new this.HOST()
+            }
+        }
+    }
+})
+;
 Class('Siesta.Content.Resource', {
     
     has : {
@@ -6351,7 +6456,7 @@ Class('Siesta.Content.Manager', {
 ;
 ;
 Class('Siesta', {
-    /*PKGVERSION*/VERSION : '2.0.1',
+    /*PKGVERSION*/VERSION : '2.0.3',
 
     // "my" should been named "static"
     my : {
@@ -6710,7 +6815,8 @@ Role('Siesta.Test.Function', {
         isCalledNTimes : function(fn, obj, n, desc, isGreaterEqual) {
             var me      = this,
                 prop    = typeof fn === "string" ? fn : me.getPropertyName(obj, fn);
-            desc = desc ? (desc + ' ') : '';
+                
+            desc        = desc ? (desc + ' ') : '';
 
             this.on('beforetestfinalizeearly', function () {
                 if (counter === n || (isGreaterEqual && counter > n)) {
@@ -6728,7 +6834,7 @@ Role('Siesta.Test.Function', {
 
             var counter = 0;
             fn = obj[prop];
-            obj[prop] = function () { counter++; return fn.apply(obj, arguments); };
+            obj[prop] = function () { counter++; return fn.apply(this, arguments); };
         },
 
         /**
@@ -7095,7 +7201,23 @@ Role('Siesta.Test.More', {
                 }
             }
             
-            if (Math.abs(value2 - value1) <= threshHold)
+            // this function normalizes the fractional numbers to fixed point presentation
+            // for example in JS: 1.05 - 1 = 0.050000000000000044
+            // so what we do is: (1.05 * 10^2 - 1 * 10^2) / 10^2 = (105 - 100) / 100 = 0.05
+            var subtract    = function (value1, value2) {
+                var fractionalLength    = function (v) {
+                    var afterPointPart = (v + '').split('.')[ 1 ]
+                    
+                    return afterPointPart && afterPointPart.length || 0
+                }
+                
+                var maxLength           = Math.max(fractionalLength(value1), fractionalLength(value2))
+                var k                   = Math.pow(10, maxLength);
+
+                return (value1 * k - value2 * k) / k;
+            };            
+            
+            if (Math.abs(subtract(value2, value1)) <= threshHold)
                 this.pass(desc, {
                     descTpl             : '`{value1}` is approximately equal to `{value2}`',
                     value1              : value1,
@@ -7761,10 +7883,15 @@ Role('Siesta.Test.More', {
             var isDone      = false
 
             // stop polling, if this test instance has finalized (probably because of exception)
-            this.on('testfinalize', function () {
-                isDone      = true
-                
-                originalClearTimeout(pollTimeout)
+            this.on('beforetestfinalize', function () {
+                if (!isDone) {
+                    isDone      = true
+                    
+                    me.finalizeWaiting(waitAssertion, false, 'Waiting aborted');
+                    me.endAsync(async)
+                    
+                    originalClearTimeout(pollTimeout)
+                }
             }, null, { single : true })
 
             if (isWaitingForTime) {
@@ -7772,7 +7899,7 @@ Role('Siesta.Test.More', {
                     isDone      = true
                     
                     me.finalizeWaiting(waitAssertion, true, 'Waited ' + method + ' ms');
-                    me.endAsync(async); 
+                    me.endAsync(async);
                     me.processCallbackFromTest(callback, [], scope || me)
                 }, method);
                 
@@ -7831,6 +7958,8 @@ Role('Siesta.Test.More', {
                 force : function () {
                     // wait operation already completed 
                     if (isDone) return
+                    
+                    isDone      = true
                     
                     originalClearTimeout(pollTimeout)
                     
@@ -7956,8 +8085,31 @@ Role('Siesta.Test.More', {
         ...
     )
     
+         *  **Tip**:
          *  
-         *  If step is presented with a `null` or `undefined` it is ignored.
+         *  If step is presented with a `null` or `undefined` value it will be ignored. Additionally, the step may be presented 
+         *  with an array of steps - all arrays in the input will be flattened.
+         *  
+         *  These tips allows us to implement conditional steps processing, like this:
+         *  
+
+    var el1IsInDom          = t.$('.some-class1')[ 0 ]
+    var el2IsInDom          = t.$('.some-class2')[ 0 ]
+    
+    t.chain(
+        { click : '.some-other-el' },
+        
+        el1IsInDom ? [
+            { click : el1IsInDom },
+            
+            el2IsInDom ? [
+                { click : el1IsInDom },
+            ] : null,
+        ] : null,
+        
+        ...
+    )
+
          *  
          *  @param {Function/Object/Array} step1 The function to execute or action configuration, or the array of such
          *  @param {Function/Object} step2 The function to execute or action configuration
@@ -7965,7 +8117,7 @@ Role('Siesta.Test.More', {
          */
         chain : function () {
             // inline any arrays in the arguments into one array
-            var steps       = Array.prototype.concat.apply([], arguments)
+            var steps       = this.flattenArray(arguments)
             
             var nonEmpty    = []
             Joose.A.each(steps, function (step) { if (step) nonEmpty.push(step) })
@@ -9640,7 +9792,7 @@ Class('Siesta.Test', {
          * @param {String} desc The description of the assertion
          */
         isNotStrict : function (got, expected, desc) {
-            if (!this.compareObjects(got, expected, false, true))
+            if (!this.compareObjects(got, expected, true, true))
                 this.pass(desc, {
                     descTpl             : '`{got}` is not strictly equal to `{expected}`',
                     got                 : got,
@@ -10512,6 +10664,21 @@ Class('Siesta.Test', {
                 description : message,
                 isWarning   : true
             }))
+        },
+        
+        
+        flattenArray : function (array) {
+            var me          = this
+            var result      = []
+            
+            Joose.A.each(array, function (el) {
+                if (me.typeOf(el) == 'Array') 
+                    result.push.apply(result, me.flattenArray(el))
+                else
+                    result.push(el)
+            })
+            
+            return result
         }
     }
     // eof methods
@@ -10529,6 +10696,7 @@ Singleton('Siesta.Test.ActionRegistry', {
                 'click', 
                 'rightClick', 
                 'doubleClick', 
+                'dblClick',
                 'doubleTap', 
                 'drag', 
                 'longpress', 
@@ -10895,7 +11063,7 @@ Class('Siesta.Test.Action.Eval', {
          * @cfg {Object} options
          *
          * Any options that will be used when simulating the event. For information about possible
-         * config options, please see: https://developer.mozilla.org/en-US/docs/DOM/event.initMouseEvent
+         * config options, please see: <https://developer.mozilla.org/en-US/docs/DOM/event.initMouseEvent>
          */
         actionString        : null
     },
@@ -21643,7 +21811,23 @@ Role('Siesta.Test.Action.Role.HasTarget', {
         /**
          * @cfg {Boolean} passTargetToNext Whether to pass the target further on chain as the first argument
          */
-        passTargetToNext    : true
+        passTargetToNext    : true,
+
+
+        /**
+         * @cfg {Object} options
+         *
+         * Any options that will be used when simulating the event. For information about possible
+         * config options, please see: <https://developer.mozilla.org/en-US/docs/DOM/event.initMouseEvent>
+         */
+        options : null,
+
+        /**
+         * @cfg {Array} offset
+         *
+         * An offset in X, Y coordinates from the targeted element
+         */
+        offset : null
     },
     
     
@@ -21775,7 +21959,7 @@ Class('Siesta.Test.Action.LongPress', {
     methods : {
         
         process : function () {
-            this.test.longpress(this.getTarget(), this.next)
+            this.test.longpress(this.getTarget(), this.next, null, this.offset)
         }
     }
 });
@@ -21843,7 +22027,8 @@ This action can be included in the `t.chain` call with "doubletap" or "doubleTap
         },
         // or
         {
-            doubletap   : someDOMElement
+            doubletap   : someDOMElement,
+            offset      : [20,20] // click 20px from the left/top corner of the element
         }
     )
 
@@ -21863,7 +22048,7 @@ Class('Siesta.Test.Action.DoubleTap', {
     methods : {
         
         process : function () {
-            this.test.doubleTap(this.getTarget(), this.next)
+            this.test.doubleTap(this.getTarget(), this.next, null, this.offset)
         }
     }
 });
@@ -21902,15 +22087,7 @@ Class('Siesta.Test.Action.MouseDown', {
     does        : Siesta.Test.Action.Role.HasTarget,
         
     has : {
-        requiredTestMethod  : 'mouseDown',
-
-        /**
-         * @cfg {Object} options
-         *
-         * Any options that will be used when simulating the event. For information about possible
-         * config options, please see: https://developer.mozilla.org/en-US/docs/DOM/event.initMouseEvent
-         */
-        options : null
+        requiredTestMethod  : 'mouseDown'
     },
 
     
@@ -21918,7 +22095,7 @@ Class('Siesta.Test.Action.MouseDown', {
         
         process : function () {
             // This method is synchronous
-            this.test.mouseDown(this.getTarget(), this.options);
+            this.test.mouseDown(this.getTarget(), this.options, this.offset);
 
             setTimeout(this.next, 100);
         }
@@ -21960,15 +22137,7 @@ Class('Siesta.Test.Action.MouseUp', {
     does        : Siesta.Test.Action.Role.HasTarget,
         
     has : {
-        requiredTestMethod  : 'mouseUp',
-
-        /**
-         * @cfg {Object} options
-         *
-         * Any options that will be used when simulating the event. For information about possible
-         * config options, please see: https://developer.mozilla.org/en-US/docs/DOM/event.initMouseEvent
-         */
-        options : null
+        requiredTestMethod  : 'mouseUp'
     },
 
     
@@ -21976,7 +22145,7 @@ Class('Siesta.Test.Action.MouseUp', {
         
         process : function () {
             // This method is synchronous
-            this.test.mouseUp(this.getTarget(), this.options);
+            this.test.mouseUp(this.getTarget(), this.options, this.offset);
 
             setTimeout(this.next, 100);
         }
@@ -22018,22 +22187,13 @@ Class('Siesta.Test.Action.Click', {
     does        : Siesta.Test.Action.Role.HasTarget,
         
     has : {
-        requiredTestMethod  : 'click',
-
-        /**
-         * @cfg {Object} options
-         *
-         * Any options that will be used when simulating the event. For information about possible
-         * config options, please see: https://developer.mozilla.org/en-US/docs/DOM/event.initMouseEvent
-         */
-        options : null
+        requiredTestMethod  : 'click'
     },
 
-    
     methods : {
         
         process : function () {
-            this.test.click(this.getTarget(), this.next, null, this.options);
+            this.test.click(this.getTarget(), this.next, null, this.options, this.offset);
         }
     }
 });
@@ -22074,28 +22234,21 @@ Class('Siesta.Test.Action.DoubleClick', {
     does        : Siesta.Test.Action.Role.HasTarget,
         
     has : {
-        requiredTestMethod  : 'doubleClick',
-
-        /**
-         * @cfg {Object} options
-         *
-         * Any options that will be used when simulating the event. For information about possible
-         * config options, please see: https://developer.mozilla.org/en-US/docs/DOM/event.initMouseEvent
-         */
-        options : null
+        requiredTestMethod  : 'doubleClick'
     },
 
     
     methods : {
         
         process : function () {
-            this.test.doubleClick(this.getTarget(), this.next, null, this.options)
+            this.test.doubleClick(this.getTarget(), this.next, null, this.options, this.offset)
         }
     }
 });
 
 
 Siesta.Test.ActionRegistry().registerAction('doubleclick', Siesta.Test.Action.DoubleClick)
+Siesta.Test.ActionRegistry().registerAction('dblclick', Siesta.Test.Action.DoubleClick)
 ;
 /**
 
@@ -22129,28 +22282,21 @@ Class('Siesta.Test.Action.RightClick', {
     does        : Siesta.Test.Action.Role.HasTarget,
         
     has : {
-        requiredTestMethod  : 'rightClick',
-
-        /**
-         * @cfg {Object} options
-         *
-         * Any options that will be used when simulating the event. For information about possible
-         * config options, please see: https://developer.mozilla.org/en-US/docs/DOM/event.initMouseEvent
-         */
-        options : null
+        requiredTestMethod  : 'rightClick'
     },
 
     
     methods : {
         
         process : function () {
-            this.test.rightClick(this.getTarget(), this.next)
+            this.test.rightClick(this.getTarget(), this.next, null, this.options, this.offset)
         }
     }
 });
 
 
 Siesta.Test.ActionRegistry().registerAction('rightclick', Siesta.Test.Action.RightClick)
+Siesta.Test.ActionRegistry().registerAction('contextmenu', Siesta.Test.Action.RightClick)
 ;
 /**
 
@@ -22200,7 +22346,7 @@ Class('Siesta.Test.Action.Type', {
          * @cfg {Object} options
          *
          * Any options that will be used when simulating the event. For information about possible
-         * config options, please see: https://developer.mozilla.org/en-US/docs/DOM/event.initMouseEvent
+         * config options, please see: <https://developer.mozilla.org/en-US/docs/DOM/event.initMouseEvent>
          */
         options             : null
     },
@@ -22280,7 +22426,21 @@ Class('Siesta.Test.Action.Drag', {
          * Exactly one of the `to` and `by` configuration options should be provided for this action.
          */
         to                  : null,
-        
+
+        /**
+         * @cfg {Array} fromOffset
+         *
+         * An offset in X, Y coordinates from the source element
+         */
+        fromOffset : null,
+
+        /**
+         * @cfg {Array} toOffset
+         *
+         * An offset in X, Y coordinates from the targeted element
+         */
+        toOffset : null,
+
         /**
          * @cfg {Array/Function} by 
          * 
@@ -22296,9 +22456,7 @@ Class('Siesta.Test.Action.Drag', {
          * 
          * True to skip the mouseup and not finish the drop operation (one can start another drag operation, emulating the pause during drag-n-drop).
          */
-        dragOnly        : false,
-        
-        options         : null
+        dragOnly        : false
     },
 
     
@@ -22346,9 +22504,9 @@ Class('Siesta.Test.Action.Drag', {
             var normalizedTarget    = test.normalizeActionTarget(target)
             
             if (this.to) {
-                test.dragTo(target, this.getTo(), function() { next(normalizedTarget); }, null, this.options, this.dragOnly)
+                test.dragTo(target, this.getTo(), function() { next(normalizedTarget); }, null, this.options, this.dragOnly, this.fromOffset, this.toOffset)
             } else {
-                test.dragBy(target, this.getBy(), function() { next(normalizedTarget); }, null, this.options, this.dragOnly)
+                test.dragBy(target, this.getBy(), function() { next(normalizedTarget); }, null, this.options, this.dragOnly, this.fromOffset || this.offset)
             }
         }
     }
@@ -22392,8 +22550,8 @@ Class('Siesta.Test.Action.MoveCursor', {
         /**
          * @cfg {Siesta.Test.ActionTarget/Function} to 
          * 
-         * The target point the cursor should be moved to. Can be provided as the DOM element, the array with screen coordinates: `[ x, y ]`, or the function
-         * returning one of those.
+         * The target point the cursor should be moved to. Can be provided as a DOM element, an array with client coordinates: `[ x, y ]`, or a function
+         * returning one of those. You can additionally pass an 'offset' array to click at a point relative to the XY position of the target.
          * 
          * Exactly one of the `to` and `by` configuration options should be provided for this action.
          */
@@ -22407,7 +22565,14 @@ Class('Siesta.Test.Action.MoveCursor', {
          * 
          * Exactly one of the `to` and `by` configuration options should be provided for this action.
          */
-        by                  : null
+        by                  : null,
+
+        /**
+         * @cfg {Array} offset
+         *
+         * An offset in X, Y coordinates from the targeted element (only applicable when using the 'to' target option.
+         */
+        offset : null
     },
 
     
@@ -22436,7 +22601,7 @@ Class('Siesta.Test.Action.MoveCursor', {
                 
                 var normalizedTarget    = test.normalizeActionTarget(to)
                 
-                test.moveMouseTo(to, function() { next(normalizedTarget); })
+                test.moveMouseTo(to, function() { next(normalizedTarget); }, null, this.offset)
             } else {
                 var by                  = this.getBy()
                 var currentXY           = test.currentPosition
@@ -22491,15 +22656,15 @@ Class('Siesta.Test.Action.MoveCursorTo', {
     methods : {
         
         process : function () {
-            this.test.moveMouseTo(this.getTarget(), this.next)
+            this.test.moveMouseTo(this.getTarget(), this.next, null, this.offset)
         }
     }
 });
 
 
 Siesta.Test.ActionRegistry().registerAction('moveCursorTo', Siesta.Test.Action.MoveCursorTo)
-Siesta.Test.ActionRegistry().registerAction('moveMouseTo', Siesta.Test.Action.MoveMouseTo)
-Siesta.Test.ActionRegistry().registerAction('moveFingerTo', Siesta.Test.Action.MoveMouseTo)
+Siesta.Test.ActionRegistry().registerAction('moveMouseTo', Siesta.Test.Action.MoveCursorTo)
+Siesta.Test.ActionRegistry().registerAction('moveFingerTo', Siesta.Test.Action.MoveCursorTo)
 ;
 /**
 @class Siesta.Test.Simulate.Mouse
@@ -22649,13 +22814,14 @@ Role('Siesta.Test.Simulate.Mouse', {
         * @param {Siesta.Test.ActionTarget} target Target point to move the mouse to.
         * @param {Function} callback (optional) To run this method async, provide a callback method to be called after the operation is completed.
         * @param {Object} scope (optional) the scope for the callback
-        */
-        moveMouseTo : function(target, callback, scope) {
+        * @param {Array} offset (optional) An X,Y offset relative to the target. Example: [20, 20] for 20px or ["50%", "50%"] to click in the center.
+         */
+        moveMouseTo : function(target, callback, scope, offset) {
             if (!target) {
                 throw 'Trying to call moveMouseTo without a target';
             }
 
-            var context = this.getNormalizedTopElementInfo(target);
+            var context = this.getNormalizedTopElementInfo(target, false, 'moveMouseTo', offset);
 
             if (!context) {
                 this.processCallbackFromTest(callback, null, scope || this);
@@ -22691,8 +22857,9 @@ Role('Siesta.Test.Simulate.Mouse', {
         * @param {Siesta.Test.ActionTarget} target Target point to move the mouse to.
         * @param {Function} callback (optional) To run this method async, provide a callback method to be called after the operation is completed.
         * @param {Object} scope (optional) the scope for the callback
-        */
-        moveCursorTo : function(target, callback, scope) {
+        * @param {Array} offset (optional) An X,Y offset relative to the target. Example: [20, 20] for 20px or ["50%", "50%"] to click in the center.
+         */
+        moveCursorTo : function(target, callback, scope, offset) {
             this.moveMouseTo.apply(this, arguments);
         },
 
@@ -22807,13 +22974,13 @@ Role('Siesta.Test.Simulate.Mouse', {
         },
         
         
-        genericMouseClick : function (el, callback, scope, options, method) {
+        genericMouseClick : function (el, callback, scope, options, method, offset) {
             if (jQuery.isFunction(el)) {
                 scope       = callback;
                 callback    = el; 
                 el          = null;
             }
-            
+
             el              = el || this.currentPosition
 
             var normalized  = this.normalizeElement(el);
@@ -22821,17 +22988,10 @@ Role('Siesta.Test.Simulate.Mouse', {
             options         = options || {};
 
             if (!this.valueIsArray(el) && this.autoScrollElementsIntoView) {
-
-                // If element isn't visible, try to bring it into view
-                if (!this.elementIsTop(normalized, true)) {
-                    // Required to handle the case where the body is scrolled
-                    normalized.scrollIntoView();
-
-                    this.$(normalized).scrollintoview({ duration : 0 });
-                }
+                this.scrollTargetIntoView(normalized, offset)
             }
 
-            var data        = this.getNormalizedTopElementInfo(el, false, method);
+            var data        = this.getNormalizedTopElementInfo(el, false, method, offset);
             
             if (!data) {
                 // No point in continuing
@@ -22844,9 +23004,9 @@ Role('Siesta.Test.Simulate.Mouse', {
 
             // the asynchronous case
             if (this.moveCursorBetweenPoints && callback) {
-                this.syncCursor(data.globalXY, this[ method ], [ data.el, callback, scope, options ]);
+                this.syncCursor(data.globalXY, this[ method ], [ data, callback, scope, options ]);
             } else {
-                this[ method ](data.el, callback, scope, options);
+                this[ method ](data, callback, scope, options);
             }
             
         },
@@ -22873,9 +23033,10 @@ Role('Siesta.Test.Simulate.Mouse', {
          * @param {Function} callback (optional) A function to call when the condition has been met.
          * @param {Object} scope (optional) The scope for the callback
          * @param {Object} options (optional) Any options to use for the simulated DOM event
+         * @param {Array} offset (optional) An X,Y offset relative to the target. Example: [20, 20] for 20px or ["50%", "50%"] to click in the center.
          */
-        click: function (el, callback, scope, options) {
-            this.genericMouseClick(el, callback, scope, options, 'simulateMouseClick')
+        click: function (el, callback, scope, options, offset) {
+            this.genericMouseClick(el, callback, scope, options, 'simulateMouseClick', offset)
         },
 
         
@@ -22901,9 +23062,10 @@ Role('Siesta.Test.Simulate.Mouse', {
          * @param {Function} callback (optional) A function to call when the condition has been met.
          * @param {Object} scope (optional) The scope for the callback
          * @param {Object} options (optional) Any options to use for the simulated DOM event
+         * @param {Array} offset (optional) An X,Y offset relative to the target. Example: [20, 20] for 20px or ["50%", "50%"] to click in the center.
          */
-        rightClick: function (el, callback, scope, options) {
-            this.genericMouseClick(el, callback, scope, options, 'simulateRightClick')
+        rightClick: function (el, callback, scope, options, offset) {
+            this.genericMouseClick(el, callback, scope, options, 'simulateRightClick', offset)
         },
 
         
@@ -22929,18 +23091,20 @@ Role('Siesta.Test.Simulate.Mouse', {
          * @param {Function} callback (optional) A function to call when the condition has been met.
          * @param {Object} scope (optional) The scope for the callback
          * @param {Object} options (optional) Any options to use for the simulated DOM event
+         * @param {Array} offset (optional) An X,Y offset relative to the target. Example: [20, 20] for 20px or ["50%", "50%"] to click in the center.
          */
-        doubleClick: function (el, callback, scope, options) {
-            this.genericMouseClick(el, callback, scope, options, 'simulateDoubleClick')
+        doubleClick: function (el, callback, scope, options, offset) {
+            this.genericMouseClick(el, callback, scope, options, 'simulateDoubleClick', offset)
         },
 
         /**
          * This method will simulate a mousedown event in the center of the specified DOM element.
          * @param {Siesta.Test.ActionTarget} el
          * @param {Object} options any extra options used to configure the DOM event
+         * @param {Array} offset (optional) An X,Y offset relative to the target. Example: [20, 20] for 20px or ["50%", "50%"] to click in the center.
          */
-        mouseDown: function (el, options) {
-            var info        = this.getNormalizedTopElementInfo(el);
+        mouseDown: function (el, options, offset) {
+            var info        = this.getNormalizedTopElementInfo(el, false, 'mouseDown', offset);
 
             if (!info) return;
             
@@ -22958,9 +23122,10 @@ Role('Siesta.Test.Simulate.Mouse', {
          * This method will simulate a mousedown event in the center of the specified DOM element.
          * @param {Siesta.Test.ActionTarget} el
          * @param {Object} options any extra options used to configure the DOM event
+         * @param {Array} offset (optional) An X,Y offset relative to the target. Example: [20, 20] for 20px or ["50%", "50%"] to click in the center.
          */
-        mouseUp: function (el, options) {
-            var info        = this.getNormalizedTopElementInfo(el);
+        mouseUp: function (el, options, offset) {
+            var info        = this.getNormalizedTopElementInfo(el, false, 'mouseUp', offset);
 
             if (!info) return;
             
@@ -23010,50 +23175,17 @@ Role('Siesta.Test.Simulate.Mouse', {
             this.simulateEvent(el, 'mouseout', options);
         },
 
-        // private
-        simulateRightClick: function (el, callback, scope, options) {
-            var me          = this;
-
-            options = options || {};
-            options.button = 2;
-
-            var queue       = new Siesta.Util.Queue({
-                deferer         : this.originalSetTimeout,
-                deferClearer    : this.originalClearTimeout,
-                
-                interval        : callback ? 10 : 0,
-                callbackDelay   : me.afterActionDelay,
-                
-                observeTest     : this,
-                
-                processor       : function (data) {
-                    me.simulateEvent.apply(me, data);
-                }
-            })
+        
+        processMouseClickSteps : function (clickInfo, callback, scope, options, steps) {
+            var me          = this
             
-            queue.addStep([ el, "mousedown", options, false ])
-            queue.addStep([ el, "mouseup", options, true ])
+            var x           = clickInfo.globalXY[ 0 ]
+            var y           = clickInfo.globalXY[ 1 ]
             
-            queue.addStep({
-                processor       : function () {
-                    me.focus(el)
-                    
-                    me.simulateEvent(el, "contextmenu", options, false);
-                }
-            })
+            // re-evaluate the target el - it might have changed while we were syncing the cursor position
+            var target      = me.elementFromPoint(x, y, false, clickInfo.el)
             
-            var async   = me.beginAsync();
-            
-            queue.run(function () {
-                me.endAsync(async);
-                
-                me.processCallbackFromTest(callback, null, scope || me)
-            })
-        }, 
-
-        // private
-        simulateMouseClick: function (el, callback, scope, options) {
-            var me          = this;
+            var targetHasChanged    = false
             
             var queue       = new Siesta.Util.Queue({
                 deferer         : this.originalSetTimeout,
@@ -23065,69 +23197,82 @@ Role('Siesta.Test.Simulate.Mouse', {
                 observeTest     : this,
                 
                 processor       : function (data) {
-                    me.simulateEvent.apply(me, data);
-                }
-            })
-            
-            queue.addStep([ el, "mousedown", options, true ])
-            queue.addStep([ el, "mouseup", options, true ])
-            
-            queue.addStep({
-                processor       : function () {
-                    me.focus(el)
+                    var el          = me.elementFromPoint(x, y, false, target)
                     
-                    me.simulateEvent(el, "click", options);
+                    if (data.reCaptureTheTarget) { target = el; targetHasChanged = false }
+                    
+                    if (el != target) targetHasChanged = true
+                    
+                    if (targetHasChanged && data.cancelIfTargetChanged) return
+                    
+                    if (data.focus) me.focus(el)
+                    
+                    me.simulateEvent(el, data.event, options, data.suppressLog);
                 }
             })
+            
+            Joose.A.each(steps, function (step) { queue.addStep(step) })
             
             var async   = me.beginAsync();
             
             queue.run(function () {
                 me.endAsync(async);
                 
-                me.processCallbackFromTest(callback, null, scope || me)
+                me.processCallbackFromTest(callback, [ me.elementFromPoint(x, y, false, target) ], scope || me)
             })
+        },
+        
+
+        // private
+        simulateMouseClick: function (clickInfo, callback, scope, options) {
+            this.processMouseClickSteps(
+                clickInfo,
+                callback,
+                scope,
+                options,
+                [
+                    { event : "mousedown", suppressLog : true },
+                    { event : "mouseup", suppressLog : true },
+                    { event : "click", suppressLog : false, focus : true, cancelIfTargetChanged : true }
+                ]
+            )
         },
 
         // private
-        simulateDoubleClick: function (el, callback, scope, options) {
-            var me          = this;
+        simulateRightClick: function (clickInfo, callback, scope, options) {
+            options         = options || {};
+            options.button  = 2;
             
-            var queue       = new Siesta.Util.Queue({
-                deferer         : this.originalSetTimeout,
-                deferClearer    : this.originalClearTimeout,
-                
-                interval        : callback ? 10 : 0,
-                callbackDelay   : me.afterActionDelay,
-                
-                observeTest     : this,
-                
-                processor       : function (data) {
-                    me.simulateEvent.apply(me, data);
-                }
-            })
-            
-            queue.addStep([ el, "mousedown", options, false ])
-            queue.addStep([ el, "mouseup", options, true ])
-            queue.addStep({
-                processor       : function () {
-                    me.focus(el)
-                    
-                    me.simulateEvent(el, "click", options, true);
-                }
-            })
-            queue.addStep([ el, "mousedown", options, false ])
-            queue.addStep([ el, "mouseup", options, true ])
-            queue.addStep([ el, "click", options, true ])
-            queue.addStep([ el, "dblclick", options, false ])
-            
-            var async   = me.beginAsync();
-            
-            queue.run(function () {
-                me.endAsync(async);
-                
-                me.processCallbackFromTest(callback, null, scope || me)
-            })
+            this.processMouseClickSteps(
+                clickInfo,
+                callback,
+                scope,
+                options,
+                [
+                    { event : "mousedown", suppressLog : false },
+                    { event : "mouseup", suppressLog : true },
+                    { event : "contextmenu", suppressLog : false, focus : true }
+                ]
+            )
+        },
+        
+        // private
+        simulateDoubleClick: function (clickInfo, callback, scope, options) {
+            this.processMouseClickSteps(
+                clickInfo,
+                callback,
+                scope,
+                options,
+                [
+                    { event : "mousedown", suppressLog : false },
+                    { event : "mouseup", suppressLog : true },
+                    { event : "click", suppressLog : false, focus : true, cancelIfTargetChanged : true },
+                    { event : "mousedown", suppressLog : false, reCaptureTheTarget : true },
+                    { event : "mouseup", suppressLog : true },
+                    { event : "click", suppressLog : true, cancelIfTargetChanged : true },
+                    { event : "dblclick", suppressLog : false, cancelIfTargetChanged : true }
+                ]
+            )
         }, 
 
         // private
@@ -23147,18 +23292,17 @@ Role('Siesta.Test.Simulate.Mouse', {
 
 
         /**
-        * This method will simulate a drag and drop operation between either two points or two DOM elements.
-        * The following events will be fired, in order:  `mouseover`, `mousedown`, `mousemove` (along the mouse path), `mouseup`
-        * 
-        * This method is deprecated in favor of {@link #dragTo} and {@link #dragBy} methods
-        *   
-        * @param {Siesta.Test.ActionTarget} source Either an element, or [x,y] as the drag starting point
-        * @param {Siesta.Test.ActionTarget} target (optional) Either an element, or [x,y] as the drag end point
-        * @param {Array} delta (optional) the amount to drag from the source coordinate, expressed as [x,y]. [50, 10] will drag 50px to the right and 10px down.
-        * @param {Function} callback (optional) To run this method async, provide a callback method to be called after the drag operation is completed.
-        * @param {Object} scope (optional) the scope for the callback
-        * @param {Object} options any extra options used to configure the DOM event
-        */
+         * This method will simulate a drag and drop operation between either two points or two DOM elements.
+         * The following events will be fired, in order:  `mouseover`, `mousedown`, `mousemove` (along the mouse path), `mouseup`
+         * 
+         * @deprecated This method is deprecated in favor of {@link #dragTo} and {@link #dragBy} methods
+         * @param {Siesta.Test.ActionTarget} source Either an element, or [x,y] as the drag starting point
+         * @param {Siesta.Test.ActionTarget} target (optional) Either an element, or [x,y] as the drag end point
+         * @param {Array} delta (optional) the amount to drag from the source coordinate, expressed as [x,y]. [50, 10] will drag 50px to the right and 10px down.
+         * @param {Function} callback (optional) To run this method async, provide a callback method to be called after the drag operation is completed.
+         * @param {Object} scope (optional) the scope for the callback
+         * @param {Object} options any extra options used to configure the DOM event
+         */
         drag: function (source, target, delta, callback, scope, options) {
             if (!source) {
                 throw 'No drag source defined';
@@ -23172,35 +23316,41 @@ Role('Siesta.Test.Simulate.Mouse', {
         },
 
         /**
-        * This method will simulate a drag and drop operation between either two points or two DOM elements.
-        * The following events will be fired, in order:  `mouseover`, `mousedown`, `mousemove` (along the mouse path), `mouseup`
-        *   
-        * @param {Siesta.Test.ActionTarget} source {@link Siesta.Test.ActionTarget} value for the drag starting point
-        * @param {Siesta.Test.ActionTarget} target {@link Siesta.Test.ActionTarget} value for the drag end point
-        * @param {Function} callback (optional) To run this method async, provide a callback method to be called after the drag operation is completed.
-        * @param {Object} scope (optional) the scope for the callback
-        * @param {Object} options any extra options used to configure the DOM event
-        * @param {Boolean} dragOnly true to skip the mouseup and not finish the drop operation.
-        */
-        dragTo : function(source, target, callback, scope, options, dragOnly) {
-            source = source || this.currentPosition;
-
-            if (!target) {
-                throw 'No drag target defined';
+         * This method will simulate a drag and drop operation between either two points or two DOM elements.
+         * The following events will be fired, in order:  `mouseover`, `mousedown`, `mousemove` (along the mouse path), `mouseup`
+         *   
+         * @param {Siesta.Test.ActionTarget} source {@link Siesta.Test.ActionTarget} value for the drag starting point
+         * @param {Siesta.Test.ActionTarget} target {@link Siesta.Test.ActionTarget} value for the drag end point
+         * @param {Function} callback (optional) To run this method async, provide a callback method to be called after the drag operation is completed.
+         * @param {Object} scope (optional) the scope for the callback
+         * @param {Object} options any extra options used to configure the DOM event
+         * @param {Boolean} dragOnly true to skip the mouseup and not finish the drop operation.
+         * @param {Array} sourceOffset (optional) An X,Y offset relative to the source. Example: [20, 20] for 20px or ["50%", "50%"] to click in the center.
+         * @param {Array} targetOffset (optional) An X,Y offset relative to the target. Example: [20, 20] for 20px or ["50%", "50%"] to click in the center.
+         */
+        dragTo : function (source, target, callback, scope, options, dragOnly, sourceOffset, targetOffset) {
+            if (!target) throw 'No drag target defined';
+            
+            source              = source || this.currentPosition;
+            options             = options || {};
+            
+            if (this.typeOf(source) != 'Array') {
+                var normalized  = this.normalizeElement(source, false, sourceOffset)
+                
+                if (normalized) this.scrollTargetIntoView(normalized, sourceOffset)
             }
-            options = options || {};
 
             // normalize source and target
-            var sourceContext = this.getNormalizedTopElementInfo(source, false, 'dragTo: Source');
-            var targetContext = this.getNormalizedTopElementInfo(target, false, 'dragTo: Target');
-
+            var sourceContext   = this.getNormalizedTopElementInfo(source, false, 'dragTo: Source', sourceOffset);
+            var targetContext   = this.getNormalizedTopElementInfo(target, false, 'dragTo: Target', targetOffset);
+            
             if (!sourceContext || !targetContext) {
                 // No point in continuing
                 this.processCallbackFromTest(callback, null, scope || this);
                 return;
             }
-
-            var args = [sourceContext.globalXY, targetContext.globalXY, callback, scope, options, dragOnly];
+            
+            var args = [ sourceContext.globalXY, targetContext.globalXY, callback, scope, options, dragOnly ];
             
             if (this.moveCursorBetweenPoints && callback) {
                 this.syncCursor(sourceContext.globalXY, this.simulateDrag, args);
@@ -23210,34 +23360,39 @@ Role('Siesta.Test.Simulate.Mouse', {
         },
 
         /**
-        * This method will simulate a drag and drop operation from a point (or DOM element) and move by a delta.
-        * The following events will be fired, in order:  `mouseover`, `mousedown`, `mousemove` (along the mouse path), `mouseup`
-        *   
-        * @param {Siesta.Test.ActionTarget} source {@link Siesta.Test.ActionTarget} value as the drag starting point
-        * @param {Array} delta The amount to drag from the source coordinate, expressed as [x,y]. E.g. [50, 10] will drag 50px to the right and 10px down.
-        * @param {Function} callback (optional) To run this method async, provide a callback method to be called after the drag operation is completed.
-        * @param {Object} scope (optional) the scope for the callback
-        * @param {Object} options any extra options used to configure the DOM event
-        * @param {Boolean} dragOnly true to skip the mouseup and not finish the drop operation.
-        */
-        dragBy : function(source, delta, callback, scope, options, dragOnly) {
-            source = source || this.currentPosition;
+         * This method will simulate a drag and drop operation from a point (or DOM element) and move by a delta.
+         * The following events will be fired, in order:  `mouseover`, `mousedown`, `mousemove` (along the mouse path), `mouseup`
+         *   
+         * @param {Siesta.Test.ActionTarget} source {@link Siesta.Test.ActionTarget} value as the drag starting point
+         * @param {Array} delta The amount to drag from the source coordinate, expressed as [x,y]. E.g. [50, 10] will drag 50px to the right and 10px down.
+         * @param {Function} callback (optional) To run this method async, provide a callback method to be called after the drag operation is completed.
+         * @param {Object} scope (optional) the scope for the callback
+         * @param {Object} options any extra options used to configure the DOM event
+         * @param {Boolean} dragOnly true to skip the mouseup and not finish the drop operation.
+         * @param {Array} offset (optional) An X,Y offset relative to the target. Example: [20, 20] for 20px or ["50%", "50%"] to click in the center.
+         */
+        dragBy : function (source, delta, callback, scope, options, dragOnly, offset) {
+            if (!delta) throw 'No drag delta defined';
+            
+            source              = source || this.currentPosition;
 
-            if (!delta) {
-                throw 'No drag delta defined';
+            if (this.typeOf(source) != 'Array') {
+                var normalized  = this.normalizeElement(source, false, offset)
+                
+                if (normalized) this.scrollTargetIntoView(normalized, offset)
             }
 
-            var sourceContext = this.getNormalizedTopElementInfo(source, false, 'dragBy: Source');
+            var sourceContext   = this.getNormalizedTopElementInfo(source, false, 'dragBy: Source', offset);
 
             if (!sourceContext) {
                 this.processCallbackFromTest(callback, null, scope || this);
                 return;
             }
-
-            var sourceXY    = sourceContext.globalXY;
-            var targetXY    = [ sourceXY[0] + delta[0], sourceXY[1] + delta[1] ];
             
-            var args        = [ sourceXY, targetXY, callback, scope, options, dragOnly ];
+            var sourceXY        = sourceContext.globalXY;
+            var targetXY        = [ sourceXY[0] + delta[0], sourceXY[1] + delta[1] ];
+            
+            var args            = [ sourceXY, targetXY, callback, scope, options, dragOnly ];
             
             if (this.moveCursorBetweenPoints && callback) {
                 this.syncCursor(sourceXY, this.simulateDrag, args);
@@ -23614,6 +23769,21 @@ Role('Siesta.Test.Simulate.Keyboard', {
                 evt.keyCode = (e.charCode > 0) ? e.charCode : e.keyCode;
                 evt.charCode = undefined;
             }
+            
+            // IE10 somehow reports that "defaultPrevented" property of the event object is `false`
+            // even that "preventDefault()" has been called on the object
+            // more over, immediately after call to "preventDefault()" the property is updated
+            // but down in stack it is replaced with "false" again somehow
+            // we setup our own, additional property, indicating that event has been prevented
+            if ($.browser.msie && $.browser.version == '10.0') {
+                var prev    = evt.preventDefault
+                
+                if (prev) evt.preventDefault = function () {
+                    this.$defaultPrevented  = true                    
+                    return prev.apply(this, arguments)
+                }
+            }
+            
             return evt;
         },
 
@@ -23636,6 +23806,77 @@ Role('Siesta.Test.Simulate.Keyboard', {
             }
 
             return null;
+        },
+        
+        
+        /*!
+         * Based on:
+         * 
+         * @license EmulateTab
+         * Copyright (c) 2011, 2012 The Swedish Post and Telecom Authority (PTS)
+         * Developed for PTS by Joel Purra <http://joelpurra.se/>
+         * Released under the BSD license.
+         *
+         * A jQuery plugin to emulate tabbing between elements on a page.
+         */
+        findNextFocusable : function (el, offset) {
+            var $el         = this.$(el)
+            
+            var $focusable  = this.$(":input, a[href]", el.ownerDocument)
+                .not(":disabled")
+                .not(":hidden")
+                .not("a[href]:empty");
+                
+            var escapeSelectorName  = function (str) {
+                // Based on http://api.jquery.com/category/selectors/
+                // Still untested
+                return str.replace(/(!"#$%&'\(\)\*\+,\.\/:;<=>\?@\[\]^`\{\|\}~)/g, "\\\\$1");
+            }
+
+            if (
+                el.tagName === "INPUT"
+                && el.type === "radio"
+                && el.name !== ""
+            ) {
+                var name    = escapeSelectorName(el.name);
+
+                $focusable  = $focusable
+                    .not("input[type=radio][name=" + name + "]")
+                    .add($el);
+            }
+
+            // Sort the inputs, by tabIndex if it is set
+            var elsWithTabIndex = $focusable.filter('[tabindex]');
+
+            elsWithTabIndex.sort(function(a, b) {
+                return a.tabIndex < b.tabIndex ? -1 : 1;
+            });
+
+            elsWithTabIndex     = $(elsWithTabIndex.toArray().concat($focusable.filter(':not([tabindex])').toArray()));
+
+            var currentIndex    = $(elsWithTabIndex).index($el);
+
+            var nextIndex       = (currentIndex + offset) % elsWithTabIndex.length;
+            var $next;
+
+            // If we're at the last focusable element, focus the body el
+            if (nextIndex > 0) {
+                $next           = elsWithTabIndex.eq(nextIndex);
+            }
+
+            return $next && $next[ 0 ] || null;
+        },
+        
+        
+        emulateTab : function (el, offset) {
+            var next        = this.findNextFocusable(el, offset || 1)
+            
+            if (next)  
+                this.focus(next)
+            else
+                el.blur()
+                
+            return next
         },
 
 
@@ -23752,18 +23993,25 @@ Role('Siesta.Test.Simulate.Keyboard', {
                 originalLength  = el.value.length;
             }
 
-            me.simulateEvent(el, 'keydown', $.extend({ charCode : 0, keyCode : keyCode }, options), true);
+            var keyDownEvent    = me.simulateEvent(el, 'keydown', $.extend({ charCode : 0, keyCode : keyCode }, options), true);
+            var keyDownPrevented    = this.isEventPrevented(keyDownEvent)
 
             var event           = me.simulateEvent(el, 'keypress', $.extend({ charCode : charCode, keyCode : isReadableKey ? 0 : keyCode }, options), false);
-            var prevented       = typeof event.defaultPrevented === 'boolean' ? event.defaultPrevented : event.returnValue === false;
+            var prevented       = this.isEventPrevented(event)
 
             var supports        = Siesta.Harness.Browser.FeatureSupport().supports
+
+            if (!keyDownPrevented && !prevented && keyCode === KeyCodes.TAB) {
+                el              = this.emulateTab(el, options.shiftKey ? -1 : 1) || el;
+            }
             
-            if (isTextInput && !prevented) {
+            if (!prevented && isTextInput && keyCode != KeyCodes.TAB) {
+                var isPhantomJS = this.harness.isPhantomJS
+                
                 if (isReadableKey) {
                     // PhantomJS does not simulate the "textInput" event correctly if target element is inside an iframe 
                     // (at least not as of 1.6), only the last character is shown.
-                    if (!this.harness.isPhantomJS) {
+                    if (!isPhantomJS) {
                         // TODO should check first if textInput event is supported
                         me.simulateEvent(el, 'textInput', { text: options.readableKey }, true);
                     }
@@ -23773,7 +24021,7 @@ Role('Siesta.Test.Simulate.Keyboard', {
                     if (maxLength != null) maxLength    = Number(maxLength)
 
                     // If the entered char had no impact on the textfield - manually put it there
-                    if (!supports.canSimulateKeyCharacters && originalLength === el.value.length && originalLength !== maxLength) {
+                    if ((!supports.canSimulateKeyCharacters || isPhantomJS) && originalLength === el.value.length && originalLength !== maxLength) {
                         el.value = el.value + options.readableKey;
                     }
                 }
@@ -23989,7 +24237,8 @@ Role('Siesta.Test.ExtJSCore', {
             lazy    : function () {
                 var isIE9           = navigator.userAgent.match(/MSIE 9.0;/)
                 var Ext             = this.global.Ext
-                var isBelowExt421   = Boolean(Ext && Ext.getVersion('extjs') && Ext.getVersion('extjs').isLessThan('4.2.1.883'))
+                // the "Ext.getVersion('extjs')" is just "true" in Ext3? (when testing SA)
+                var isBelowExt421   = Boolean(Ext && (!Ext.getVersion || Ext.getVersion('extjs') && Ext.getVersion('extjs').isLessThan && Ext.getVersion('extjs').isLessThan('4.2.1.883')))
                 
                 var div             = document.createElement('div')
                 
@@ -24023,26 +24272,27 @@ Role('Siesta.Test.ExtJSCore', {
         },
 
         // Overridden to deal with the different event firing mechanisms in Ext JS 3 vs 4
-        // This code is required because in IE are simulated using fireEvent instead of dispatchEvent and it seems fireEvent will
+        // This code is required because in IE events are simulated using fireEvent instead of dispatchEvent and it seems fireEvent will
         // will not update a checkbox 'checked' state properly so we're forcing the toggle to solve this situation. 
         // This issue is only relevant in IE + Ext. 
         //
         // Test case: 507_form_checkbox.t.js
-        simulateMouseClick: function (el, callback, scope) {
+        simulateMouseClick: function (clickInfo, callback, scope, options) {
+            var el      = clickInfo.el
             
             // Force check toggle for input checkboxes
             if (this.getSimulateEventsWith() === 'fireEvent' && (el.type === 'checkbox' || el.type === 'radio') && !el.disabled && !el.readOnly) {
                 var oldState = el.checked;
 
                 if (callback) {
-                    this.SUPER(el, function() { 
-                        if (el.checked === oldState) {
+                    this.SUPER(el, function (finalClickTarget) { 
+                        if (finalClickTarget == el && el.checked === oldState) {
                             el.checked = !oldState;
                         }
-                        callback.call(scope || this);
+                        callback.call(scope || this, finalClickTarget);
                     });
                 } else {
-                    this.SUPER(el);
+                    this.SUPERARG(arguments);
 
                     if (el.checked === oldState) {
                         el.checked = !oldState;
@@ -24140,6 +24390,13 @@ Role('Siesta.Test.ExtJSCore', {
             return this.global.Ext
         },
         
+        
+        isExtJSComponent : function (obj) {
+            var Ext     = this.global.Ext
+            
+            return Boolean(Ext && Ext.Component && obj instanceof Ext.Component)
+        },
+        
         // Accepts Ext.Component or ComponentQuery
         normalizeComponent : function(component, allowEmpty) {
             var Ext = this.Ext();
@@ -24187,7 +24444,8 @@ Role('Siesta.Test.ExtJSCore', {
         },
 
         // Accept Ext.Element and Ext.Component
-        normalizeElement : function(el, allowMissing) {
+        // If the 'shallow' flag is true we should not 'reevaluate' the target element - stop at the component element.
+        normalizeElement : function(el, allowMissing, shallow) {
             if (!el) return null
             
             var Ext     = this.getExt();
@@ -24197,7 +24455,7 @@ Role('Siesta.Test.ExtJSCore', {
             if (typeof el === 'string') {
                 if (el.match(/=>/))
                     // Composite query
-                    el      = this.compositeQuery(el)[ 0 ]
+                    el      = this.compositeQuery(el, null, false)[ 0 ]
                 else if (el.match(/^\s*>>/)) {
                     // Component query
                     el      = this.cq1(el.substring(2))
@@ -24207,14 +24465,15 @@ Role('Siesta.Test.ExtJSCore', {
                 }
 
                 if (!allowMissing && !el) {
-                    throw 'No component found found for CQ: ' + origEl;
+                    this.warn('No component found for CQ: ' + origEl)
+                    throw 'No component found for CQ: ' + origEl;
                 }
             }
 
-            if (Ext && Ext.Component && el instanceof Ext.Component) {
+            if (this.isExtJSComponent(el)) {
                 el          = this.compToEl(el);
 
-                if (this.isElementVisible(el) && this.elementIsTop(el, true)) {
+                if (!shallow && this.isElementVisible(el) && this.elementIsTop(el, true)) {
                     var center  = this.findCenter(el);
 
                     el          = this.elementFromPoint(center[0], center[1], false, el.dom);
@@ -24225,7 +24484,7 @@ Role('Siesta.Test.ExtJSCore', {
             if (el && el.dom) return el.dom
                 
             // will also handle the case of conversion of array with coordinates to el 
-            return this.SUPER(el, allowMissing);
+            return this.SUPER(el, allowMissing, shallow);
         },
         
         
@@ -24242,7 +24501,8 @@ Role('Siesta.Test.ExtJSCore', {
                     var result = this.cq1(el.substring(2));
 
                     if (!result || result.length < 1) {
-                        throw 'No component found found for CQ: ' + el;
+                        this.warn('No component found for CQ: ' + el)
+                        throw 'No component found for CQ: ' + el;
                     }
                     return result;
                 }
@@ -24251,7 +24511,7 @@ Role('Siesta.Test.ExtJSCore', {
             var Ext = this.getExt();
             
             // if user has passed ExtJS Component, return it as is
-            if (Ext && el instanceof Ext.Component) return el
+            if (this.isExtJSComponent(el)) return el
             
             // if user has passed ExtJS Element, return it as is
             if (el && el.dom) return el
@@ -24401,43 +24661,53 @@ Role('Siesta.Test.ExtJSCore', {
          *       
          * On the left side of such "composite" query should be a component query, on the right - DOM query (CSS selector)
          * 
-         * This method will generate exception, if component query returns no results. In case when component query returns more than one
-         * component, method will generate a warning and proceed with the 1st found component. The exception/warning can be suppressed with the "allowEmpty" argument.
+         * In case when component query returns more than one component, this method iterate through all of them and will try to
+         * resolve the 2nd part of the query. The results from the 1st component with matching DOM nodes is returned. 
          * 
-         * E.g. the composite query `gridpanel[title=Accounts] => .x-grid-row` will give you the grid row elements inside a certain grid panel
+         * E.g. the composite query `gridpanel[title=Accounts] => .x-grid-row` will give you the grid row elements inside a grid panel
+         * with `title` config matching "Accounts". 
          * 
          * @param {String} selector The CompositeQuery selector
-         * @param {Ext.Component} root The optional root component to start the component query from. If omitted, global component query will be performed.
-         * @param {Boolean} allowEmpty True to suppress the exception/warnings from this method if no match is found. Default is `false`.
+         * @param {Ext.Component} root The optional root component to start the component query from. If omitted, a global component query will be performed.
+         * @param {Boolean} allowEmpty False to throw the exception from this method if no matching DOM element is found. Default is `true`.
          * 
          * @return {HTMLElement[]} The array of DOM elements 
          */
         compositeQuery : function (selector, root, allowEmpty) {
+            allowEmpty  = allowEmpty !== false
+            
             var Ext     = this.Ext();
+            // Try to find magic => selector for nested ComponentQuery and CSS selector
+            var parts   = selector.split('=>');
+
             root        = root || Ext.ComponentQuery;
 
-            // Ext JS specific
-            // Try to find magic => selector for nested ComponentQuery and CSS selector
-            var result  = selector.split('=>');
-
-            if (result.length < 1) throw "Invalid composite query selector: " + selector
+            if (parts.length < 2) throw "Invalid composite query selector: " + selector
             
-            var cmp     = root.query(result[0]);
+            var components     = root.query(parts[0]);
                     
-            if (!cmp.length)
+            if (!components.length)
                 if (allowEmpty) 
                     return []
                 else
-                    throw 'ComponentQuery ' + result[0] + ' matched no Ext.Component';
+                    throw 'ComponentQuery ' + parts[0] + ' matched no Ext.Component';
             
-            if (cmp.length > 1) this.warn('ComponentQuery ' + result[0] + ' matched more than 1 Ext.Component')
-                    
-            cmp         = cmp[0];
+            for (var i = 0; i < components.length; i++) {
+                var cmp         = components[i];
 
-            if (!cmp.rendered) throw 'The source component of the composite query: ' + cmp.id + ' is not yet rendered';
+                if (cmp.rendered) {
+                    var result  = this.compToEl(cmp, false).query(parts[1]);
 
+                    if (result.length > 0) {
+                        return result;
+                    }
+                }
+            }
 
-            return this.compToEl(cmp, false).query(result[1]);
+            if (allowEmpty) 
+                return []
+            else
+                throw 'Composite query ' + selector + ' matched no Ext.Component';
         },
         
         /**
@@ -24759,7 +25029,7 @@ Role('Siesta.Test.ExtJS.Observable', {
             var Ext         = this.Ext();
             observable      = this.normalizeComponent(observable);
             
-            if (observable instanceof Ext.Element || observable.fireEvent && observable.fireEvent === Ext.util.Observable.prototype.fireEvent) {
+            if (observable && observable.un && observable.on) {
                 var eventFired      = false
             
                 observable.on(event, function () { eventFired = true }, null, { single : true })
@@ -24891,9 +25161,7 @@ Role('Siesta.Test.ExtJS.Component', {
         waitForComponentVisible: function (component, callback, scope, timeout) {
             component = this.normalizeComponent(component);
             
-            var Ext = this.getExt();
-            
-            if (!(component instanceof Ext.Component)) {
+            if (!this.isExtJSComponent(component)) {
                 throw 'Expected an Ext.Component, got: ' + component;
             }
 
@@ -24921,8 +25189,7 @@ Role('Siesta.Test.ExtJS.Component', {
         waitForComponentNotVisible: function (component, callback, scope, timeout) {
             component = this.normalizeComponent(component);
 
-            var Ext = this.getExt();
-            if (!(component instanceof Ext.Component)) {
+            if (!this.isExtJSComponent(component)) {
                 throw 'Expected an Ext.Component, got: ' + component;
             }
 
@@ -25771,12 +26038,37 @@ Role('Siesta.Test.Element', {
          * @return {Array} The array first element of which is the `x` coordinate and 2nd - `y` 
          */
         findCenter : function (target, local) {
-            var normalizedEl    = this.normalizeElement(target);
+            return this.getTargetCoordinate(target, local);
+        },
+        
+        
+        normalizeOffset : function (offset, $el) {
+            offset              = offset || [ '50%', '50%' ];
+
+            if (typeof (offset[ 0 ]) === 'string') {
+                offset[ 0 ]     = parseInt(offset[ 0 ].match(/\d+/)[ 0 ], 10) * $el.outerWidth() / 100;
+            }
+
+            if (typeof (offset[ 1 ]) === 'string') {
+                offset[ 1 ]     = parseInt(offset[ 1 ].match(/\d+/)[ 0 ], 10) * $el.outerHeight() / 100;
+            }
             
-            var el              = this.$(normalizedEl),
-                offset          = el.offset(),
+            return offset
+        },
+
+        
+        getTargetCoordinate : function (target, local, offset) {
+            var normalizedEl    = this.normalizeElement(target),
+                $normalizedEl   = this.$(normalizedEl),
+                bodyOffset      = $normalizedEl.offset(),
                 elDoc           = normalizedEl.ownerDocument,
-                doc             = this.$(elDoc);
+                $doc            = this.$(elDoc),
+                xy              = [ bodyOffset.left - $doc.scrollLeft(), bodyOffset.top - $doc.scrollTop() ];
+
+            offset              = this.normalizeOffset(offset, $normalizedEl)
+
+            xy[ 0 ]             += offset[ 0 ];
+            xy[ 1 ]             += offset[ 1 ];
 
             if (local === false) {
                 var elWindow    = elDoc.defaultView || elDoc.parentWindow;
@@ -25784,18 +26076,14 @@ Role('Siesta.Test.Element', {
                 // Potentially we're interacting with an element inside a nested frame, which means the coordinates are local to that frame
                 if (elWindow !== this.global) {
                     var offsetsToTop    = this.$(elWindow.frameElement).offset();
-                    
-                    offset.left         += offsetsToTop.left;
-                    offset.top          += offsetsToTop.top;
+
+                    xy[ 0 ]     += offsetsToTop.left;
+                    xy[ 1 ]     += offsetsToTop.top;
                 }
             }
 
-            return [
-                offset.left + el.outerWidth()  / 2 - doc.scrollLeft(),
-                offset.top  + el.outerHeight() / 2 - doc.scrollTop()
-            ]
+            return xy;
         },
-
 
         /**
          * Returns true if the element is visible, checking jQuery :visible selector + style visibilty value.
@@ -27012,7 +27300,6 @@ Role('Siesta.Test.Element', {
 });
 ;
 /**
- * 
 @class Siesta.Test.Browser
 @extends Siesta.Test
 @mixin Siesta.Test.Simulate.Event
@@ -27056,8 +27343,104 @@ Class('Siesta.Test.Browser', {
         },
         
         
+        isEventPrevented : function (event) {
+            // our custom property - takes highest priority
+            if (this.typeOf(event.$defaultPrevented) == 'Boolean') return event.$defaultPrevented
+            
+            // W3c standards property
+            if (this.typeOf(event.defaultPrevented) == 'Boolean') return event.defaultPrevented
+            
+            return event.returnValue === false
+        },
+        
+        
+        getElementPageRect : function (el, $el) {
+            $el             = $el || this.$(el)
+            
+            var offset      = $el.offset()
+            
+            return new Siesta.Util.Rect({
+                left        : offset.left,
+                top         : offset.top,
+                width       : $el.outerWidth(),
+                height      : $el.outerHeight()
+            })
+        },
+        
+        
+        elementHasScroller : function (el, $el) {
+            $el             = $el || this.$(el)
+                
+            var hasX        = el.scrollWidth != el.clientWidth && $el.css('overflow-x') != 'visible'
+            var hasY        = el.scrollHeight != el.clientHeight && $el.css('overflow-y') != 'visible'
+            
+            return hasX || hasY ? { x : hasX, y : hasY } : false
+        },
+        
+        
         hasForcedIframe : function () {
             return Boolean(this.forceDOMVisible && (this.scopeProvider instanceof Scope.Provider.IFrame) && this.scopeProvider.iframe)
+        },
+        
+        
+        elementIsScrolledOut : function (el, offset) {
+            var $el                 = this.$(el)
+            
+            var scrollableParents   = []
+            var parent              = $el
+            
+            var body                = this.global.document.body
+            
+            while (parent = parent.parent(), parent.length && parent[ 0 ] != body) {
+                var hasScroller     = this.elementHasScroller(parent[ 0 ], parent)
+                
+                if (hasScroller) scrollableParents.unshift({ hasScroller : hasScroller, $el : parent }) 
+            }
+            
+            var $body               = this.$(body)
+            var bodyOffset          = $body.offset()
+            
+            var currentRect         = new Siesta.Util.Rect({
+                left        : bodyOffset.left + $body.scrollLeft(),
+                top         : bodyOffset.top + $body.scrollTop(),
+                width       : body.clientWidth,
+                height      : body.clientHeight
+            })
+            
+            for (var i = 0; i < scrollableParents.length; i++) {
+                var hasScroller     = scrollableParents[ i ].hasScroller
+                var $parent         = scrollableParents[ i ].$el
+                
+                if (hasScroller && hasScroller.x)
+                    currentRect     = currentRect.cropLeftRight(this.getElementPageRect($parent[ 0 ], $parent))
+                    
+                if (currentRect.isEmpty()) return true
+                    
+                if (hasScroller && hasScroller.y)
+                    currentRect     = currentRect.cropTopBottom(this.getElementPageRect($parent[ 0 ], $parent))
+                    
+                if (currentRect.isEmpty()) return true
+            }
+            
+            var elPageRect          = this.getElementPageRect($el[ 0 ], $el)
+            var finalRect           = currentRect.intersect(elPageRect)
+            
+            if (finalRect.isEmpty()) return true
+            
+            offset                  = this.normalizeOffset(offset, $el)
+            
+            return !finalRect.contains(elPageRect.left + offset[ 0 ], elPageRect.top + offset[ 1 ])
+        },
+        
+        
+        scrollTargetIntoView : function (target, offset) {
+            // If element isn't visible, try to bring it into view
+            if (this.elementIsScrolledOut(target, offset)) {
+                // Required to handle the case where the body is scrolled
+                target.scrollIntoView();
+
+                this.$(target).scrollintoview({ duration : 0 });
+            }
         },
 
         
@@ -27081,14 +27464,15 @@ Class('Siesta.Test.Browser', {
         
         // Normalizes the element to an HTML element. Every 'framework layer' will need to provide its own implementation
         // This implementation accepts either a CSS selector or an Array with xy coordinates.
-        normalizeElement : function (el, allowMissing) {
+        normalizeElement : function (el, allowMissing, shallow) {
             if (typeof el === 'string') {
                 // DOM query
                 var origEl  = el;
                 el          = this.$(el)[ 0 ];
                 
                 if (!allowMissing && !el) {
-                    throw 'No DOM element found found for CSS selector: ' + origEl;
+                    this.warn('No DOM element found for CSS selector: ' + origEl)
+                    throw 'No DOM element found for CSS selector: ' + origEl;
                 }
             }
             
@@ -27571,7 +27955,7 @@ Class('Siesta.Test.Browser', {
         // After initial normalization it also tries to locate, the 'top' DOM node at the center of the first pass resulting DOM node.
         // This is the only element we can truly interact with in a real browser.
         // returns an object containing the element plus coordinates
-        getNormalizedTopElementInfo : function (actionTarget, skipWarning, actionName) {
+        getNormalizedTopElementInfo : function (actionTarget, skipWarning, actionName, offset) {
             var localXY, globalXY, el;
 
             actionTarget    = actionTarget || this.currentPosition;
@@ -27585,7 +27969,7 @@ Class('Siesta.Test.Browser', {
                 el          = info.el
                 localXY     = info.localXY
             } else {
-                el          = this.normalizeElement(actionTarget);
+                el          = this.normalizeElement(actionTarget, skipWarning, Boolean(offset));
             }
 
             // 1. If this element is not visible, something is wrong
@@ -27599,9 +27983,10 @@ Class('Siesta.Test.Browser', {
 
             if (!this.valueIsArray(actionTarget)) {
                 var doc     = el.ownerDocument;
-                
-                localXY     = this.findCenter(el, true)
-                globalXY    = this.findCenter(el, false)
+
+                localXY     = this.getTargetCoordinate(el, true, offset)
+                globalXY    = this.getTargetCoordinate(el, false, offset)
+
                 // trying 2 times for IE
                 el          = doc.elementFromPoint(localXY[ 0 ], localXY[ 1 ]) || doc.elementFromPoint(localXY[ 0 ], localXY[ 1 ]) || doc.body;
 
@@ -27658,20 +28043,24 @@ Class('Siesta.Test.ExtJS', {
 
     
     has : {
-        globalExtOverrides      : null
+        globalExtOverrides      : null,
+        
+        extPathRegex1           : /(.*ext(?:js)?-\d\.\d+(?:\.\d+)?.*?)\/ext-all(?:-debug)?\.js/,
+        extPathRegex2           : /(.*ext(?:js)?\/gpl\/\d\.\d+(?:\.\d+)?.*?)\/ext-all(?:-debug)?\.js/
     },
     
     methods : {
 
         getExtBundlePath : function() {
-            var path;
+            var path
             var testDescriptor      = this.harness.getScriptDescriptor(this.url)
+            var me                  = this
 
             while (testDescriptor && !path) {
                 if (testDescriptor.preload) {
                     Joose.A.each(testDescriptor.preload, function (url) {
-                        if (url.match && url.match(/ext(?:js)?-\d\.\d+(?:\.\d+)?.*?\/ext-all(?:-debug)?\.js/)) {
-                            path = url;
+                        if (url.match && (url.match(me.extPathRegex1) || url.match(me.extPathRegex2))) {
+                            path    = url;
                             return false;
                         }
                     });
@@ -27686,16 +28075,16 @@ Class('Siesta.Test.ExtJS', {
         getExtBundleFolder : function() {
             var folder;
             var testDescriptor      = this.harness.getScriptDescriptor(this.url)
+            var me                  = this
 
             while (testDescriptor && !folder) {
                 if (testDescriptor.preload) {
                     Joose.A.each(testDescriptor.preload, function (url) {
-                        var regex = /(.*ext(?:js)?-\d\.\d+(?:\.\d+)?.*?)\/ext-all(?:-debug)?\.js/;
-                        var match = regex.exec(url);
+                        var match = me.extPathRegex1.exec(url) || me.extPathRegex2.exec(url);
 
-                        if (match) {
-                           folder = match[1];
-                        }
+                        if (match) folder = match[1];
+                        
+                        return false
                     });
                 }
                 testDescriptor = testDescriptor.parent;
@@ -28109,12 +28498,13 @@ Class('Siesta.Test.SenchaTouch', {
          * 
          * @param {Siesta.Test.ActionTarget} target Target for this action
          * @param {Function} callback (optional) A function to call after action
-         * @param {Object} scope (optional) The scope for the callback 
+         * @param {Object} scope (optional) The scope for the callback
+         * @param {Array} offset (optional) An X,Y offset relative to the target. Example: [20, 20] for 20px or ["50%", "50%"] to click in the center.
          */
-        doubleTap: function (target, callback, scope) {
+        doubleTap: function (target, callback, scope, offset) {
             var me          = this;
 
-            var context = this.getNormalizedTopElementInfo(target);
+            var context = this.getNormalizedTopElementInfo(target, false, 'doubleTap', offset);
 
             if (!context) {
                 this.processCallbackFromTest(callback, null, scope || this);
@@ -28156,13 +28546,14 @@ Class('Siesta.Test.SenchaTouch', {
          * 
          * @param {Siesta.Test.ActionTarget} target Target for this action
          * @param {Function} callback (optional) A function to call after action
-         * @param {Object} scope (optional) The scope for the callback 
+         * @param {Object} scope (optional) The scope for the callback
+         * @param {Array} offset (optional) An X,Y offset relative to the target. Example: [20, 20] for 20px or ["50%", "50%"] to click in the center.
          */
-        longpress: function (target, callback, scope) {
+        longpress: function (target, callback, scope, offset) {
             var Ext = this.Ext();
             var me = this;
 
-            var context = this.getNormalizedTopElementInfo(target);
+            var context = this.getNormalizedTopElementInfo(target, false, 'longpress', offset);
 
             if (!context) {
                 this.processCallbackFromTest(callback, null, scope || this);
@@ -28264,20 +28655,10 @@ Class('Siesta.Test.SenchaTouch', {
         * @param {Siesta.Test.ActionTarget} target Target point to move the finger to.
         * @param {Function} callback (optional) To run this method async, provide a callback method to be called after the operation is completed.
         * @param {Object} scope (optional) the scope for the callback
-        */
-        moveFingerTo : function(target, callback, scope) {
-            if (!target) {
-                throw 'Trying to call moveFingerTo without a target';
-            }
-
-            var context = this.getNormalizedTopElementInfo(target);
-
-            if (!context) {
-                this.processCallbackFromTest(callback, null, scope || this);
-                return;
-            }
-
-            this.moveCursorTo(context.globalXY, callback, scope);
+        * @param {Array} offset (optional) An X,Y offset relative to the target. Example: [20, 20] for 20px or ["50%", "50%"] to click in the center.
+         */
+        moveFingerTo : function(target, callback, scope, offset) {
+            this.moveCursorTo.apply(this, arguments);
         },
 
         /**
@@ -29170,19 +29551,21 @@ Singleton('Siesta.Harness.Browser.FeatureSupport', {
                 {
                     id : "canSimulateKeyCharacters",
                     fn : function() {
-                
-                        var sim = this.simulator;
+                        var sim     = this.simulator;
                         
-                        var input = $('<input class="siesta-hidden" type="text" />'),
-                            A = Siesta.Test.Simulate.KeyCodes().keys.A;
+                        var input   = $('<input class="siesta-hidden" type="text" />'),
+                            A       = Siesta.Test.Simulate.KeyCodes().keys.A;
+                            
                         $('body').append(input);
                         
                         input.focus();
                         sim.simulateEvent(input, 'keypress', { keyCode : A, charCode : A }, true);
                         sim.simulateEvent(input, 'textInput', { text : "A" }, true);
                 
-                        var result = input.val() === 'A';
+                        var result  = input.val() === 'A';
+                        
                         input.remove();
+                        
                         return result;
                     }
                 },
@@ -29190,20 +29573,23 @@ Singleton('Siesta.Harness.Browser.FeatureSupport', {
                 {
                     id : "canSimulateBackspace",
                     fn : function() {
-                        var sim = this.simulator;
+                        var sim     = this.simulator;
                         
-                        var input = $('<input class="siesta-hidden" type="text" />'),
-                            BS = Siesta.Test.Simulate.KeyCodes().keys.BACKSPACE,
-                            A = Siesta.Test.Simulate.KeyCodes().keys.A;
+                        var input   = $('<input class="siesta-hidden" type="text" />'),
+                            BS      = Siesta.Test.Simulate.KeyCodes().keys.BACKSPACE,
+                            A       = Siesta.Test.Simulate.KeyCodes().keys.A;
+                            
                         $('body').append(input);
                         
                         input.focus();
                         sim.simulateEvent(input, 'keypress', { keyCode : A, charCode : A }, true);
                         sim.simulateEvent(input, 'keypress', { keyCode : A, charCode : A }, true);
                         sim.simulateEvent(input, 'keypress', { keyCode : BS, charCode : BS }, true);
-                        var result = input.val() === 'A';
+                        
+                        var result  = input.val() === 'A';
                  
                         input.remove();
+                        
                         return result;
                     }
                 },
@@ -29413,6 +29799,22 @@ Class('Siesta.Harness.Browser.ExtJS', {
             
             setup : function (callback) {
                 var me      = this
+                
+                /*
+                    This is to be able to pass "next" function form the chain step to the Ext as callback:
+                        function (next) {
+                            resourceStore.reload({
+                                callback : next
+                            })
+                        }
+                    For some reason, Ext performs "isFunction" check on the callback value and only calls it if this check passes
+                    (assuming programming does not know what he is doing)
+                    "isFunction" check in turn relies on the presence of this property in the Function prototype
+                    
+                    This line can be removed once "isFunction" in Ext will become cross-context or Ext will stop
+                    using "isFunction" check for callbacks
+                */
+                Function.prototype.$extIsFunction = true;
                 
                 this.SUPER(function () {
                     if (me.allowExtVersionChange) me.extVersion = me.findExtVersion()

@@ -1,6 +1,6 @@
 /*
 
-Siesta 2.0.1
+Siesta 2.0.3
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -27,6 +27,9 @@ http://bryntum.com/products/siesta/license
 
 .test-name-column .x-grid-cell-inner {
     position            : relative;
+}
+.tr-testgrid .x-tree-view,
+.test-name-column .x-grid-cell-inner {
     user-select         : none;
     -o-user-select      : none;
     -ms-user-select     : none;
@@ -35,11 +38,11 @@ http://bryntum.com/products/siesta/license
 }
 
 .test-name-column span.x-tree-node-text {
-    -moz-user-select    : text;
-    -webkit-user-select : text;
-    -ms-user-select     : text;
-    user-select         : text;
-    -o-user-select      : text;
+    /*-moz-user-select    : text;*/
+    /*-webkit-user-select : text;*/
+    /*-ms-user-select     : text;*/
+    /*user-select         : text;*/
+    /*-o-user-select      : text;*/
 }
 
 /* TOP TOOLBAR STYLES */
@@ -49,6 +52,11 @@ http://bryntum.com/products/siesta/license
 
 .tr-testgrid .x-tree-icon {
     display : none;
+}
+
+.tr-testgrid .x-tree-view
+{
+
 }
 
 .x-ie9 .tr-testgrid .x-tree-view {

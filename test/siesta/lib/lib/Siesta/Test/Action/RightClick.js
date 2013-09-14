@@ -1,6 +1,6 @@
 /*
 
-Siesta 2.0.1
+Siesta 2.0.3
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -38,25 +38,18 @@ Class('Siesta.Test.Action.RightClick', {
     does        : Siesta.Test.Action.Role.HasTarget,
         
     has : {
-        requiredTestMethod  : 'rightClick',
-
-        /**
-         * @cfg {Object} options
-         *
-         * Any options that will be used when simulating the event. For information about possible
-         * config options, please see: https://developer.mozilla.org/en-US/docs/DOM/event.initMouseEvent
-         */
-        options : null
+        requiredTestMethod  : 'rightClick'
     },
 
     
     methods : {
         
         process : function () {
-            this.test.rightClick(this.getTarget(), this.next)
+            this.test.rightClick(this.getTarget(), this.next, null, this.options, this.offset)
         }
     }
 });
 
 
 Siesta.Test.ActionRegistry().registerAction('rightclick', Siesta.Test.Action.RightClick)
+Siesta.Test.ActionRegistry().registerAction('contextmenu', Siesta.Test.Action.RightClick)

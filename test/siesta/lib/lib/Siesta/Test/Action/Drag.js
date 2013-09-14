@@ -1,6 +1,6 @@
 /*
 
-Siesta 2.0.1
+Siesta 2.0.3
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -66,7 +66,21 @@ Class('Siesta.Test.Action.Drag', {
          * Exactly one of the `to` and `by` configuration options should be provided for this action.
          */
         to                  : null,
-        
+
+        /**
+         * @cfg {Array} fromOffset
+         *
+         * An offset in X, Y coordinates from the source element
+         */
+        fromOffset : null,
+
+        /**
+         * @cfg {Array} toOffset
+         *
+         * An offset in X, Y coordinates from the targeted element
+         */
+        toOffset : null,
+
         /**
          * @cfg {Array/Function} by 
          * 
@@ -82,9 +96,7 @@ Class('Siesta.Test.Action.Drag', {
          * 
          * True to skip the mouseup and not finish the drop operation (one can start another drag operation, emulating the pause during drag-n-drop).
          */
-        dragOnly        : false,
-        
-        options         : null
+        dragOnly        : false
     },
 
     
@@ -132,9 +144,9 @@ Class('Siesta.Test.Action.Drag', {
             var normalizedTarget    = test.normalizeActionTarget(target)
             
             if (this.to) {
-                test.dragTo(target, this.getTo(), function() { next(normalizedTarget); }, null, this.options, this.dragOnly)
+                test.dragTo(target, this.getTo(), function() { next(normalizedTarget); }, null, this.options, this.dragOnly, this.fromOffset, this.toOffset)
             } else {
-                test.dragBy(target, this.getBy(), function() { next(normalizedTarget); }, null, this.options, this.dragOnly)
+                test.dragBy(target, this.getBy(), function() { next(normalizedTarget); }, null, this.options, this.dragOnly, this.fromOffset || this.offset)
             }
         }
     }

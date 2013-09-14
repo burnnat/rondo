@@ -1,6 +1,6 @@
 /*
 
-Siesta 2.0.1
+Siesta 2.0.3
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -154,13 +154,14 @@ Role('Siesta.Test.Simulate.Mouse', {
         * @param {Siesta.Test.ActionTarget} target Target point to move the mouse to.
         * @param {Function} callback (optional) To run this method async, provide a callback method to be called after the operation is completed.
         * @param {Object} scope (optional) the scope for the callback
-        */
-        moveMouseTo : function(target, callback, scope) {
+        * @param {Array} offset (optional) An X,Y offset relative to the target. Example: [20, 20] for 20px or ["50%", "50%"] to click in the center.
+         */
+        moveMouseTo : function(target, callback, scope, offset) {
             if (!target) {
                 throw 'Trying to call moveMouseTo without a target';
             }
 
-            var context = this.getNormalizedTopElementInfo(target);
+            var context = this.getNormalizedTopElementInfo(target, false, 'moveMouseTo', offset);
 
             if (!context) {
                 this.processCallbackFromTest(callback, null, scope || this);
@@ -196,8 +197,9 @@ Role('Siesta.Test.Simulate.Mouse', {
         * @param {Siesta.Test.ActionTarget} target Target point to move the mouse to.
         * @param {Function} callback (optional) To run this method async, provide a callback method to be called after the operation is completed.
         * @param {Object} scope (optional) the scope for the callback
-        */
-        moveCursorTo : function(target, callback, scope) {
+        * @param {Array} offset (optional) An X,Y offset relative to the target. Example: [20, 20] for 20px or ["50%", "50%"] to click in the center.
+         */
+        moveCursorTo : function(target, callback, scope, offset) {
             this.moveMouseTo.apply(this, arguments);
         },
 
@@ -312,13 +314,13 @@ Role('Siesta.Test.Simulate.Mouse', {
         },
         
         
-        genericMouseClick : function (el, callback, scope, options, method) {
+        genericMouseClick : function (el, callback, scope, options, method, offset) {
             if (jQuery.isFunction(el)) {
                 scope       = callback;
                 callback    = el; 
                 el          = null;
             }
-            
+
             el              = el || this.currentPosition
 
             var normalized  = this.normalizeElement(el);
@@ -326,17 +328,10 @@ Role('Siesta.Test.Simulate.Mouse', {
             options         = options || {};
 
             if (!this.valueIsArray(el) && this.autoScrollElementsIntoView) {
-
-                // If element isn't visible, try to bring it into view
-                if (!this.elementIsTop(normalized, true)) {
-                    // Required to handle the case where the body is scrolled
-                    normalized.scrollIntoView();
-
-                    this.$(normalized).scrollintoview({ duration : 0 });
-                }
+                this.scrollTargetIntoView(normalized, offset)
             }
 
-            var data        = this.getNormalizedTopElementInfo(el, false, method);
+            var data        = this.getNormalizedTopElementInfo(el, false, method, offset);
             
             if (!data) {
                 // No point in continuing
@@ -349,9 +344,9 @@ Role('Siesta.Test.Simulate.Mouse', {
 
             // the asynchronous case
             if (this.moveCursorBetweenPoints && callback) {
-                this.syncCursor(data.globalXY, this[ method ], [ data.el, callback, scope, options ]);
+                this.syncCursor(data.globalXY, this[ method ], [ data, callback, scope, options ]);
             } else {
-                this[ method ](data.el, callback, scope, options);
+                this[ method ](data, callback, scope, options);
             }
             
         },
@@ -378,9 +373,10 @@ Role('Siesta.Test.Simulate.Mouse', {
          * @param {Function} callback (optional) A function to call when the condition has been met.
          * @param {Object} scope (optional) The scope for the callback
          * @param {Object} options (optional) Any options to use for the simulated DOM event
+         * @param {Array} offset (optional) An X,Y offset relative to the target. Example: [20, 20] for 20px or ["50%", "50%"] to click in the center.
          */
-        click: function (el, callback, scope, options) {
-            this.genericMouseClick(el, callback, scope, options, 'simulateMouseClick')
+        click: function (el, callback, scope, options, offset) {
+            this.genericMouseClick(el, callback, scope, options, 'simulateMouseClick', offset)
         },
 
         
@@ -406,9 +402,10 @@ Role('Siesta.Test.Simulate.Mouse', {
          * @param {Function} callback (optional) A function to call when the condition has been met.
          * @param {Object} scope (optional) The scope for the callback
          * @param {Object} options (optional) Any options to use for the simulated DOM event
+         * @param {Array} offset (optional) An X,Y offset relative to the target. Example: [20, 20] for 20px or ["50%", "50%"] to click in the center.
          */
-        rightClick: function (el, callback, scope, options) {
-            this.genericMouseClick(el, callback, scope, options, 'simulateRightClick')
+        rightClick: function (el, callback, scope, options, offset) {
+            this.genericMouseClick(el, callback, scope, options, 'simulateRightClick', offset)
         },
 
         
@@ -434,18 +431,20 @@ Role('Siesta.Test.Simulate.Mouse', {
          * @param {Function} callback (optional) A function to call when the condition has been met.
          * @param {Object} scope (optional) The scope for the callback
          * @param {Object} options (optional) Any options to use for the simulated DOM event
+         * @param {Array} offset (optional) An X,Y offset relative to the target. Example: [20, 20] for 20px or ["50%", "50%"] to click in the center.
          */
-        doubleClick: function (el, callback, scope, options) {
-            this.genericMouseClick(el, callback, scope, options, 'simulateDoubleClick')
+        doubleClick: function (el, callback, scope, options, offset) {
+            this.genericMouseClick(el, callback, scope, options, 'simulateDoubleClick', offset)
         },
 
         /**
          * This method will simulate a mousedown event in the center of the specified DOM element.
          * @param {Siesta.Test.ActionTarget} el
          * @param {Object} options any extra options used to configure the DOM event
+         * @param {Array} offset (optional) An X,Y offset relative to the target. Example: [20, 20] for 20px or ["50%", "50%"] to click in the center.
          */
-        mouseDown: function (el, options) {
-            var info        = this.getNormalizedTopElementInfo(el);
+        mouseDown: function (el, options, offset) {
+            var info        = this.getNormalizedTopElementInfo(el, false, 'mouseDown', offset);
 
             if (!info) return;
             
@@ -463,9 +462,10 @@ Role('Siesta.Test.Simulate.Mouse', {
          * This method will simulate a mousedown event in the center of the specified DOM element.
          * @param {Siesta.Test.ActionTarget} el
          * @param {Object} options any extra options used to configure the DOM event
+         * @param {Array} offset (optional) An X,Y offset relative to the target. Example: [20, 20] for 20px or ["50%", "50%"] to click in the center.
          */
-        mouseUp: function (el, options) {
-            var info        = this.getNormalizedTopElementInfo(el);
+        mouseUp: function (el, options, offset) {
+            var info        = this.getNormalizedTopElementInfo(el, false, 'mouseUp', offset);
 
             if (!info) return;
             
@@ -515,50 +515,17 @@ Role('Siesta.Test.Simulate.Mouse', {
             this.simulateEvent(el, 'mouseout', options);
         },
 
-        // private
-        simulateRightClick: function (el, callback, scope, options) {
-            var me          = this;
-
-            options = options || {};
-            options.button = 2;
-
-            var queue       = new Siesta.Util.Queue({
-                deferer         : this.originalSetTimeout,
-                deferClearer    : this.originalClearTimeout,
-                
-                interval        : callback ? 10 : 0,
-                callbackDelay   : me.afterActionDelay,
-                
-                observeTest     : this,
-                
-                processor       : function (data) {
-                    me.simulateEvent.apply(me, data);
-                }
-            })
+        
+        processMouseClickSteps : function (clickInfo, callback, scope, options, steps) {
+            var me          = this
             
-            queue.addStep([ el, "mousedown", options, false ])
-            queue.addStep([ el, "mouseup", options, true ])
+            var x           = clickInfo.globalXY[ 0 ]
+            var y           = clickInfo.globalXY[ 1 ]
             
-            queue.addStep({
-                processor       : function () {
-                    me.focus(el)
-                    
-                    me.simulateEvent(el, "contextmenu", options, false);
-                }
-            })
+            // re-evaluate the target el - it might have changed while we were syncing the cursor position
+            var target      = me.elementFromPoint(x, y, false, clickInfo.el)
             
-            var async   = me.beginAsync();
-            
-            queue.run(function () {
-                me.endAsync(async);
-                
-                me.processCallbackFromTest(callback, null, scope || me)
-            })
-        }, 
-
-        // private
-        simulateMouseClick: function (el, callback, scope, options) {
-            var me          = this;
+            var targetHasChanged    = false
             
             var queue       = new Siesta.Util.Queue({
                 deferer         : this.originalSetTimeout,
@@ -570,69 +537,82 @@ Role('Siesta.Test.Simulate.Mouse', {
                 observeTest     : this,
                 
                 processor       : function (data) {
-                    me.simulateEvent.apply(me, data);
-                }
-            })
-            
-            queue.addStep([ el, "mousedown", options, true ])
-            queue.addStep([ el, "mouseup", options, true ])
-            
-            queue.addStep({
-                processor       : function () {
-                    me.focus(el)
+                    var el          = me.elementFromPoint(x, y, false, target)
                     
-                    me.simulateEvent(el, "click", options);
+                    if (data.reCaptureTheTarget) { target = el; targetHasChanged = false }
+                    
+                    if (el != target) targetHasChanged = true
+                    
+                    if (targetHasChanged && data.cancelIfTargetChanged) return
+                    
+                    if (data.focus) me.focus(el)
+                    
+                    me.simulateEvent(el, data.event, options, data.suppressLog);
                 }
             })
+            
+            Joose.A.each(steps, function (step) { queue.addStep(step) })
             
             var async   = me.beginAsync();
             
             queue.run(function () {
                 me.endAsync(async);
                 
-                me.processCallbackFromTest(callback, null, scope || me)
+                me.processCallbackFromTest(callback, [ me.elementFromPoint(x, y, false, target) ], scope || me)
             })
+        },
+        
+
+        // private
+        simulateMouseClick: function (clickInfo, callback, scope, options) {
+            this.processMouseClickSteps(
+                clickInfo,
+                callback,
+                scope,
+                options,
+                [
+                    { event : "mousedown", suppressLog : true },
+                    { event : "mouseup", suppressLog : true },
+                    { event : "click", suppressLog : false, focus : true, cancelIfTargetChanged : true }
+                ]
+            )
         },
 
         // private
-        simulateDoubleClick: function (el, callback, scope, options) {
-            var me          = this;
+        simulateRightClick: function (clickInfo, callback, scope, options) {
+            options         = options || {};
+            options.button  = 2;
             
-            var queue       = new Siesta.Util.Queue({
-                deferer         : this.originalSetTimeout,
-                deferClearer    : this.originalClearTimeout,
-                
-                interval        : callback ? 10 : 0,
-                callbackDelay   : me.afterActionDelay,
-                
-                observeTest     : this,
-                
-                processor       : function (data) {
-                    me.simulateEvent.apply(me, data);
-                }
-            })
-            
-            queue.addStep([ el, "mousedown", options, false ])
-            queue.addStep([ el, "mouseup", options, true ])
-            queue.addStep({
-                processor       : function () {
-                    me.focus(el)
-                    
-                    me.simulateEvent(el, "click", options, true);
-                }
-            })
-            queue.addStep([ el, "mousedown", options, false ])
-            queue.addStep([ el, "mouseup", options, true ])
-            queue.addStep([ el, "click", options, true ])
-            queue.addStep([ el, "dblclick", options, false ])
-            
-            var async   = me.beginAsync();
-            
-            queue.run(function () {
-                me.endAsync(async);
-                
-                me.processCallbackFromTest(callback, null, scope || me)
-            })
+            this.processMouseClickSteps(
+                clickInfo,
+                callback,
+                scope,
+                options,
+                [
+                    { event : "mousedown", suppressLog : false },
+                    { event : "mouseup", suppressLog : true },
+                    { event : "contextmenu", suppressLog : false, focus : true }
+                ]
+            )
+        },
+        
+        // private
+        simulateDoubleClick: function (clickInfo, callback, scope, options) {
+            this.processMouseClickSteps(
+                clickInfo,
+                callback,
+                scope,
+                options,
+                [
+                    { event : "mousedown", suppressLog : false },
+                    { event : "mouseup", suppressLog : true },
+                    { event : "click", suppressLog : false, focus : true, cancelIfTargetChanged : true },
+                    { event : "mousedown", suppressLog : false, reCaptureTheTarget : true },
+                    { event : "mouseup", suppressLog : true },
+                    { event : "click", suppressLog : true, cancelIfTargetChanged : true },
+                    { event : "dblclick", suppressLog : false, cancelIfTargetChanged : true }
+                ]
+            )
         }, 
 
         // private
@@ -652,18 +632,17 @@ Role('Siesta.Test.Simulate.Mouse', {
 
 
         /**
-        * This method will simulate a drag and drop operation between either two points or two DOM elements.
-        * The following events will be fired, in order:  `mouseover`, `mousedown`, `mousemove` (along the mouse path), `mouseup`
-        * 
-        * This method is deprecated in favor of {@link #dragTo} and {@link #dragBy} methods
-        *   
-        * @param {Siesta.Test.ActionTarget} source Either an element, or [x,y] as the drag starting point
-        * @param {Siesta.Test.ActionTarget} target (optional) Either an element, or [x,y] as the drag end point
-        * @param {Array} delta (optional) the amount to drag from the source coordinate, expressed as [x,y]. [50, 10] will drag 50px to the right and 10px down.
-        * @param {Function} callback (optional) To run this method async, provide a callback method to be called after the drag operation is completed.
-        * @param {Object} scope (optional) the scope for the callback
-        * @param {Object} options any extra options used to configure the DOM event
-        */
+         * This method will simulate a drag and drop operation between either two points or two DOM elements.
+         * The following events will be fired, in order:  `mouseover`, `mousedown`, `mousemove` (along the mouse path), `mouseup`
+         * 
+         * @deprecated This method is deprecated in favor of {@link #dragTo} and {@link #dragBy} methods
+         * @param {Siesta.Test.ActionTarget} source Either an element, or [x,y] as the drag starting point
+         * @param {Siesta.Test.ActionTarget} target (optional) Either an element, or [x,y] as the drag end point
+         * @param {Array} delta (optional) the amount to drag from the source coordinate, expressed as [x,y]. [50, 10] will drag 50px to the right and 10px down.
+         * @param {Function} callback (optional) To run this method async, provide a callback method to be called after the drag operation is completed.
+         * @param {Object} scope (optional) the scope for the callback
+         * @param {Object} options any extra options used to configure the DOM event
+         */
         drag: function (source, target, delta, callback, scope, options) {
             if (!source) {
                 throw 'No drag source defined';
@@ -677,35 +656,41 @@ Role('Siesta.Test.Simulate.Mouse', {
         },
 
         /**
-        * This method will simulate a drag and drop operation between either two points or two DOM elements.
-        * The following events will be fired, in order:  `mouseover`, `mousedown`, `mousemove` (along the mouse path), `mouseup`
-        *   
-        * @param {Siesta.Test.ActionTarget} source {@link Siesta.Test.ActionTarget} value for the drag starting point
-        * @param {Siesta.Test.ActionTarget} target {@link Siesta.Test.ActionTarget} value for the drag end point
-        * @param {Function} callback (optional) To run this method async, provide a callback method to be called after the drag operation is completed.
-        * @param {Object} scope (optional) the scope for the callback
-        * @param {Object} options any extra options used to configure the DOM event
-        * @param {Boolean} dragOnly true to skip the mouseup and not finish the drop operation.
-        */
-        dragTo : function(source, target, callback, scope, options, dragOnly) {
-            source = source || this.currentPosition;
-
-            if (!target) {
-                throw 'No drag target defined';
+         * This method will simulate a drag and drop operation between either two points or two DOM elements.
+         * The following events will be fired, in order:  `mouseover`, `mousedown`, `mousemove` (along the mouse path), `mouseup`
+         *   
+         * @param {Siesta.Test.ActionTarget} source {@link Siesta.Test.ActionTarget} value for the drag starting point
+         * @param {Siesta.Test.ActionTarget} target {@link Siesta.Test.ActionTarget} value for the drag end point
+         * @param {Function} callback (optional) To run this method async, provide a callback method to be called after the drag operation is completed.
+         * @param {Object} scope (optional) the scope for the callback
+         * @param {Object} options any extra options used to configure the DOM event
+         * @param {Boolean} dragOnly true to skip the mouseup and not finish the drop operation.
+         * @param {Array} sourceOffset (optional) An X,Y offset relative to the source. Example: [20, 20] for 20px or ["50%", "50%"] to click in the center.
+         * @param {Array} targetOffset (optional) An X,Y offset relative to the target. Example: [20, 20] for 20px or ["50%", "50%"] to click in the center.
+         */
+        dragTo : function (source, target, callback, scope, options, dragOnly, sourceOffset, targetOffset) {
+            if (!target) throw 'No drag target defined';
+            
+            source              = source || this.currentPosition;
+            options             = options || {};
+            
+            if (this.typeOf(source) != 'Array') {
+                var normalized  = this.normalizeElement(source, false, sourceOffset)
+                
+                if (normalized) this.scrollTargetIntoView(normalized, sourceOffset)
             }
-            options = options || {};
 
             // normalize source and target
-            var sourceContext = this.getNormalizedTopElementInfo(source, false, 'dragTo: Source');
-            var targetContext = this.getNormalizedTopElementInfo(target, false, 'dragTo: Target');
-
+            var sourceContext   = this.getNormalizedTopElementInfo(source, false, 'dragTo: Source', sourceOffset);
+            var targetContext   = this.getNormalizedTopElementInfo(target, false, 'dragTo: Target', targetOffset);
+            
             if (!sourceContext || !targetContext) {
                 // No point in continuing
                 this.processCallbackFromTest(callback, null, scope || this);
                 return;
             }
-
-            var args = [sourceContext.globalXY, targetContext.globalXY, callback, scope, options, dragOnly];
+            
+            var args = [ sourceContext.globalXY, targetContext.globalXY, callback, scope, options, dragOnly ];
             
             if (this.moveCursorBetweenPoints && callback) {
                 this.syncCursor(sourceContext.globalXY, this.simulateDrag, args);
@@ -715,34 +700,39 @@ Role('Siesta.Test.Simulate.Mouse', {
         },
 
         /**
-        * This method will simulate a drag and drop operation from a point (or DOM element) and move by a delta.
-        * The following events will be fired, in order:  `mouseover`, `mousedown`, `mousemove` (along the mouse path), `mouseup`
-        *   
-        * @param {Siesta.Test.ActionTarget} source {@link Siesta.Test.ActionTarget} value as the drag starting point
-        * @param {Array} delta The amount to drag from the source coordinate, expressed as [x,y]. E.g. [50, 10] will drag 50px to the right and 10px down.
-        * @param {Function} callback (optional) To run this method async, provide a callback method to be called after the drag operation is completed.
-        * @param {Object} scope (optional) the scope for the callback
-        * @param {Object} options any extra options used to configure the DOM event
-        * @param {Boolean} dragOnly true to skip the mouseup and not finish the drop operation.
-        */
-        dragBy : function(source, delta, callback, scope, options, dragOnly) {
-            source = source || this.currentPosition;
+         * This method will simulate a drag and drop operation from a point (or DOM element) and move by a delta.
+         * The following events will be fired, in order:  `mouseover`, `mousedown`, `mousemove` (along the mouse path), `mouseup`
+         *   
+         * @param {Siesta.Test.ActionTarget} source {@link Siesta.Test.ActionTarget} value as the drag starting point
+         * @param {Array} delta The amount to drag from the source coordinate, expressed as [x,y]. E.g. [50, 10] will drag 50px to the right and 10px down.
+         * @param {Function} callback (optional) To run this method async, provide a callback method to be called after the drag operation is completed.
+         * @param {Object} scope (optional) the scope for the callback
+         * @param {Object} options any extra options used to configure the DOM event
+         * @param {Boolean} dragOnly true to skip the mouseup and not finish the drop operation.
+         * @param {Array} offset (optional) An X,Y offset relative to the target. Example: [20, 20] for 20px or ["50%", "50%"] to click in the center.
+         */
+        dragBy : function (source, delta, callback, scope, options, dragOnly, offset) {
+            if (!delta) throw 'No drag delta defined';
+            
+            source              = source || this.currentPosition;
 
-            if (!delta) {
-                throw 'No drag delta defined';
+            if (this.typeOf(source) != 'Array') {
+                var normalized  = this.normalizeElement(source, false, offset)
+                
+                if (normalized) this.scrollTargetIntoView(normalized, offset)
             }
 
-            var sourceContext = this.getNormalizedTopElementInfo(source, false, 'dragBy: Source');
+            var sourceContext   = this.getNormalizedTopElementInfo(source, false, 'dragBy: Source', offset);
 
             if (!sourceContext) {
                 this.processCallbackFromTest(callback, null, scope || this);
                 return;
             }
-
-            var sourceXY    = sourceContext.globalXY;
-            var targetXY    = [ sourceXY[0] + delta[0], sourceXY[1] + delta[1] ];
             
-            var args        = [ sourceXY, targetXY, callback, scope, options, dragOnly ];
+            var sourceXY        = sourceContext.globalXY;
+            var targetXY        = [ sourceXY[0] + delta[0], sourceXY[1] + delta[1] ];
+            
+            var args            = [ sourceXY, targetXY, callback, scope, options, dragOnly ];
             
             if (this.moveCursorBetweenPoints && callback) {
                 this.syncCursor(sourceXY, this.simulateDrag, args);

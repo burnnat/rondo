@@ -1,6 +1,6 @@
 /*
 
-Siesta 2.0.1
+Siesta 2.0.3
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -34,12 +34,37 @@ Role('Siesta.Test.Element', {
          * @return {Array} The array first element of which is the `x` coordinate and 2nd - `y` 
          */
         findCenter : function (target, local) {
-            var normalizedEl    = this.normalizeElement(target);
+            return this.getTargetCoordinate(target, local);
+        },
+        
+        
+        normalizeOffset : function (offset, $el) {
+            offset              = offset || [ '50%', '50%' ];
+
+            if (typeof (offset[ 0 ]) === 'string') {
+                offset[ 0 ]     = parseInt(offset[ 0 ].match(/\d+/)[ 0 ], 10) * $el.outerWidth() / 100;
+            }
+
+            if (typeof (offset[ 1 ]) === 'string') {
+                offset[ 1 ]     = parseInt(offset[ 1 ].match(/\d+/)[ 0 ], 10) * $el.outerHeight() / 100;
+            }
             
-            var el              = this.$(normalizedEl),
-                offset          = el.offset(),
+            return offset
+        },
+
+        
+        getTargetCoordinate : function (target, local, offset) {
+            var normalizedEl    = this.normalizeElement(target),
+                $normalizedEl   = this.$(normalizedEl),
+                bodyOffset      = $normalizedEl.offset(),
                 elDoc           = normalizedEl.ownerDocument,
-                doc             = this.$(elDoc);
+                $doc            = this.$(elDoc),
+                xy              = [ bodyOffset.left - $doc.scrollLeft(), bodyOffset.top - $doc.scrollTop() ];
+
+            offset              = this.normalizeOffset(offset, $normalizedEl)
+
+            xy[ 0 ]             += offset[ 0 ];
+            xy[ 1 ]             += offset[ 1 ];
 
             if (local === false) {
                 var elWindow    = elDoc.defaultView || elDoc.parentWindow;
@@ -47,18 +72,14 @@ Role('Siesta.Test.Element', {
                 // Potentially we're interacting with an element inside a nested frame, which means the coordinates are local to that frame
                 if (elWindow !== this.global) {
                     var offsetsToTop    = this.$(elWindow.frameElement).offset();
-                    
-                    offset.left         += offsetsToTop.left;
-                    offset.top          += offsetsToTop.top;
+
+                    xy[ 0 ]     += offsetsToTop.left;
+                    xy[ 1 ]     += offsetsToTop.top;
                 }
             }
 
-            return [
-                offset.left + el.outerWidth()  / 2 - doc.scrollLeft(),
-                offset.top  + el.outerHeight() / 2 - doc.scrollTop()
-            ]
+            return xy;
         },
-
 
         /**
          * Returns true if the element is visible, checking jQuery :visible selector + style visibilty value.

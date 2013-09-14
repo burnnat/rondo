@@ -1,6 +1,6 @@
 /*
 
-Siesta 2.0.1
+Siesta 2.0.3
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -186,12 +186,13 @@ Class('Siesta.Test.SenchaTouch', {
          * 
          * @param {Siesta.Test.ActionTarget} target Target for this action
          * @param {Function} callback (optional) A function to call after action
-         * @param {Object} scope (optional) The scope for the callback 
+         * @param {Object} scope (optional) The scope for the callback
+         * @param {Array} offset (optional) An X,Y offset relative to the target. Example: [20, 20] for 20px or ["50%", "50%"] to click in the center.
          */
-        doubleTap: function (target, callback, scope) {
+        doubleTap: function (target, callback, scope, offset) {
             var me          = this;
 
-            var context = this.getNormalizedTopElementInfo(target);
+            var context = this.getNormalizedTopElementInfo(target, false, 'doubleTap', offset);
 
             if (!context) {
                 this.processCallbackFromTest(callback, null, scope || this);
@@ -233,13 +234,14 @@ Class('Siesta.Test.SenchaTouch', {
          * 
          * @param {Siesta.Test.ActionTarget} target Target for this action
          * @param {Function} callback (optional) A function to call after action
-         * @param {Object} scope (optional) The scope for the callback 
+         * @param {Object} scope (optional) The scope for the callback
+         * @param {Array} offset (optional) An X,Y offset relative to the target. Example: [20, 20] for 20px or ["50%", "50%"] to click in the center.
          */
-        longpress: function (target, callback, scope) {
+        longpress: function (target, callback, scope, offset) {
             var Ext = this.Ext();
             var me = this;
 
-            var context = this.getNormalizedTopElementInfo(target);
+            var context = this.getNormalizedTopElementInfo(target, false, 'longpress', offset);
 
             if (!context) {
                 this.processCallbackFromTest(callback, null, scope || this);
@@ -341,20 +343,10 @@ Class('Siesta.Test.SenchaTouch', {
         * @param {Siesta.Test.ActionTarget} target Target point to move the finger to.
         * @param {Function} callback (optional) To run this method async, provide a callback method to be called after the operation is completed.
         * @param {Object} scope (optional) the scope for the callback
-        */
-        moveFingerTo : function(target, callback, scope) {
-            if (!target) {
-                throw 'Trying to call moveFingerTo without a target';
-            }
-
-            var context = this.getNormalizedTopElementInfo(target);
-
-            if (!context) {
-                this.processCallbackFromTest(callback, null, scope || this);
-                return;
-            }
-
-            this.moveCursorTo(context.globalXY, callback, scope);
+        * @param {Array} offset (optional) An X,Y offset relative to the target. Example: [20, 20] for 20px or ["50%", "50%"] to click in the center.
+         */
+        moveFingerTo : function(target, callback, scope, offset) {
+            this.moveCursorTo.apply(this, arguments);
         },
 
         /**

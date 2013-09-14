@@ -1,6 +1,6 @@
 /*
 
-Siesta 2.0.1
+Siesta 2.0.3
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -23,7 +23,8 @@ This action can be included in the `t.chain` call with "doubletap" or "doubleTap
         },
         // or
         {
-            doubletap   : someDOMElement
+            doubletap   : someDOMElement,
+            offset      : [20,20] // click 20px from the left/top corner of the element
         }
     )
 
@@ -43,7 +44,7 @@ Class('Siesta.Test.Action.DoubleTap', {
     methods : {
         
         process : function () {
-            this.test.doubleTap(this.getTarget(), this.next)
+            this.test.doubleTap(this.getTarget(), this.next, null, this.offset)
         }
     }
 });

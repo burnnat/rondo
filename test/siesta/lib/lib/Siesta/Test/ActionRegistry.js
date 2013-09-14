@@ -1,6 +1,6 @@
 /*
 
-Siesta 2.0.1
+Siesta 2.0.3
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -17,6 +17,7 @@ Singleton('Siesta.Test.ActionRegistry', {
                 'click', 
                 'rightClick', 
                 'doubleClick', 
+                'dblClick',
                 'doubleTap', 
                 'drag', 
                 'longpress', 

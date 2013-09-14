@@ -1,6 +1,6 @@
 /*
 
-Siesta 2.0.1
+Siesta 2.0.3
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -93,7 +93,7 @@ Role('Siesta.Test.ExtJS.Observable', {
             var Ext         = this.Ext();
             observable      = this.normalizeComponent(observable);
             
-            if (observable instanceof Ext.Element || observable.fireEvent && observable.fireEvent === Ext.util.Observable.prototype.fireEvent) {
+            if (observable && observable.un && observable.on) {
                 var eventFired      = false
             
                 observable.on(event, function () { eventFired = true }, null, { single : true })

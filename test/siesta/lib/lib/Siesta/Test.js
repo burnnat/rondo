@@ -1,6 +1,6 @@
 /*
 
-Siesta 2.0.1
+Siesta 2.0.3
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -839,7 +839,7 @@ Class('Siesta.Test', {
          * @param {String} desc The description of the assertion
          */
         isNotStrict : function (got, expected, desc) {
-            if (!this.compareObjects(got, expected, false, true))
+            if (!this.compareObjects(got, expected, true, true))
                 this.pass(desc, {
                     descTpl             : '`{got}` is not strictly equal to `{expected}`',
                     got                 : got,
@@ -1711,6 +1711,21 @@ Class('Siesta.Test', {
                 description : message,
                 isWarning   : true
             }))
+        },
+        
+        
+        flattenArray : function (array) {
+            var me          = this
+            var result      = []
+            
+            Joose.A.each(array, function (el) {
+                if (me.typeOf(el) == 'Array') 
+                    result.push.apply(result, me.flattenArray(el))
+                else
+                    result.push(el)
+            })
+            
+            return result
         }
     }
     // eof methods

@@ -1,6 +1,6 @@
 /*
 
-Siesta 2.0.1
+Siesta 2.0.3
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -91,7 +91,23 @@ Role('Siesta.Test.Action.Role.HasTarget', {
         /**
          * @cfg {Boolean} passTargetToNext Whether to pass the target further on chain as the first argument
          */
-        passTargetToNext    : true
+        passTargetToNext    : true,
+
+
+        /**
+         * @cfg {Object} options
+         *
+         * Any options that will be used when simulating the event. For information about possible
+         * config options, please see: <https://developer.mozilla.org/en-US/docs/DOM/event.initMouseEvent>
+         */
+        options : null,
+
+        /**
+         * @cfg {Array} offset
+         *
+         * An offset in X, Y coordinates from the targeted element
+         */
+        offset : null
     },
     
     

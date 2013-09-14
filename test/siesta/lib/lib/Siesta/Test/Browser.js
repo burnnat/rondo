@@ -1,13 +1,12 @@
 /*
 
-Siesta 2.0.1
+Siesta 2.0.3
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
 
 */
 /**
- * 
 @class Siesta.Test.Browser
 @extends Siesta.Test
 @mixin Siesta.Test.Simulate.Event
@@ -51,8 +50,104 @@ Class('Siesta.Test.Browser', {
         },
         
         
+        isEventPrevented : function (event) {
+            // our custom property - takes highest priority
+            if (this.typeOf(event.$defaultPrevented) == 'Boolean') return event.$defaultPrevented
+            
+            // W3c standards property
+            if (this.typeOf(event.defaultPrevented) == 'Boolean') return event.defaultPrevented
+            
+            return event.returnValue === false
+        },
+        
+        
+        getElementPageRect : function (el, $el) {
+            $el             = $el || this.$(el)
+            
+            var offset      = $el.offset()
+            
+            return new Siesta.Util.Rect({
+                left        : offset.left,
+                top         : offset.top,
+                width       : $el.outerWidth(),
+                height      : $el.outerHeight()
+            })
+        },
+        
+        
+        elementHasScroller : function (el, $el) {
+            $el             = $el || this.$(el)
+                
+            var hasX        = el.scrollWidth != el.clientWidth && $el.css('overflow-x') != 'visible'
+            var hasY        = el.scrollHeight != el.clientHeight && $el.css('overflow-y') != 'visible'
+            
+            return hasX || hasY ? { x : hasX, y : hasY } : false
+        },
+        
+        
         hasForcedIframe : function () {
             return Boolean(this.forceDOMVisible && (this.scopeProvider instanceof Scope.Provider.IFrame) && this.scopeProvider.iframe)
+        },
+        
+        
+        elementIsScrolledOut : function (el, offset) {
+            var $el                 = this.$(el)
+            
+            var scrollableParents   = []
+            var parent              = $el
+            
+            var body                = this.global.document.body
+            
+            while (parent = parent.parent(), parent.length && parent[ 0 ] != body) {
+                var hasScroller     = this.elementHasScroller(parent[ 0 ], parent)
+                
+                if (hasScroller) scrollableParents.unshift({ hasScroller : hasScroller, $el : parent }) 
+            }
+            
+            var $body               = this.$(body)
+            var bodyOffset          = $body.offset()
+            
+            var currentRect         = new Siesta.Util.Rect({
+                left        : bodyOffset.left + $body.scrollLeft(),
+                top         : bodyOffset.top + $body.scrollTop(),
+                width       : body.clientWidth,
+                height      : body.clientHeight
+            })
+            
+            for (var i = 0; i < scrollableParents.length; i++) {
+                var hasScroller     = scrollableParents[ i ].hasScroller
+                var $parent         = scrollableParents[ i ].$el
+                
+                if (hasScroller && hasScroller.x)
+                    currentRect     = currentRect.cropLeftRight(this.getElementPageRect($parent[ 0 ], $parent))
+                    
+                if (currentRect.isEmpty()) return true
+                    
+                if (hasScroller && hasScroller.y)
+                    currentRect     = currentRect.cropTopBottom(this.getElementPageRect($parent[ 0 ], $parent))
+                    
+                if (currentRect.isEmpty()) return true
+            }
+            
+            var elPageRect          = this.getElementPageRect($el[ 0 ], $el)
+            var finalRect           = currentRect.intersect(elPageRect)
+            
+            if (finalRect.isEmpty()) return true
+            
+            offset                  = this.normalizeOffset(offset, $el)
+            
+            return !finalRect.contains(elPageRect.left + offset[ 0 ], elPageRect.top + offset[ 1 ])
+        },
+        
+        
+        scrollTargetIntoView : function (target, offset) {
+            // If element isn't visible, try to bring it into view
+            if (this.elementIsScrolledOut(target, offset)) {
+                // Required to handle the case where the body is scrolled
+                target.scrollIntoView();
+
+                this.$(target).scrollintoview({ duration : 0 });
+            }
         },
 
         
@@ -76,14 +171,15 @@ Class('Siesta.Test.Browser', {
         
         // Normalizes the element to an HTML element. Every 'framework layer' will need to provide its own implementation
         // This implementation accepts either a CSS selector or an Array with xy coordinates.
-        normalizeElement : function (el, allowMissing) {
+        normalizeElement : function (el, allowMissing, shallow) {
             if (typeof el === 'string') {
                 // DOM query
                 var origEl  = el;
                 el          = this.$(el)[ 0 ];
                 
                 if (!allowMissing && !el) {
-                    throw 'No DOM element found found for CSS selector: ' + origEl;
+                    this.warn('No DOM element found for CSS selector: ' + origEl)
+                    throw 'No DOM element found for CSS selector: ' + origEl;
                 }
             }
             
@@ -566,7 +662,7 @@ Class('Siesta.Test.Browser', {
         // After initial normalization it also tries to locate, the 'top' DOM node at the center of the first pass resulting DOM node.
         // This is the only element we can truly interact with in a real browser.
         // returns an object containing the element plus coordinates
-        getNormalizedTopElementInfo : function (actionTarget, skipWarning, actionName) {
+        getNormalizedTopElementInfo : function (actionTarget, skipWarning, actionName, offset) {
             var localXY, globalXY, el;
 
             actionTarget    = actionTarget || this.currentPosition;
@@ -580,7 +676,7 @@ Class('Siesta.Test.Browser', {
                 el          = info.el
                 localXY     = info.localXY
             } else {
-                el          = this.normalizeElement(actionTarget);
+                el          = this.normalizeElement(actionTarget, skipWarning, Boolean(offset));
             }
 
             // 1. If this element is not visible, something is wrong
@@ -594,9 +690,10 @@ Class('Siesta.Test.Browser', {
 
             if (!this.valueIsArray(actionTarget)) {
                 var doc     = el.ownerDocument;
-                
-                localXY     = this.findCenter(el, true)
-                globalXY    = this.findCenter(el, false)
+
+                localXY     = this.getTargetCoordinate(el, true, offset)
+                globalXY    = this.getTargetCoordinate(el, false, offset)
+
                 // trying 2 times for IE
                 el          = doc.elementFromPoint(localXY[ 0 ], localXY[ 1 ]) || doc.elementFromPoint(localXY[ 0 ], localXY[ 1 ]) || doc.body;
 

@@ -1,6 +1,6 @@
 /*
 
-Siesta 2.0.1
+Siesta 2.0.3
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -47,19 +47,21 @@ Singleton('Siesta.Harness.Browser.FeatureSupport', {
                 {
                     id : "canSimulateKeyCharacters",
                     fn : function() {
-                
-                        var sim = this.simulator;
+                        var sim     = this.simulator;
                         
-                        var input = $('<input class="siesta-hidden" type="text" />'),
-                            A = Siesta.Test.Simulate.KeyCodes().keys.A;
+                        var input   = $('<input class="siesta-hidden" type="text" />'),
+                            A       = Siesta.Test.Simulate.KeyCodes().keys.A;
+                            
                         $('body').append(input);
                         
                         input.focus();
                         sim.simulateEvent(input, 'keypress', { keyCode : A, charCode : A }, true);
                         sim.simulateEvent(input, 'textInput', { text : "A" }, true);
                 
-                        var result = input.val() === 'A';
+                        var result  = input.val() === 'A';
+                        
                         input.remove();
+                        
                         return result;
                     }
                 },
@@ -67,20 +69,23 @@ Singleton('Siesta.Harness.Browser.FeatureSupport', {
                 {
                     id : "canSimulateBackspace",
                     fn : function() {
-                        var sim = this.simulator;
+                        var sim     = this.simulator;
                         
-                        var input = $('<input class="siesta-hidden" type="text" />'),
-                            BS = Siesta.Test.Simulate.KeyCodes().keys.BACKSPACE,
-                            A = Siesta.Test.Simulate.KeyCodes().keys.A;
+                        var input   = $('<input class="siesta-hidden" type="text" />'),
+                            BS      = Siesta.Test.Simulate.KeyCodes().keys.BACKSPACE,
+                            A       = Siesta.Test.Simulate.KeyCodes().keys.A;
+                            
                         $('body').append(input);
                         
                         input.focus();
                         sim.simulateEvent(input, 'keypress', { keyCode : A, charCode : A }, true);
                         sim.simulateEvent(input, 'keypress', { keyCode : A, charCode : A }, true);
                         sim.simulateEvent(input, 'keypress', { keyCode : BS, charCode : BS }, true);
-                        var result = input.val() === 'A';
+                        
+                        var result  = input.val() === 'A';
                  
                         input.remove();
+                        
                         return result;
                     }
                 },

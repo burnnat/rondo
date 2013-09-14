@@ -1,6 +1,6 @@
 /*
 
-Siesta 2.0.1
+Siesta 2.0.3
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -623,7 +623,7 @@ Ext.define('Siesta.Harness.Browser.UI.Viewport', {
     
     setOption : function (name, value) {
         switch (name) {
-            case 'selection'    : return this.selection         = value
+            case 'selection'    : return this.selection         = value || {}
             
             case 'selectedURL'  : return this.selectedURL       = value
             

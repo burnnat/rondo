@@ -1,6 +1,6 @@
 /*
 
-Siesta 2.0.1
+Siesta 2.0.3
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -29,7 +29,8 @@ Role('Siesta.Test.ExtJSCore', {
             lazy    : function () {
                 var isIE9           = navigator.userAgent.match(/MSIE 9.0;/)
                 var Ext             = this.global.Ext
-                var isBelowExt421   = Boolean(Ext && Ext.getVersion('extjs') && Ext.getVersion('extjs').isLessThan('4.2.1.883'))
+                // the "Ext.getVersion('extjs')" is just "true" in Ext3? (when testing SA)
+                var isBelowExt421   = Boolean(Ext && (!Ext.getVersion || Ext.getVersion('extjs') && Ext.getVersion('extjs').isLessThan && Ext.getVersion('extjs').isLessThan('4.2.1.883')))
                 
                 var div             = document.createElement('div')
                 
@@ -63,26 +64,27 @@ Role('Siesta.Test.ExtJSCore', {
         },
 
         // Overridden to deal with the different event firing mechanisms in Ext JS 3 vs 4
-        // This code is required because in IE are simulated using fireEvent instead of dispatchEvent and it seems fireEvent will
+        // This code is required because in IE events are simulated using fireEvent instead of dispatchEvent and it seems fireEvent will
         // will not update a checkbox 'checked' state properly so we're forcing the toggle to solve this situation. 
         // This issue is only relevant in IE + Ext. 
         //
         // Test case: 507_form_checkbox.t.js
-        simulateMouseClick: function (el, callback, scope) {
+        simulateMouseClick: function (clickInfo, callback, scope, options) {
+            var el      = clickInfo.el
             
             // Force check toggle for input checkboxes
             if (this.getSimulateEventsWith() === 'fireEvent' && (el.type === 'checkbox' || el.type === 'radio') && !el.disabled && !el.readOnly) {
                 var oldState = el.checked;
 
                 if (callback) {
-                    this.SUPER(el, function() { 
-                        if (el.checked === oldState) {
+                    this.SUPER(el, function (finalClickTarget) { 
+                        if (finalClickTarget == el && el.checked === oldState) {
                             el.checked = !oldState;
                         }
-                        callback.call(scope || this);
+                        callback.call(scope || this, finalClickTarget);
                     });
                 } else {
-                    this.SUPER(el);
+                    this.SUPERARG(arguments);
 
                     if (el.checked === oldState) {
                         el.checked = !oldState;
@@ -180,6 +182,13 @@ Role('Siesta.Test.ExtJSCore', {
             return this.global.Ext
         },
         
+        
+        isExtJSComponent : function (obj) {
+            var Ext     = this.global.Ext
+            
+            return Boolean(Ext && Ext.Component && obj instanceof Ext.Component)
+        },
+        
         // Accepts Ext.Component or ComponentQuery
         normalizeComponent : function(component, allowEmpty) {
             var Ext = this.Ext();
@@ -227,7 +236,8 @@ Role('Siesta.Test.ExtJSCore', {
         },
 
         // Accept Ext.Element and Ext.Component
-        normalizeElement : function(el, allowMissing) {
+        // If the 'shallow' flag is true we should not 'reevaluate' the target element - stop at the component element.
+        normalizeElement : function(el, allowMissing, shallow) {
             if (!el) return null
             
             var Ext     = this.getExt();
@@ -237,7 +247,7 @@ Role('Siesta.Test.ExtJSCore', {
             if (typeof el === 'string') {
                 if (el.match(/=>/))
                     // Composite query
-                    el      = this.compositeQuery(el)[ 0 ]
+                    el      = this.compositeQuery(el, null, false)[ 0 ]
                 else if (el.match(/^\s*>>/)) {
                     // Component query
                     el      = this.cq1(el.substring(2))
@@ -247,14 +257,15 @@ Role('Siesta.Test.ExtJSCore', {
                 }
 
                 if (!allowMissing && !el) {
-                    throw 'No component found found for CQ: ' + origEl;
+                    this.warn('No component found for CQ: ' + origEl)
+                    throw 'No component found for CQ: ' + origEl;
                 }
             }
 
-            if (Ext && Ext.Component && el instanceof Ext.Component) {
+            if (this.isExtJSComponent(el)) {
                 el          = this.compToEl(el);
 
-                if (this.isElementVisible(el) && this.elementIsTop(el, true)) {
+                if (!shallow && this.isElementVisible(el) && this.elementIsTop(el, true)) {
                     var center  = this.findCenter(el);
 
                     el          = this.elementFromPoint(center[0], center[1], false, el.dom);
@@ -265,7 +276,7 @@ Role('Siesta.Test.ExtJSCore', {
             if (el && el.dom) return el.dom
                 
             // will also handle the case of conversion of array with coordinates to el 
-            return this.SUPER(el, allowMissing);
+            return this.SUPER(el, allowMissing, shallow);
         },
         
         
@@ -282,7 +293,8 @@ Role('Siesta.Test.ExtJSCore', {
                     var result = this.cq1(el.substring(2));
 
                     if (!result || result.length < 1) {
-                        throw 'No component found found for CQ: ' + el;
+                        this.warn('No component found for CQ: ' + el)
+                        throw 'No component found for CQ: ' + el;
                     }
                     return result;
                 }
@@ -291,7 +303,7 @@ Role('Siesta.Test.ExtJSCore', {
             var Ext = this.getExt();
             
             // if user has passed ExtJS Component, return it as is
-            if (Ext && el instanceof Ext.Component) return el
+            if (this.isExtJSComponent(el)) return el
             
             // if user has passed ExtJS Element, return it as is
             if (el && el.dom) return el
@@ -441,43 +453,53 @@ Role('Siesta.Test.ExtJSCore', {
          *       
          * On the left side of such "composite" query should be a component query, on the right - DOM query (CSS selector)
          * 
-         * This method will generate exception, if component query returns no results. In case when component query returns more than one
-         * component, method will generate a warning and proceed with the 1st found component. The exception/warning can be suppressed with the "allowEmpty" argument.
+         * In case when component query returns more than one component, this method iterate through all of them and will try to
+         * resolve the 2nd part of the query. The results from the 1st component with matching DOM nodes is returned. 
          * 
-         * E.g. the composite query `gridpanel[title=Accounts] => .x-grid-row` will give you the grid row elements inside a certain grid panel
+         * E.g. the composite query `gridpanel[title=Accounts] => .x-grid-row` will give you the grid row elements inside a grid panel
+         * with `title` config matching "Accounts". 
          * 
          * @param {String} selector The CompositeQuery selector
-         * @param {Ext.Component} root The optional root component to start the component query from. If omitted, global component query will be performed.
-         * @param {Boolean} allowEmpty True to suppress the exception/warnings from this method if no match is found. Default is `false`.
+         * @param {Ext.Component} root The optional root component to start the component query from. If omitted, a global component query will be performed.
+         * @param {Boolean} allowEmpty False to throw the exception from this method if no matching DOM element is found. Default is `true`.
          * 
          * @return {HTMLElement[]} The array of DOM elements 
          */
         compositeQuery : function (selector, root, allowEmpty) {
+            allowEmpty  = allowEmpty !== false
+            
             var Ext     = this.Ext();
+            // Try to find magic => selector for nested ComponentQuery and CSS selector
+            var parts   = selector.split('=>');
+
             root        = root || Ext.ComponentQuery;
 
-            // Ext JS specific
-            // Try to find magic => selector for nested ComponentQuery and CSS selector
-            var result  = selector.split('=>');
-
-            if (result.length < 1) throw "Invalid composite query selector: " + selector
+            if (parts.length < 2) throw "Invalid composite query selector: " + selector
             
-            var cmp     = root.query(result[0]);
+            var components     = root.query(parts[0]);
                     
-            if (!cmp.length)
+            if (!components.length)
                 if (allowEmpty) 
                     return []
                 else
-                    throw 'ComponentQuery ' + result[0] + ' matched no Ext.Component';
+                    throw 'ComponentQuery ' + parts[0] + ' matched no Ext.Component';
             
-            if (cmp.length > 1) this.warn('ComponentQuery ' + result[0] + ' matched more than 1 Ext.Component')
-                    
-            cmp         = cmp[0];
+            for (var i = 0; i < components.length; i++) {
+                var cmp         = components[i];
 
-            if (!cmp.rendered) throw 'The source component of the composite query: ' + cmp.id + ' is not yet rendered';
+                if (cmp.rendered) {
+                    var result  = this.compToEl(cmp, false).query(parts[1]);
 
+                    if (result.length > 0) {
+                        return result;
+                    }
+                }
+            }
 
-            return this.compToEl(cmp, false).query(result[1]);
+            if (allowEmpty) 
+                return []
+            else
+                throw 'Composite query ' + selector + ' matched no Ext.Component';
         },
         
         /**

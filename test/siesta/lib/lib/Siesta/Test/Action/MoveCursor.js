@@ -1,6 +1,6 @@
 /*
 
-Siesta 2.0.1
+Siesta 2.0.3
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -42,8 +42,8 @@ Class('Siesta.Test.Action.MoveCursor', {
         /**
          * @cfg {Siesta.Test.ActionTarget/Function} to 
          * 
-         * The target point the cursor should be moved to. Can be provided as the DOM element, the array with screen coordinates: `[ x, y ]`, or the function
-         * returning one of those.
+         * The target point the cursor should be moved to. Can be provided as a DOM element, an array with client coordinates: `[ x, y ]`, or a function
+         * returning one of those. You can additionally pass an 'offset' array to click at a point relative to the XY position of the target.
          * 
          * Exactly one of the `to` and `by` configuration options should be provided for this action.
          */
@@ -57,7 +57,14 @@ Class('Siesta.Test.Action.MoveCursor', {
          * 
          * Exactly one of the `to` and `by` configuration options should be provided for this action.
          */
-        by                  : null
+        by                  : null,
+
+        /**
+         * @cfg {Array} offset
+         *
+         * An offset in X, Y coordinates from the targeted element (only applicable when using the 'to' target option.
+         */
+        offset : null
     },
 
     
@@ -86,7 +93,7 @@ Class('Siesta.Test.Action.MoveCursor', {
                 
                 var normalizedTarget    = test.normalizeActionTarget(to)
                 
-                test.moveMouseTo(to, function() { next(normalizedTarget); })
+                test.moveMouseTo(to, function() { next(normalizedTarget); }, null, this.offset)
             } else {
                 var by                  = this.getBy()
                 var currentXY           = test.currentPosition

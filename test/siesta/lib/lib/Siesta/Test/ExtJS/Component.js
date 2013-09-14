@@ -1,6 +1,6 @@
 /*
 
-Siesta 2.0.1
+Siesta 2.0.3
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -29,9 +29,7 @@ Role('Siesta.Test.ExtJS.Component', {
         waitForComponentVisible: function (component, callback, scope, timeout) {
             component = this.normalizeComponent(component);
             
-            var Ext = this.getExt();
-            
-            if (!(component instanceof Ext.Component)) {
+            if (!this.isExtJSComponent(component)) {
                 throw 'Expected an Ext.Component, got: ' + component;
             }
 
@@ -59,8 +57,7 @@ Role('Siesta.Test.ExtJS.Component', {
         waitForComponentNotVisible: function (component, callback, scope, timeout) {
             component = this.normalizeComponent(component);
 
-            var Ext = this.getExt();
-            if (!(component instanceof Ext.Component)) {
+            if (!this.isExtJSComponent(component)) {
                 throw 'Expected an Ext.Component, got: ' + component;
             }
 

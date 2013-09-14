@@ -1,6 +1,6 @@
 /*
 
-Siesta 2.0.1
+Siesta 2.0.3
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -44,20 +44,24 @@ Class('Siesta.Test.ExtJS', {
 
     
     has : {
-        globalExtOverrides      : null
+        globalExtOverrides      : null,
+        
+        extPathRegex1           : /(.*ext(?:js)?-\d\.\d+(?:\.\d+)?.*?)\/ext-all(?:-debug)?\.js/,
+        extPathRegex2           : /(.*ext(?:js)?\/gpl\/\d\.\d+(?:\.\d+)?.*?)\/ext-all(?:-debug)?\.js/
     },
     
     methods : {
 
         getExtBundlePath : function() {
-            var path;
+            var path
             var testDescriptor      = this.harness.getScriptDescriptor(this.url)
+            var me                  = this
 
             while (testDescriptor && !path) {
                 if (testDescriptor.preload) {
                     Joose.A.each(testDescriptor.preload, function (url) {
-                        if (url.match && url.match(/ext(?:js)?-\d\.\d+(?:\.\d+)?.*?\/ext-all(?:-debug)?\.js/)) {
-                            path = url;
+                        if (url.match && (url.match(me.extPathRegex1) || url.match(me.extPathRegex2))) {
+                            path    = url;
                             return false;
                         }
                     });
@@ -72,16 +76,16 @@ Class('Siesta.Test.ExtJS', {
         getExtBundleFolder : function() {
             var folder;
             var testDescriptor      = this.harness.getScriptDescriptor(this.url)
+            var me                  = this
 
             while (testDescriptor && !folder) {
                 if (testDescriptor.preload) {
                     Joose.A.each(testDescriptor.preload, function (url) {
-                        var regex = /(.*ext(?:js)?-\d\.\d+(?:\.\d+)?.*?)\/ext-all(?:-debug)?\.js/;
-                        var match = regex.exec(url);
+                        var match = me.extPathRegex1.exec(url) || me.extPathRegex2.exec(url);
 
-                        if (match) {
-                           folder = match[1];
-                        }
+                        if (match) folder = match[1];
+                        
+                        return false
                     });
                 }
                 testDescriptor = testDescriptor.parent;

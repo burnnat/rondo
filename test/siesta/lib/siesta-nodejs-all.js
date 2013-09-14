@@ -1,6 +1,6 @@
 /*
 
-Siesta 2.0.1
+Siesta 2.0.3
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -6057,6 +6057,111 @@ Class('Siesta.Util.XMLNode', {
     }
 })
 ;
+Class('Siesta.Util.Rect', {
+    
+    has     : {
+        left            : null,
+        top             : null,
+        width           : null,
+        height          : null,
+        
+        right           : null,
+        bottom          : null
+    },
+    
+    
+    methods : {
+        
+        initialize : function () {
+            var left        = this.left
+            var width       = this.width
+            var right       = this.right
+            
+            if (right == null && left != null && width != null) this.right = left + width - 1
+            
+            if (width == null && left != null && right != null) this.width = right - left + 1
+            
+            var top         = this.top
+            var height      = this.height
+            var bottom      = this.bottom
+            
+            if (bottom == null && top != null && height != null) this.bottom = top + height - 1
+            
+            if (height == null && top != null && bottom != null) this.height = bottom - top + 1
+        },
+        
+        
+        isEmpty : function () {
+            return this.left == null
+        },
+        
+        
+        intersect : function (rect) {
+            if (
+                rect.isEmpty() || this.isEmpty()
+                    ||
+                rect.left > this.right || rect.right < this.left
+                    ||
+                rect.top > this.bottom || rect.bottom < this.top
+            ) return this.my.getEmpty()
+            
+            return new this.constructor({
+                left        : Math.max(this.left, rect.left),
+                right       : Math.min(this.right, rect.right),
+                top         : Math.max(this.top, rect.top),
+                bottom      : Math.min(this.bottom, rect.bottom)
+            })
+        },
+        
+        
+        contains : function (left, top) {
+            return this.left <= left && left <= this.right 
+                    && 
+                this.top <= top && top <= this.bottom
+        },
+        
+        
+        cropLeftRight : function (rect) {
+            return this.intersect(new this.constructor({
+                left        : rect.left,
+                right       : rect.right,
+                top         : this.top,
+                bottom      : this.bottom
+            }))
+        },
+        
+        
+        cropTopBottom : function (rect) {
+            return this.intersect(new this.constructor({
+                left        : this.left,
+                right       : this.right,
+                top         : rect.top,
+                bottom      : rect.bottom
+            }))
+        },
+        
+        
+        equalsTo : function (rect) {
+            return this.left == rect.left && this.right == rect.right && this.top == rect.top && this.bottom == rect.bottom
+        }
+    },
+    
+    
+    // static methods/props
+    my : {
+        has : {
+            HOST        : null
+        }, 
+        
+        methods : {
+            
+            getEmpty : function () {
+                return new this.HOST()
+            }
+        }
+    }
+})
+;
 Class('Siesta.Content.Resource', {
     
     has : {
@@ -6351,7 +6456,7 @@ Class('Siesta.Content.Manager', {
 ;
 ;
 Class('Siesta', {
-    /*PKGVERSION*/VERSION : '2.0.1',
+    /*PKGVERSION*/VERSION : '2.0.3',
 
     // "my" should been named "static"
     my : {
@@ -6710,7 +6815,8 @@ Role('Siesta.Test.Function', {
         isCalledNTimes : function(fn, obj, n, desc, isGreaterEqual) {
             var me      = this,
                 prop    = typeof fn === "string" ? fn : me.getPropertyName(obj, fn);
-            desc = desc ? (desc + ' ') : '';
+                
+            desc        = desc ? (desc + ' ') : '';
 
             this.on('beforetestfinalizeearly', function () {
                 if (counter === n || (isGreaterEqual && counter > n)) {
@@ -6728,7 +6834,7 @@ Role('Siesta.Test.Function', {
 
             var counter = 0;
             fn = obj[prop];
-            obj[prop] = function () { counter++; return fn.apply(obj, arguments); };
+            obj[prop] = function () { counter++; return fn.apply(this, arguments); };
         },
 
         /**
@@ -7095,7 +7201,23 @@ Role('Siesta.Test.More', {
                 }
             }
             
-            if (Math.abs(value2 - value1) <= threshHold)
+            // this function normalizes the fractional numbers to fixed point presentation
+            // for example in JS: 1.05 - 1 = 0.050000000000000044
+            // so what we do is: (1.05 * 10^2 - 1 * 10^2) / 10^2 = (105 - 100) / 100 = 0.05
+            var subtract    = function (value1, value2) {
+                var fractionalLength    = function (v) {
+                    var afterPointPart = (v + '').split('.')[ 1 ]
+                    
+                    return afterPointPart && afterPointPart.length || 0
+                }
+                
+                var maxLength           = Math.max(fractionalLength(value1), fractionalLength(value2))
+                var k                   = Math.pow(10, maxLength);
+
+                return (value1 * k - value2 * k) / k;
+            };            
+            
+            if (Math.abs(subtract(value2, value1)) <= threshHold)
                 this.pass(desc, {
                     descTpl             : '`{value1}` is approximately equal to `{value2}`',
                     value1              : value1,
@@ -7761,10 +7883,15 @@ Role('Siesta.Test.More', {
             var isDone      = false
 
             // stop polling, if this test instance has finalized (probably because of exception)
-            this.on('testfinalize', function () {
-                isDone      = true
-                
-                originalClearTimeout(pollTimeout)
+            this.on('beforetestfinalize', function () {
+                if (!isDone) {
+                    isDone      = true
+                    
+                    me.finalizeWaiting(waitAssertion, false, 'Waiting aborted');
+                    me.endAsync(async)
+                    
+                    originalClearTimeout(pollTimeout)
+                }
             }, null, { single : true })
 
             if (isWaitingForTime) {
@@ -7772,7 +7899,7 @@ Role('Siesta.Test.More', {
                     isDone      = true
                     
                     me.finalizeWaiting(waitAssertion, true, 'Waited ' + method + ' ms');
-                    me.endAsync(async); 
+                    me.endAsync(async);
                     me.processCallbackFromTest(callback, [], scope || me)
                 }, method);
                 
@@ -7831,6 +7958,8 @@ Role('Siesta.Test.More', {
                 force : function () {
                     // wait operation already completed 
                     if (isDone) return
+                    
+                    isDone      = true
                     
                     originalClearTimeout(pollTimeout)
                     
@@ -7956,8 +8085,31 @@ Role('Siesta.Test.More', {
         ...
     )
     
+         *  **Tip**:
          *  
-         *  If step is presented with a `null` or `undefined` it is ignored.
+         *  If step is presented with a `null` or `undefined` value it will be ignored. Additionally, the step may be presented 
+         *  with an array of steps - all arrays in the input will be flattened.
+         *  
+         *  These tips allows us to implement conditional steps processing, like this:
+         *  
+
+    var el1IsInDom          = t.$('.some-class1')[ 0 ]
+    var el2IsInDom          = t.$('.some-class2')[ 0 ]
+    
+    t.chain(
+        { click : '.some-other-el' },
+        
+        el1IsInDom ? [
+            { click : el1IsInDom },
+            
+            el2IsInDom ? [
+                { click : el1IsInDom },
+            ] : null,
+        ] : null,
+        
+        ...
+    )
+
          *  
          *  @param {Function/Object/Array} step1 The function to execute or action configuration, or the array of such
          *  @param {Function/Object} step2 The function to execute or action configuration
@@ -7965,7 +8117,7 @@ Role('Siesta.Test.More', {
          */
         chain : function () {
             // inline any arrays in the arguments into one array
-            var steps       = Array.prototype.concat.apply([], arguments)
+            var steps       = this.flattenArray(arguments)
             
             var nonEmpty    = []
             Joose.A.each(steps, function (step) { if (step) nonEmpty.push(step) })
@@ -9640,7 +9792,7 @@ Class('Siesta.Test', {
          * @param {String} desc The description of the assertion
          */
         isNotStrict : function (got, expected, desc) {
-            if (!this.compareObjects(got, expected, false, true))
+            if (!this.compareObjects(got, expected, true, true))
                 this.pass(desc, {
                     descTpl             : '`{got}` is not strictly equal to `{expected}`',
                     got                 : got,
@@ -10512,6 +10664,21 @@ Class('Siesta.Test', {
                 description : message,
                 isWarning   : true
             }))
+        },
+        
+        
+        flattenArray : function (array) {
+            var me          = this
+            var result      = []
+            
+            Joose.A.each(array, function (el) {
+                if (me.typeOf(el) == 'Array') 
+                    result.push.apply(result, me.flattenArray(el))
+                else
+                    result.push(el)
+            })
+            
+            return result
         }
     }
     // eof methods
@@ -10529,6 +10696,7 @@ Singleton('Siesta.Test.ActionRegistry', {
                 'click', 
                 'rightClick', 
                 'doubleClick', 
+                'dblClick',
                 'doubleTap', 
                 'drag', 
                 'longpress', 
@@ -10895,7 +11063,7 @@ Class('Siesta.Test.Action.Eval', {
          * @cfg {Object} options
          *
          * Any options that will be used when simulating the event. For information about possible
-         * config options, please see: https://developer.mozilla.org/en-US/docs/DOM/event.initMouseEvent
+         * config options, please see: <https://developer.mozilla.org/en-US/docs/DOM/event.initMouseEvent>
          */
         actionString        : null
     },

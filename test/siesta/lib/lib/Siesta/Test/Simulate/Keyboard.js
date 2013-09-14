@@ -1,6 +1,6 @@
 /*
 
-Siesta 2.0.1
+Siesta 2.0.3
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -73,6 +73,21 @@ Role('Siesta.Test.Simulate.Keyboard', {
                 evt.keyCode = (e.charCode > 0) ? e.charCode : e.keyCode;
                 evt.charCode = undefined;
             }
+            
+            // IE10 somehow reports that "defaultPrevented" property of the event object is `false`
+            // even that "preventDefault()" has been called on the object
+            // more over, immediately after call to "preventDefault()" the property is updated
+            // but down in stack it is replaced with "false" again somehow
+            // we setup our own, additional property, indicating that event has been prevented
+            if ($.browser.msie && $.browser.version == '10.0') {
+                var prev    = evt.preventDefault
+                
+                if (prev) evt.preventDefault = function () {
+                    this.$defaultPrevented  = true                    
+                    return prev.apply(this, arguments)
+                }
+            }
+            
             return evt;
         },
 
@@ -95,6 +110,77 @@ Role('Siesta.Test.Simulate.Keyboard', {
             }
 
             return null;
+        },
+        
+        
+        /*!
+         * Based on:
+         * 
+         * @license EmulateTab
+         * Copyright (c) 2011, 2012 The Swedish Post and Telecom Authority (PTS)
+         * Developed for PTS by Joel Purra <http://joelpurra.se/>
+         * Released under the BSD license.
+         *
+         * A jQuery plugin to emulate tabbing between elements on a page.
+         */
+        findNextFocusable : function (el, offset) {
+            var $el         = this.$(el)
+            
+            var $focusable  = this.$(":input, a[href]", el.ownerDocument)
+                .not(":disabled")
+                .not(":hidden")
+                .not("a[href]:empty");
+                
+            var escapeSelectorName  = function (str) {
+                // Based on http://api.jquery.com/category/selectors/
+                // Still untested
+                return str.replace(/(!"#$%&'\(\)\*\+,\.\/:;<=>\?@\[\]^`\{\|\}~)/g, "\\\\$1");
+            }
+
+            if (
+                el.tagName === "INPUT"
+                && el.type === "radio"
+                && el.name !== ""
+            ) {
+                var name    = escapeSelectorName(el.name);
+
+                $focusable  = $focusable
+                    .not("input[type=radio][name=" + name + "]")
+                    .add($el);
+            }
+
+            // Sort the inputs, by tabIndex if it is set
+            var elsWithTabIndex = $focusable.filter('[tabindex]');
+
+            elsWithTabIndex.sort(function(a, b) {
+                return a.tabIndex < b.tabIndex ? -1 : 1;
+            });
+
+            elsWithTabIndex     = $(elsWithTabIndex.toArray().concat($focusable.filter(':not([tabindex])').toArray()));
+
+            var currentIndex    = $(elsWithTabIndex).index($el);
+
+            var nextIndex       = (currentIndex + offset) % elsWithTabIndex.length;
+            var $next;
+
+            // If we're at the last focusable element, focus the body el
+            if (nextIndex > 0) {
+                $next           = elsWithTabIndex.eq(nextIndex);
+            }
+
+            return $next && $next[ 0 ] || null;
+        },
+        
+        
+        emulateTab : function (el, offset) {
+            var next        = this.findNextFocusable(el, offset || 1)
+            
+            if (next)  
+                this.focus(next)
+            else
+                el.blur()
+                
+            return next
         },
 
 
@@ -211,18 +297,25 @@ Role('Siesta.Test.Simulate.Keyboard', {
                 originalLength  = el.value.length;
             }
 
-            me.simulateEvent(el, 'keydown', $.extend({ charCode : 0, keyCode : keyCode }, options), true);
+            var keyDownEvent    = me.simulateEvent(el, 'keydown', $.extend({ charCode : 0, keyCode : keyCode }, options), true);
+            var keyDownPrevented    = this.isEventPrevented(keyDownEvent)
 
             var event           = me.simulateEvent(el, 'keypress', $.extend({ charCode : charCode, keyCode : isReadableKey ? 0 : keyCode }, options), false);
-            var prevented       = typeof event.defaultPrevented === 'boolean' ? event.defaultPrevented : event.returnValue === false;
+            var prevented       = this.isEventPrevented(event)
 
             var supports        = Siesta.Harness.Browser.FeatureSupport().supports
+
+            if (!keyDownPrevented && !prevented && keyCode === KeyCodes.TAB) {
+                el              = this.emulateTab(el, options.shiftKey ? -1 : 1) || el;
+            }
             
-            if (isTextInput && !prevented) {
+            if (!prevented && isTextInput && keyCode != KeyCodes.TAB) {
+                var isPhantomJS = this.harness.isPhantomJS
+                
                 if (isReadableKey) {
                     // PhantomJS does not simulate the "textInput" event correctly if target element is inside an iframe 
                     // (at least not as of 1.6), only the last character is shown.
-                    if (!this.harness.isPhantomJS) {
+                    if (!isPhantomJS) {
                         // TODO should check first if textInput event is supported
                         me.simulateEvent(el, 'textInput', { text: options.readableKey }, true);
                     }
@@ -232,7 +325,7 @@ Role('Siesta.Test.Simulate.Keyboard', {
                     if (maxLength != null) maxLength    = Number(maxLength)
 
                     // If the entered char had no impact on the textfield - manually put it there
-                    if (!supports.canSimulateKeyCharacters && originalLength === el.value.length && originalLength !== maxLength) {
+                    if ((!supports.canSimulateKeyCharacters || isPhantomJS) && originalLength === el.value.length && originalLength !== maxLength) {
                         el.value = el.value + options.readableKey;
                     }
                 }

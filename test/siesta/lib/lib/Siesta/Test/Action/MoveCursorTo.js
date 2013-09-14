@@ -1,6 +1,6 @@
 /*
 
-Siesta 2.0.1
+Siesta 2.0.3
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -43,12 +43,12 @@ Class('Siesta.Test.Action.MoveCursorTo', {
     methods : {
         
         process : function () {
-            this.test.moveMouseTo(this.getTarget(), this.next)
+            this.test.moveMouseTo(this.getTarget(), this.next, null, this.offset)
         }
     }
 });
 
 
 Siesta.Test.ActionRegistry().registerAction('moveCursorTo', Siesta.Test.Action.MoveCursorTo)
-Siesta.Test.ActionRegistry().registerAction('moveMouseTo', Siesta.Test.Action.MoveMouseTo)
-Siesta.Test.ActionRegistry().registerAction('moveFingerTo', Siesta.Test.Action.MoveMouseTo)
+Siesta.Test.ActionRegistry().registerAction('moveMouseTo', Siesta.Test.Action.MoveCursorTo)
+Siesta.Test.ActionRegistry().registerAction('moveFingerTo', Siesta.Test.Action.MoveCursorTo)

@@ -1,6 +1,6 @@
 /*
 
-Siesta 2.0.1
+Siesta 2.0.3
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -48,7 +48,8 @@ Role('Siesta.Test.Function', {
         isCalledNTimes : function(fn, obj, n, desc, isGreaterEqual) {
             var me      = this,
                 prop    = typeof fn === "string" ? fn : me.getPropertyName(obj, fn);
-            desc = desc ? (desc + ' ') : '';
+                
+            desc        = desc ? (desc + ' ') : '';
 
             this.on('beforetestfinalizeearly', function () {
                 if (counter === n || (isGreaterEqual && counter > n)) {
@@ -66,7 +67,7 @@ Role('Siesta.Test.Function', {
 
             var counter = 0;
             fn = obj[prop];
-            obj[prop] = function () { counter++; return fn.apply(obj, arguments); };
+            obj[prop] = function () { counter++; return fn.apply(this, arguments); };
         },
 
         /**

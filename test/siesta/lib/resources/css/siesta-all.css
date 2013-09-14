@@ -1,6 +1,6 @@
 /*
 
-Siesta 2.0.1
+Siesta 2.0.3
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -593,6 +593,9 @@ td.tr-td-vertical-align {
 
 .test-name-column .x-grid-cell-inner {
     position            : relative;
+}
+.tr-testgrid .x-tree-view,
+.test-name-column .x-grid-cell-inner {
     user-select         : none;
     -o-user-select      : none;
     -ms-user-select     : none;
@@ -601,11 +604,11 @@ td.tr-td-vertical-align {
 }
 
 .test-name-column span.x-tree-node-text {
-    -moz-user-select    : text;
-    -webkit-user-select : text;
-    -ms-user-select     : text;
-    user-select         : text;
-    -o-user-select      : text;
+    /*-moz-user-select    : text;*/
+    /*-webkit-user-select : text;*/
+    /*-ms-user-select     : text;*/
+    /*user-select         : text;*/
+    /*-o-user-select      : text;*/
 }
 
 /* TOP TOOLBAR STYLES */
@@ -615,6 +618,11 @@ td.tr-td-vertical-align {
 
 .tr-testgrid .x-tree-icon {
     display : none;
+}
+
+.tr-testgrid .x-tree-view
+{
+
 }
 
 .x-ie9 .tr-testgrid .x-tree-view {
@@ -902,14 +910,18 @@ td.tr-td-vertical-align {
     display : none;
 }
 
+.tr-waiting-row .x-tree-icon {
+    background-image : url(../images/spinner.gif);
+}
+
 .tr-assertion-row-passed .x-tree-icon,
 .tr-subtest-row-green .x-tree-icon {
-    background-image : url(../images/ok.png) !important;
+    background-image : url(../images/ok.png);
 }
 
 .tr-assertion-row-failed .x-tree-icon,
 .tr-subtest-row-red .x-tree-icon {
-    background-image : url(../images/bug.png) !important;
+    background-image : url(../images/bug.png);
 }
 
 .tr-assertion-row-failed {
@@ -917,15 +929,11 @@ td.tr-td-vertical-align {
 }
 
 .tr-todo-row-passed .x-tree-icon {
-    background-image : url(../images/ok-todo.png) !important;
+    background-image : url(../images/ok-todo.png);
 }
 
 .tr-todo-row-failed .x-tree-icon {
-    background-image : url(../images/bug-todo.png) !important;
-}
-
-.tr-waiting-row .x-tree-icon {
-    background-image : url(../images/spinner.gif) !important;
+    background-image : url(../images/bug-todo.png);
 }
 
 .tr-waiting-row .assertion-text {
@@ -933,7 +941,7 @@ td.tr-td-vertical-align {
 }
 
 .tr-waiting-row-passed .x-tree-icon {
-    background-image : url(../images/clock_check.png) !important;
+    background-image : url(../images/clock_check.png);
 }
 
 .tr-waiting-row-passed .assertion-text {
@@ -941,7 +949,7 @@ td.tr-td-vertical-align {
 }
 
 .tr-subtest-row-working .x-tree-icon {
-    background-image : url(../images/spinner.gif) !important;
+    background-image : url(../images/spinner.gif);
 }
 
 /*=======================================================================================================================================================================================================================

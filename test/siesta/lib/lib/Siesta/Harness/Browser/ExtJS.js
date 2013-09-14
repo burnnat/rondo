@@ -1,6 +1,6 @@
 /*
 
-Siesta 2.0.1
+Siesta 2.0.3
 Copyright(c) 2009-2013 Bryntum AB
 http://bryntum.com/contact
 http://bryntum.com/products/siesta/license
@@ -143,6 +143,22 @@ Class('Siesta.Harness.Browser.ExtJS', {
             
             setup : function (callback) {
                 var me      = this
+                
+                /*
+                    This is to be able to pass "next" function form the chain step to the Ext as callback:
+                        function (next) {
+                            resourceStore.reload({
+                                callback : next
+                            })
+                        }
+                    For some reason, Ext performs "isFunction" check on the callback value and only calls it if this check passes
+                    (assuming programming does not know what he is doing)
+                    "isFunction" check in turn relies on the presence of this property in the Function prototype
+                    
+                    This line can be removed once "isFunction" in Ext will become cross-context or Ext will stop
+                    using "isFunction" check for callbacks
+                */
+                Function.prototype.$extIsFunction = true;
                 
                 this.SUPER(function () {
                     if (me.allowExtVersionChange) me.extVersion = me.findExtVersion()
