@@ -263,8 +263,7 @@ module.exports = function(grunt) {
 		"express:build",
 		"mochaTest:server",
 		"saucelabs-jasmine:mobile",
-		// Disable automated Siesta tests due to issues running on SauceLabs
-		// "saucelabs-siesta:mobile",
+		"saucelabs-siesta:mobile",
 		"saucelabs-selenium:mobile"
 	]);
 	
