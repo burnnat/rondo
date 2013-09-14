@@ -1,6 +1,13 @@
 <!DOCTYPE html>
 <html>
 	<head>
+		<!--
+			Favicon © 2013 by DaPinoGraphics
+			Licensed under Creative Commons Attribution-Non-Commercial 3.0
+			For more information see: http://dapinographics.com/projects/summer-holiday-icon-set/
+		-->
+		<link rel="shortcut icon" type="image/png" href="siesta_favicon.png">
+		
 		<!-- <link rel="stylesheet" type="text/css" href="/common/ext/packages/ext-theme-classic/build/resources/ext-theme-classic-all.css" /> -->
 		<link rel="stylesheet" type="text/css" href="http://cdn.sencha.io/ext-4.2.0-gpl/resources/css/ext-all.css" />
 		<link rel="stylesheet" type="text/css" href="lib/resources/css/siesta-all.css" />
@@ -21,12 +28,11 @@
 				{{/production}}
 				
 				preload: [
+						'/mobile/resources/css/app.css',
 					{{#production}}
-						'/build/rondo-mobile/production/resources/css/app.css',
-						'/build/rondo-mobile/production/test-classes.js'
+						'/mobile/test-classes.js'
 					{{/production}}
 					{{^production}}
-						'/mobile/resources/css/app.css',
 						'/common/touch/sencha-touch.js',
 						'/common/packages/tutti/vexflow/build/vexflow-all.js',
 						'/test/siesta/setup.js'
