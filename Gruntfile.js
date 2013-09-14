@@ -66,7 +66,7 @@ module.exports = function(grunt) {
 	
 	grunt.initConfig({
 		
-		domain: local['app.domain'] || 'http://127.0.0.1:<%= port %>',
+		domain: local['app.domain'] || 'http://localhost:<%= port %>',
 		port: parseInt(local['server.port']),
 		deployTarget: local['deploy.dir'],
 		
