@@ -5,6 +5,19 @@ var app = require('./app.js');
 module.exports = {
 	app: app,
 	
+	make: function(type, data, done) {
+		app.post('/api/' + type)
+			.send(data)
+			.set('Accept', 'application/json')
+			.expect('Content-Type', /json/)
+			.expect(
+				200,
+				function(err, res) {
+					done(err, res.body.records.id);
+				}
+			);
+	},
+	
 	run: function(setup) {
 		var path = setup.path;
 		

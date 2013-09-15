@@ -8,7 +8,8 @@ var object = require('./api/object');
 var types = [
 	require("./api/sketch"),
 	require("./api/measure"),
-	require("./api/part")
+	require("./api/part"),
+	require("./api/staff")
 ];
 
 module.exports = {

@@ -8,20 +8,16 @@ test.run({
 	
 	prep: function() {
 		before(function(done) {
-			test.app
-				.post('/api/sketches')
-				.send({
+			test.make(
+				'sketches',
+				{
 					title: 'Root Sketch'
-				})
-				.set('Accept', 'application/json')
-				.expect('Content-Type', /json/)
-				.expect(
-					200,
-					function(err, res) {
-						parent = res.body.records.id;
-						done(err);
-					}
-				);
+				},
+				function(err, id) {
+					parent = id;
+					done(err);
+				}
+			);
 		});
 	},
 	
