@@ -164,7 +164,7 @@ module.exports = function(grunt) {
 					url: '<%= domain %>/mobile/',
 					script: require('./test/selenium/mobile.js')
 						.init(
-							local['facebook.user.email'] || process.env.FACEBOOK_ID,
+							local['facebook.user.email'] || process.env.FACEBOOK_USERNAME,
 							local['facebook.user.password'] || process.env.FACEBOOK_PASSWORD
 						),
 					local: grunt.option('local') || grunt.option('human'),
