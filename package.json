@@ -47,7 +47,7 @@
 	
 	"scripts": {
 		"start": "node ./server/web.js production",
-		"test": "grunt test"
+		"test": "node ./node_modules/grunt-cli/bin/grunt test"
 	},
 	
 	"engines": {
