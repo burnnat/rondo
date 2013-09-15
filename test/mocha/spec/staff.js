@@ -43,6 +43,12 @@ test.run({
 		};
 	},
 	
+	invalidData: function() {
+		return {
+			clef: 'rock of ages, clef for thee'
+		};
+	},
+	
 	updateRecord: function(record) {
 		record.clef = 'bass';
 	}

@@ -130,6 +130,6 @@ module.exports = {
 	
 	failure: function(res, err) {
 		console.error(err);
-		return res.send({ success: false });
+		return res.send(400, { success: false });
 	}
 };

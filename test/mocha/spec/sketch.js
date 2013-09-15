@@ -10,6 +10,12 @@ test.run({
 		};
 	},
 	
+	invalidData: function() {
+		return {
+			title: null
+		};
+	},
+	
 	updateRecord: function(record) {
 		record.title = '...New Title...';
 	}

@@ -99,6 +99,22 @@ module.exports = {
 					);
 			});
 			
+			it('fails on invalid ' + path, function(done) {
+				var data = setup.invalidData();
+				
+				app.post('/api/' + path)
+					.send(data)
+					.set('Accept', 'application/json')
+					.expect('Content-Type', /json/)
+					.expect(
+						400,
+						{
+							success: false
+						},
+						done
+					);
+			});
+			
 			describe('individually', function() {
 				var record;
 				

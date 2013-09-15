@@ -29,6 +29,12 @@ test.run({
 		};
 	},
 	
+	invalidData: function() {
+		return {
+			group: 'blue man'
+		};
+	},
+	
 	updateRecord: function(record) {
 		record.name = 'Piano';
 		record.group = 'brace';

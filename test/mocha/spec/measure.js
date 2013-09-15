@@ -29,6 +29,13 @@ test.run({
 		};
 	},
 	
+	invalidData: function() {
+		return {
+			key: 'Q',
+			time: 34
+		};
+	},
+	
 	updateRecord: function(record) {
 		record.key = 'C';
 		record.time = '3/4';
