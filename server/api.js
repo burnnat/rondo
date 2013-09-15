@@ -5,8 +5,11 @@ var async = require("async");
 var info = require('../package.json');
 
 var object = require('./api/object');
-var sketches = require("./api/sketch");
-var measures = require("./api/measure");
+var types = [
+	require("./api/sketch"),
+	require("./api/measure"),
+	require("./api/part")
+];
 
 module.exports = {
 	init: function(app) {
@@ -28,10 +31,9 @@ module.exports = {
 				
 				if (req.body.reset === true) {
 					async.parallel(
-						[
-							sketches.reset,
-							measures.reset
-						],
+						types.map(function(type) {
+							return type.reset;
+						}),
 						function(err) {
 							req.logout();
 							finalize(err);
@@ -61,7 +63,8 @@ module.exports = {
 			}
 		});
 		
-		object.init(app, sketches);
-		object.init(app, measures);
+		types.forEach(function(type) {
+			object.init(app, type)
+		});
 	}
 };
