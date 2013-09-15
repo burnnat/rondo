@@ -27,7 +27,7 @@ module.exports = {
 				
 				var browserCallback = browserConfig.callback
 					? function(err) {
-						browserConfig.callback(err, browser, rootCallback)
+						browserConfig.callback(err, browser, rootCallback);
 					}
 					: rootCallback;
 				
@@ -274,13 +274,13 @@ module.exports = {
 		});
 		
 		// Update SauceLabs job status as browser run completes.
-		options.callback = function(err, browser, next) {
+		options.callback = function(browserError, browser, next) {
 			var job = browser.sessionID;
 			
 			sauce.updateJob(
 				job,
 				{
-					passed: !err && browser.saucePassed !== false,
+					passed: !browserError && browser.saucePassed !== false,
 					'custom-data': browser.sauceData
 				},
 				function(err) {
@@ -291,7 +291,7 @@ module.exports = {
 						grunt.log.verbose.writeln('Updated SauceLabs status for job: ' + job);
 					}
 					
-					next(err);
+					next(browserError || err);
 				}
 			);
 		};
