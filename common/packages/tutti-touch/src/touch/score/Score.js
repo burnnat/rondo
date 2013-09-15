@@ -50,28 +50,39 @@ Ext.define('Tutti.touch.score.Score', {
 		var parts = sketch.parts();
 		var blockHeight = 100;
 		
-		sketch.measures().each(
-			function(measure, index, length) {
-				var first = index === 0;
-				
-				var measure = new Tutti.touch.score.Measure({
-					data: measure,
-					parts: parts,
-					blockHeight: blockHeight,
-					blockWidth: 400 + (first ? 100 : 0),
-					systemStart: first,
-					systemEnd: index === length - 1
-				});
-				
-				if (first) {
-					blockHeight = measure.getSystemHeight();
-					measure.setBlockHeight(blockHeight);
-				}
-				
-				this.add(measure);
-			},
-			this
-		);
+		var measures = sketch.measures();
+		
+		if (measures.getCount() > 0) {
+			measures.each(
+				function(measure, index, length) {
+					var first = index === 0;
+					
+					var measure = new Tutti.touch.score.Measure({
+						data: measure,
+						parts: parts,
+						blockHeight: blockHeight,
+						blockWidth: 400 + (first ? 100 : 0),
+						systemStart: first,
+						systemEnd: index === length - 1
+					});
+					
+					if (first) {
+						blockHeight = measure.getSystemHeight();
+						measure.setBlockHeight(blockHeight);
+					}
+					
+					this.add(measure);
+				},
+				this
+			);
+		}
+		else {
+			this.getLayout().setPack('center');
+			this.add({
+				xtype: 'component',
+				html: 'This sketch is empty.'
+			});
+		}
 		
 		this.on('painted', this.adjustHeight, this, { single: true });
 	},
@@ -88,8 +99,11 @@ Ext.define('Tutti.touch.score.Score', {
 	
 	fetchChildHeight: function() {
 		var first = this.getAt(0);
-		this.blockHeight = first.getBlockHeight();
-		this.baseHeight = first.getHeight() || this.blockHeight;
+		
+		if (first && first instanceof Tutti.touch.score.Measure) {
+			this.blockHeight = first.getBlockHeight();
+			this.baseHeight = first.getHeight() || this.blockHeight;
+		}
 	},
 	
 	setChildHeight: function(height) {
