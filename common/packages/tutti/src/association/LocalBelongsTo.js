@@ -11,8 +11,21 @@ Ext.define('Tutti.association.LocalBelongsTo', {
 	alias: 'association.localbelongsto',
 	
 	config: {
-		primaryKey: 'localId',
+		primaryKey: 'id',
 		lookupStore: null
+	},
+	
+	constructor: function() {
+		this.callParent(arguments);
+		this.mixins.local.constructor.apply(this, arguments);
+	},
+	
+	getPrimaryStore: function() {
+		return this.getLookupStore();
+	},
+	
+	getForeignStore: function() {
+		return Ext.util.Inflector.pluralize(this.getOwnerName().toLowerCase());
 	},
 	
 	updatePrimaryKey: function(primaryKey, oldPrimaryKey) {

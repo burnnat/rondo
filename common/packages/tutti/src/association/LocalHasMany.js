@@ -15,7 +15,34 @@ Ext.define('Tutti.association.LocalHasMany', {
 	config: {
 		autoLoad: true,
 //		autoSync: true,
-		primaryKey: 'localId'
+		primaryKey: 'id'
+	},
+	
+	constructor: function() {
+		this.callParent(arguments);
+		this.mixins.local.constructor.apply(this, arguments);
+	},
+	
+	getPrimaryStore: function() {
+		return Ext.util.Inflector.pluralize(this.getOwnerName().toLowerCase());
+	},
+	
+	getForeignStore: function() {
+		return this.getName();
+	},
+	
+	updateReferences: function(record, foreignKey, value) {
+		this.mixins.local.updateReferences.apply(this, arguments);
+		
+		var store = record[this.getStoreName()];
+		
+		if (store) {
+			store.filter({
+				property: foreignKey,
+				value: value,
+				exactMatch: true
+			});
+		}
 	},
 	
 	onAddRecords: function(store, records) {
@@ -55,20 +82,6 @@ Ext.define('Tutti.association.LocalHasMany', {
 			oldPrimaryKey,
 			{
 				convert: this.convertPrimary
-			}
-		);
-	},
-	
-	updateForeignKey: function(foreignKey, oldForeignKey) {
-		this.updateField(
-			this.getAssociatedModel(),
-			foreignKey,
-			oldForeignKey,
-			{
-				convert: function(value, record) {
-					// Only set the foreign key if it hasn't already been set.
-					return record.get(foreignKey) || value;
-				}
 			}
 		);
 	}

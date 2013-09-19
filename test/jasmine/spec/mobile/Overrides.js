@@ -1,9 +1,34 @@
 Ext.require([
 	'Ext.data.Store',
-	'TouchOverrides.data.Store'
+	'Tutti.overrides.data.StoreManager',
+	'Tutti.touch.overrides.data.Store'
 ]);
 
 describe("Touch Overrides", function() {
+	describe("Ext.data.StoreManager", function() {
+		it("should fire registered event", function() {
+			var storeId = 'test';
+			var fired = false;
+			
+			Ext.data.StoreManager.on(
+				'register',
+				function(stores) {
+					fired = true;
+					expect(stores.length).toEqual(1);
+					expect(stores[0].getStoreId()).toEqual(storeId);
+				},
+				null,
+				{ single: true }
+			);
+			
+			store = new Ext.data.Store({
+				storeId: storeId,
+				fields: []
+			});
+			
+			expect(fired).toEqual(true);
+		});
+	})
 	
 	describe("Ext.data.Store", function() {
 		var store, record;

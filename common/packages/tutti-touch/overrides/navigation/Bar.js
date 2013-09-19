@@ -1,7 +1,7 @@
 /**
  * 
  */
-Ext.define('TouchOverrides.navigation.Bar', {
+Ext.define('Tutti.touch.overrides.navigation.Bar', {
 	override: 'Ext.navigation.Bar',
 	
 	doChangeView: function(view, hasPrevious, reverse) {
