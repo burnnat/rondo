@@ -7,12 +7,8 @@ Ext.require([
 describe("Tutti.association.LocalBelongsTo", function() {
 	var FruitClass, DessertClass, fruits, desserts;
 	
-	var makeClassName = function(name) {
-		return 'Test.' + Ext.id(null, 'run') + '.' + name;
-	}
-	
 	beforeEach(function() {
-		FruitClass = Ext.define(makeClassName('Fruit'), {
+		FruitClass = Ext.define(classname('Fruit'), {
 			extend: 'Ext.data.Model',
 			
 			config: {
@@ -20,7 +16,7 @@ describe("Tutti.association.LocalBelongsTo", function() {
 			}
 		});
 		
-		DessertClass = Ext.define(makeClassName('Dessert'), {
+		DessertClass = Ext.define(classname('Dessert'), {
 			extend: 'Ext.data.Model',
 			
 			config: {
