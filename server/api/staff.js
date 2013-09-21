@@ -5,7 +5,16 @@ module.exports = {
 	model: 'Staff',
 	
 	fields: {
-		clef: String,
+		clef: {
+			type: String,
+			enum: [
+				'treble',
+				'bass',
+				'tenor',
+				'alto',
+				'percussion'
+			]
+		},
 		part_id: {
 			type: Schema.Types.ObjectId,
 			required: true

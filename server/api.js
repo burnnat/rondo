@@ -9,7 +9,8 @@ var types = [
 	require("./api/sketch"),
 	require("./api/measure"),
 	require("./api/part"),
-	require("./api/staff")
+	require("./api/staff"),
+	require("./api/voice")
 ];
 
 module.exports = {
