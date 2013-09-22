@@ -263,7 +263,7 @@ module.exports = function(grunt) {
 		"express:build",
 		"mochaTest:server",
 		"saucelabs-jasmine:mobile",
-		"saucelabs-siesta:mobile",
+//		"saucelabs-siesta:mobile",
 		"saucelabs-selenium:mobile"
 	]);
 	
