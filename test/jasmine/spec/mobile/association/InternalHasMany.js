@@ -87,32 +87,55 @@ describe("Tutti.association.InternalHasMany", function() {
 		apple.save();
 	});
 	
-	it("should read associated data", function() {
-		// For WebStorage proxies, loading is performed synchronously
-		// so we don't need to worry about waiting for this callback.
-		var record;
-		FruitClass.load(
-			apple.getId(),
-			{
-				callback: function(loaded) {
-					record = loaded;
+	describe("should read associated data", function() {
+		var load = function(id) {
+			// For WebStorage proxies, loading is performed synchronously
+			// so we don't need to worry about waiting for this callback.
+			var record;
+			FruitClass.load(
+				id,
+				{
+					callback: function(loaded) {
+						record = loaded;
+					}
 				}
-			}
-		);
-		
-		expect(record === apple).toBe(false);
-		expect(record.getData()).toEqual(apple.getData());
-		
-		var recordDesserts = record.desserts();
-		var appleDesserts = apple.desserts();
-		
-		expect(recordDesserts.getCount()).toEqual(appleDesserts.getCount());
-		
-		appleDesserts.each(function(appleDessert, index) {
-			var recordDessert = recordDesserts.getAt(index);
+			);
 			
-			expect(recordDessert === appleDessert).toBe(false);
-			expect(recordDessert.getData()).toEqual(appleDessert.getData());
+			return record;
+		};
+		
+		it("for empty stores", function() {
+			var cherry = new FruitClass({
+				id: 'cherry',
+				name: 'Cherry',
+				color: 'red' 
+			});
+			cherry.save();
+			
+			var record = load(cherry.getId());
+			
+			expect(record === cherry).toBe(false);
+			expect(record.getData()).toEqual(cherry.getData());
+			expect(record.desserts().getCount()).toEqual(0);
+		});
+		
+		it("for non-empty stores", function() {
+			var record = load(apple.getId());
+			
+			expect(record === apple).toBe(false);
+			expect(record.getData()).toEqual(apple.getData());
+			
+			var recordDesserts = record.desserts();
+			var appleDesserts = apple.desserts();
+			
+			expect(recordDesserts.getCount()).toEqual(appleDesserts.getCount());
+			
+			appleDesserts.each(function(appleDessert, index) {
+				var recordDessert = recordDesserts.getAt(index);
+				
+				expect(recordDessert === appleDessert).toBe(false);
+				expect(recordDessert.getData()).toEqual(appleDessert.getData());
+			});
 		});
 	});
 	

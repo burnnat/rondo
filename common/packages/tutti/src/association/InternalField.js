@@ -19,7 +19,7 @@ Ext.define('Tutti.association.InternalField', {
 	encode: function(value, record) {
 		var data = [];
 		
-		record[this.getAssociation().getStoreName()].each(function(child) {
+		record[this.getName()]().each(function(child) {
 			var item = {};
 			
 			child.fields.each(function(field) {
