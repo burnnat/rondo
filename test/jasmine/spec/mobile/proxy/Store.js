@@ -5,11 +5,11 @@ Ext.require([
 ]);
 
 describe("Tutti.proxy.Store", function() {
-	var store, parent;
+	var Model, store, parent;
 	var parentId = 'parent';
 	
 	prep(function() {
-		Ext.define('Test.Model', {
+		Model = Ext.define(classname('Model'), {
 			extend: 'Ext.data.Model',
 			
 			config: {
@@ -19,7 +19,7 @@ describe("Tutti.proxy.Store", function() {
 		
 		parent = new Ext.data.Store({
 			storeId: parentId,
-			model: Test.Model,
+			model: Model,
 			data: [
 				{ fruit: 'apple', dessert: 'pie' },
 				{ fruit: 'peach', dessert: 'cobbler' },
@@ -32,6 +32,7 @@ describe("Tutti.proxy.Store", function() {
 	
 	beforeEach(function() {
 		store = new Ext.data.Store({
+			model: Model,
 			proxy: {
 				type: 'store',
 				storeName: parentId

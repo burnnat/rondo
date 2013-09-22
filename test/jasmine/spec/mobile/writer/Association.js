@@ -24,7 +24,9 @@ describe("Tutti.writer.Association", function() {
 		var Submodel = Ext.define(classname('Submodel'), {
 			extend: 'Ext.data.Model',
 			
-			fields: ['id', 'color']
+			config: {
+				fields: ['id', 'color']
+			}
 		});
 		
 		var subrecord = new Submodel(subrecordData);
@@ -32,12 +34,14 @@ describe("Tutti.writer.Association", function() {
 		var Model = Ext.define(classname('Model'), {
 			extend: 'Ext.data.Model',
 			
-			fields: ['id', 'name'],
-			
-			hasOne: {
-				model: Ext.getClassName(Submodel),
-				setterName: 'setFavorite',
-				associationKey: 'favorite'
+			config: {
+				fields: ['id', 'name'],
+				
+				hasOne: {
+					model: Ext.getClassName(Submodel),
+					setterName: 'setFavorite',
+					associationKey: 'favorite'
+				}
 			}
 		});
 		
@@ -71,7 +75,9 @@ describe("Tutti.writer.Association", function() {
 		var Submodel = Ext.define(classname('Submodel'), {
 			extend: 'Ext.data.Model',
 			
-			fields: ['id', 'name']
+			config: {
+				fields: ['id', 'name']
+			}
 		});
 		
 		var subrecord = new Submodel(subrecordData);
@@ -79,12 +85,14 @@ describe("Tutti.writer.Association", function() {
 		var Model = Ext.define(classname('Model'), {
 			extend: 'Ext.data.Model',
 			
-			fields: ['id', 'name', 'breed'],
-			
-			belongsTo: {
-				model: Ext.getClassName(Submodel),
-				setterName: 'setOwner',
-				associationKey: 'owner'
+			config: {
+				fields: ['id', 'name', 'breed'],
+				
+				belongsTo: {
+					model: Ext.getClassName(Submodel),
+					setterName: 'setOwner',
+					associationKey: 'owner'
+				}
 			}
 		});
 		
@@ -127,18 +135,22 @@ describe("Tutti.writer.Association", function() {
 		var Submodel = Ext.define(classname('Submodel'), {
 			extend: 'Ext.data.Model',
 			
-			fields: ['id', 'color']
+			config: {
+				fields: ['id', 'color']
+			}
 		});
 		
 		var Model = Ext.define(classname('Model'), {
 			extend: 'Ext.data.Model',
 			
-			fields: ['id', 'name'],
-			
-			hasMany: {
-				model: Ext.getClassName(Submodel),
-				associationKey: 'colors',
-				name: 'getColors'
+			config: {
+				fields: ['id', 'name'],
+				
+				hasMany: {
+					model: Ext.getClassName(Submodel),
+					associationKey: 'colors',
+					name: 'getColors'
+				}
 			}
 		});
 		
@@ -188,34 +200,43 @@ describe("Tutti.writer.Association", function() {
 		
 		var Subsubmodel = Ext.define(classname('Subsubmodel'), {
 			extend: 'Ext.data.Model',
-			fields: ['id', 'element'],
 			
-			belongsTo: {
-				model: submodelName,
-				setterName: 'setPlanet',
-				associationKey: 'planet'
+			config: {
+				fields: ['id', 'element'],
+				
+				belongsTo: {
+					model: submodelName,
+					setterName: 'setPlanet',
+					associationKey: 'planet'
+				}
 			}
 		});
 		
 		var Submodel = Ext.define(submodelName, {
 			extend: 'Ext.data.Model',
-			fields: ['id', 'habitable'],
 			
-			hasMany: {
-				model: Ext.getClassName(Subsubmodel),
-				associationKey: 'atmosphere',
-				name: 'getAtmosphere'
+			config: {
+				fields: ['id', 'habitable'],
+				
+				hasMany: {
+					model: Ext.getClassName(Subsubmodel),
+					associationKey: 'atmosphere',
+					name: 'getAtmosphere'
+				}
 			}
 		});
 		
 		var Model = Ext.define(classname('Model'), {
 			extend: 'Ext.data.Model',
-			fields: ['id', 'galaxy'],
 			
-			hasOne: {
-				model: Ext.getClassName(Submodel),
-				setterName: 'setLife',
-				associationKey: 'life'
+			config: {
+				fields: ['id', 'galaxy'],
+				
+				hasOne: {
+					model: Ext.getClassName(Submodel),
+					setterName: 'setLife',
+					associationKey: 'life'
+				}
 			}
 		});
 		
