@@ -6,14 +6,15 @@ Ext.define('Tutti.model.Part', {
 	
 	requires: [
 		'Tutti.association.LocalHasMany',
-		'Tutti.model.Staff'
+		'Tutti.model.Staff',
+		'Tutti.proxy.Sync'
 	],
 	
 	config: {
 		identifier: 'uuid',
 		
 		proxy: {
-			type: 'localstorage',
+			type: 'sync',
 			id: 'parts'
 		},
 		

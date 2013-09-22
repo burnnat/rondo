@@ -10,6 +10,6 @@ Ext.define('Tutti.store.Voices', {
 		storeId: 'voices',
 		model: 'Tutti.model.Voice',
 		
-		autoLoad: true
+		autoSync: true
 	}
 });

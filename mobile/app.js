@@ -26,6 +26,7 @@ Ext.application({
 		
 		'Tutti.overrides.data.StoreManager',
 		'Tutti.touch.overrides.data.Store',
+		'Tutti.touch.overrides.log.Logger',
 		'Tutti.touch.overrides.navigation.Bar',
 		
 		'Rondo.User',
@@ -61,6 +62,10 @@ Ext.application({
 	},
 	
 	launch: function() {
+		//<debug>
+		Ext.Logger.setMinPriority('info');
+		//</debug>
+		
 		// Destroy the #appLoadingIndicator element
 		Ext.fly('appLoadingIndicator').destroy();
 		

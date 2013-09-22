@@ -10,6 +10,6 @@ Ext.define('Tutti.store.Staves', {
 		storeId: 'staves',
 		model: 'Tutti.model.Staff',
 		
-		autoLoad: true
+		autoSync: true
 	}
 });

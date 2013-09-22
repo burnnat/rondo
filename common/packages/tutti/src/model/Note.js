@@ -9,24 +9,21 @@ Ext.define('Tutti.model.Note', {
 		
 		fields: [
 			{
+				name: 'id',
+				persist: false
+			},
+//			{
+//				name: 'voice_id',
+//				persist: false
+//			},
+			{
 				name: 'pitches',
-				type: 'string',
-				convert: function(value) {
-					if (!Ext.isString(value)) {
-						return Ext.encode(Ext.Array.from(value));
-					}
-					
-					return value;
-				}
+				type: 'auto'
 			},
 			{
 				name: 'duration',
 				type: 'string'
 			}
 		]
-	},
-	
-	getPitchData: function() {
-		return Ext.decode(this.get('pitches'));
 	}
 });

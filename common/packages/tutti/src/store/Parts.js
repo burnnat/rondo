@@ -10,6 +10,6 @@ Ext.define('Tutti.store.Parts', {
 		storeId: 'parts',
 		model: 'Tutti.model.Part',
 		
-		autoLoad: true
+		autoSync: true
 	}
 });

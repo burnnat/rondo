@@ -6,14 +6,15 @@ Ext.define('Tutti.model.Measure', {
 	
 	requires: [
 		'Tutti.association.LocalHasMany',
-		'Tutti.model.Voice'
+		'Tutti.model.Voice',
+		'Tutti.proxy.Sync'
 	],
 	
 	config: {
 		identifier: 'uuid',
 		
 		proxy: {
-			type: 'localstorage',
+			type: 'sync',
 			id: 'measures'
 		},
 		

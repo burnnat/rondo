@@ -27,7 +27,7 @@ Ext.define('Tutti.touch.score.Note', {
 		var data = this.getData();
 		
 		this.primitive = new Vex.Flow.StaveNote({
-			keys: data.getPitchData(),
+			keys: data.get('pitches'),
 			duration: data.get('duration'),
 			clef: voice.stave.clef
 		});

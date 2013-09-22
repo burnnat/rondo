@@ -10,7 +10,7 @@ Ext.define('Tutti.store.Sketches', {
 		storeId: 'sketches',
 		model: 'Tutti.model.Sketch',
 		
-		autoLoad: true,
+		autoSync: true,
 		
 		sorters: [{
 			property: 'title',

@@ -4,11 +4,15 @@
 Ext.define('Tutti.model.Staff', {
 	extend: 'Ext.data.Model',
 	
+	requires: [
+		'Tutti.proxy.Sync'
+	],
+	
 	config: {
 		identifier: 'uuid',
 		
 		proxy: {
-			type: 'localstorage',
+			type: 'sync',
 			id: 'staves'
 		},
 		

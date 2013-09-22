@@ -42,11 +42,13 @@ Ext.define('Rondo.User', {
 	
 	onUserLoad: function(user) {
 		this.record = user;
-		this.fireEvent('logout', user);
-		
 		var authenticated = user.get('authenticated');
 		
 		if (authenticated != this.authenticated) {
+			//<debug>
+			Ext.Logger.info('User logged ' + (authenticated ? 'in' : 'out'));
+			//<debug>
+			
 			this.authenticated = authenticated;
 			this.fireEvent(authenticated ? 'login' : 'logout', user);
 		}

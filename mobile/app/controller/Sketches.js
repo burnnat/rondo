@@ -4,6 +4,10 @@
 Ext.define('Rondo.controller.Sketches', {
 	extend: 'Ext.app.Controller',
 	
+	requires: [
+		'Tutti.store.SyncManager'
+	],
+	
 	uses: [
 		'Rondo.view.sketch.Viewer',
 		'Rondo.view.sketch.Editor'
@@ -54,43 +58,38 @@ Ext.define('Rondo.controller.Sketches', {
 	},
 	
 	init: function() {
-		this.getApplication().on({
+		Rondo.User.on({
 			login: this.onLogin,
 			logout: this.onLogout,
 			scope: this
 		});
+		
+		Tutti.store.SyncManager.register(this.getApplication().getStores());
+		
+		this.eachStore(
+			function(store) {
+				store.load();
+			}
+		);
 	},
 	
 	eachStore: function(fn) {
 		Ext.Array.forEach(
-			[
-				'sketches',
-				'parts',
-				'staves',
-				'measures',
-				'voices'
-			],
-			function(name) {
-				fn.call(this, Ext.getStore(name));
+			this.getApplication().getStores(),
+			function(store) {
+				fn.call(this, store);
 			}
 		);
 	},
 	
 	onLogin: function() {
-		this.eachStore(
-			function(store) {
-//				store.setAutoSync(true);
-				store.sync();
-			}
-		);
+		Tutti.store.SyncManager.syncAll();
 	},
 	
 	onLogout: function() {
 		this.eachStore(
 			function(store) {
-//				store.setAutoSync(false);
-//				store.getProxy().clear();
-				store.load();
+				
 			}
 		);
 	},
@@ -107,15 +106,16 @@ Ext.define('Rondo.controller.Sketches', {
 	onRefresh: function() {
 		this.eachStore(
 			function(store) {
+				var storeId = store.getStoreId();
+				var isVoice = storeId == 'voices';
+				
 				console.log(store.getStoreId() + ': ' + store.getCount())
 				
-				var localIds = [];
+				var data = [];
 				
 				store.each(function(item) {
-					localIds.push(item.get('localId'));
+					data.push(item.getData(isVoice));
 				});
-				
-				console.log('[' + localIds.join(', ') + ']');
 			}
 		)
 	},
@@ -136,6 +136,31 @@ Ext.define('Rondo.controller.Sketches', {
 		
 		store.add(sketch);
 		store.sync();
+		/*
+		var coordinator = new Tutti.Coordinator({
+			callback: function() {
+				Ext.getStore('voices').sync();
+			},
+			taskCount: 2
+		});
+		
+		store.add(sketch);
+		store.sync({
+			callback: function() {
+				Ext.getStore('parts').sync({
+					callback: function() {
+						Ext.getStore('staves').sync({
+							callback: coordinator.getTask()
+						});
+					}
+				});
+				
+				Ext.getStore('measures').sync({
+					callback: coordinator.getTask()
+				});
+			}
+		});
+		*/
 	},
 	
 	onViewSketch: function(list, index, target, sketch) {

@@ -6,7 +6,8 @@ Ext.define('Tutti.proxy.Store', {
 	alias: 'proxy.store',
 	
 	config: {
-		storeName: null
+		storeName: null,
+		autoSync: true
 	},
 	
 	getStore: function() {
@@ -17,28 +18,27 @@ Ext.define('Tutti.proxy.Store', {
 		return this.store;
 	},
 	
+	autoSync: function() {
+		if (this.getAutoSync()) {
+			this.getStore().sync();
+		}
+	},
+	
 	create: function(operation, callback, scope) {
-		var store = this.getStore();
-		
-		store.add(operation.getRecords());
-		store.sync();
+		this.getStore().add(operation.getRecords());
+		this.autoSync();
 		
 		Ext.callback(callback, scope || this, [operation]);
 	},
 	
 	update: function(operation, callback, scope) {
-		var store = this.getStore();
-		
-		store.sync();
-		
+		this.autoSync();
 		Ext.callback(callback, scope || this, [operation]);
 	},
 	
 	destroy: function(operation, callback, scope) {
-		var store = this.getStore();
-		
-		store.remove(operation.getRecords());
-		store.sync();
+		this.getStore().remove(operation.getRecords());
+		this.autoSync();
 		
 		Ext.callback(callback, scope || this, [operation]);
 	},
@@ -77,9 +77,7 @@ Ext.define('Tutti.proxy.Store', {
 	},
 	
 	clear: function() {
-		var store = this.getStore();
-		
-		store.removeAll();
-		store.sync();
+		this.getStore().removeAll();
+		this.autoSync();
 	}
 })

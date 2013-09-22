@@ -7,14 +7,15 @@ Ext.define('Tutti.model.Sketch', {
 	requires: [
 		'Tutti.association.LocalHasMany',
 		'Tutti.model.Measure',
-		'Tutti.model.Part'
+		'Tutti.model.Part',
+		'Tutti.proxy.Sync'
 	],
 	
 	config: {
 		identifier: 'uuid',
 		
 		proxy: {
-			type: 'localstorage',
+			type: 'sync',
 			id: 'sketches'
 		},
 		
