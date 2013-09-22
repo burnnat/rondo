@@ -49,7 +49,7 @@ Ext.define('Tutti.association.InternalHasMany', {
 				listeners: {
 					addrecords: this.onAddRecords,
 					removerecords: this.onRemoveRecords,
-					updaterecords: this.onUpdateRecord,
+					updaterecord: this.onUpdateRecord,
 					scope: this
 				}
 			}

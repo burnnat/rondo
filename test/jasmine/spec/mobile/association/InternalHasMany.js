@@ -68,12 +68,12 @@ describe("Tutti.association.InternalHasMany", function() {
 		});
 	});
 	
+	var apple;
+	
 	beforeEach(function() {
 		storage.data = {};
-	});
-	
-	it("should read associated data", function() {
-		var apple = new FruitClass({
+		
+		apple = new FruitClass({
 			id: 'apple',
 			name: 'Apple',
 			color: 'red'
@@ -85,8 +85,9 @@ describe("Tutti.association.InternalHasMany", function() {
 		);
 		
 		apple.save();
-		
-		
+	});
+	
+	it("should read associated data", function() {
 		// For WebStorage proxies, loading is performed synchronously
 		// so we don't need to worry about waiting for this callback.
 		var record;
@@ -99,7 +100,7 @@ describe("Tutti.association.InternalHasMany", function() {
 			}
 		);
 		
-		expect(record === apple).toEqual(false);
+		expect(record === apple).toBe(false);
 		expect(record.getData()).toEqual(apple.getData());
 		
 		var recordDesserts = record.desserts();
@@ -110,8 +111,36 @@ describe("Tutti.association.InternalHasMany", function() {
 		appleDesserts.each(function(appleDessert, index) {
 			var recordDessert = recordDesserts.getAt(index);
 			
-			expect(recordDessert === appleDessert).toEqual(false);
+			expect(recordDessert === appleDessert).toBe(false);
 			expect(recordDessert.getData()).toEqual(appleDessert.getData());
 		});
 	});
+	
+	describe("should mark parent records dirty", function() {
+		it("on add", function() {
+			expect(apple.dirty).toBe(false);
+			
+			apple.desserts().add(
+				{ id: 'apple-tart', name: 'Apple Tart' }
+			);
+			
+			expect(apple.dirty).toBe(true);
+		});
+		
+		it("on remove", function() {
+			expect(apple.dirty).toBe(false);
+			
+			apple.desserts().removeAt(1);
+			
+			expect(apple.dirty).toBe(true);
+		});
+		
+		it("on update", function() {
+			expect(apple.dirty).toBe(false);
+			
+			apple.desserts().first().set('name', 'Le Applé Pie');
+			
+			expect(apple.dirty).toBe(true);
+		});
+	})
 });
