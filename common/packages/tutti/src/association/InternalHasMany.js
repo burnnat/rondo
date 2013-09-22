@@ -5,9 +5,14 @@ Ext.define('Tutti.association.InternalHasMany', {
 	extend: 'Ext.data.association.HasMany',
 	alias: 'association.internalhasmany',
 	
-	uses: [
+	requires: [
 		'Tutti.association.InternalField'
 	],
+	
+	constructor: function() {
+		this.callParent(arguments);
+		this.setType('hasmany');
+	},
 	
 	updateForeignKey: function(foreignKey) {
 		this.callParent(arguments);
@@ -47,9 +52,9 @@ Ext.define('Tutti.association.InternalHasMany', {
 			storeConfig,
 			{
 				listeners: {
-					addrecords: this.onAddRecords,
-					removerecords: this.onRemoveRecords,
-					updaterecord: this.onUpdateRecord,
+					addrecords: this.onStoreChange,
+					removerecords: this.onStoreChange,
+					updaterecord: this.onStoreChange,
 					scope: this
 				}
 			}
@@ -58,18 +63,11 @@ Ext.define('Tutti.association.InternalHasMany', {
 		return this.callParent([storeConfig]);
 	},
 	
-	onAddRecords: function(store) {
-		this.callParent(arguments);
-		store.boundTo.setDirty();
-	},
-	
-	onRemoveRecords: function(store) {
-		this.callParent(arguments);
-		store.boundTo.setDirty();
-	},
-	
-	onUpdateRecord: function(store) {
-		store.boundTo.setDirty();
+	onStoreChange: function(store) {
+		var record = store.boundTo;
+		
+		record.setDirty();
+		record.notifyStores('afterEdit', [this.getAssociationKey()], {})
 	},
 	
 	read: function(record) {

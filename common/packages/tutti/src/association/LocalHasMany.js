@@ -21,6 +21,7 @@ Ext.define('Tutti.association.LocalHasMany', {
 	constructor: function() {
 		this.callParent(arguments);
 		this.mixins.local.constructor.apply(this, arguments);
+		this.setType('hasmany');
 	},
 	
 	getPrimaryStore: function() {

@@ -18,6 +18,7 @@ Ext.define('Tutti.association.LocalBelongsTo', {
 	constructor: function() {
 		this.callParent(arguments);
 		this.mixins.local.constructor.apply(this, arguments);
+		this.setType('belongsto');
 	},
 	
 	getPrimaryStore: function() {
