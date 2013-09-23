@@ -213,7 +213,9 @@ Ext.define('Tutti.touch.Block', {
 					}
 				}
 				catch (e) {
+					//<feature logger>
 					Ext.Logger.error(e.stack);
+					//</feature>
 				}
 			},
 			this

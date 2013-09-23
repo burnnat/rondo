@@ -82,9 +82,15 @@ Ext.define('Tutti.proxy.Sync', {
 	sync: function(store, callback, scope) {
 		var id = store.getStoreId();
 		
+		//<feature logger>
 		Ext.Logger.info("Syncing store '" + id + "' with server");
+		//</feature>
+		
 		// TODO: implement the actual sync logic
+		
+		//<feature logger>
 		Ext.Logger.info("Sync complete for store '" + id + "'");
+		//</feature>
 		
 		Ext.callback(callback, scope, [this, store]);
 	}

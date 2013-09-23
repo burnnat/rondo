@@ -37,11 +37,11 @@ Ext.define('Tutti.store.SyncManager', {
 		var model = store.getModel();
 		var modelName = model.getName();
 		
-		//<debug>
+		//<feature logger>
 		if (!(store.getProxy() instanceof Tutti.proxy.Sync)) {
 			Ext.Logger.warn("Store '" + storeId + "' is not configured to use a sync proxy");
 		}
-		//</debug>
+		//</feature>
 		
 		model.getAssociations().each(
 			function(association) {

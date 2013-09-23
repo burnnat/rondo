@@ -44,9 +44,9 @@ Ext.define('Rondo.User', {
 		var authenticated = user.get('authenticated');
 		
 		if (authenticated != this.authenticated) {
-			//<debug>
+			//<feature logger>
 			Ext.Logger.info('User logged ' + (authenticated ? 'in' : 'out'));
-			//</debug>
+			//</feature>
 			
 			this.authenticated = authenticated;
 			this.fireEvent(authenticated ? 'login' : 'logout', user);
