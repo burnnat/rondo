@@ -13,6 +13,18 @@ Ext.define('Tutti.store.SyncManager', {
 	session: null,
 	
 	/**
+	 * 
+	 */
+	reset: function() {
+		Ext.apply(this, {
+			stores: {},
+			prereqs: {},
+			dependencies: {},
+			session: null
+		});
+	},
+	
+	/**
 	 * @param {Ext.data.Store/Ext.data.Store[]} store
 	 */
 	register: function(store) {
@@ -69,6 +81,8 @@ Ext.define('Tutti.store.SyncManager', {
 	},
 	
 	/**
+	 * @protected
+	 * 
 	 * Adds a dependency such that the stores for the `parent` model
 	 * must be synced prior to any stores for the `child` model.
 	 * 
@@ -87,13 +101,17 @@ Ext.define('Tutti.store.SyncManager', {
 	},
 	
 	/**
+	 * @protected
 	 * 
+	 * @param {String} parent
+	 * @param {String} child
 	 */
 	addPrereq: function(parent, child) {
+		var parentStore = this.stores[parent];
 		var childStore = this.stores[child];
 		
-		if (childStore) {
-			Ext.Array.include(this.prereqs[childStore], this.stores[parent]);
+		if (parentStore && childStore) {
+			Ext.Array.include(this.prereqs[childStore], parentStore);
 		}
 	},
 	
