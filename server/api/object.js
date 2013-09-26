@@ -2,12 +2,37 @@ var _ = require("lodash");
 var mongoose = require("mongoose");
 var Schema = mongoose.Schema;
 
+var ConfigModel = mongoose.model(
+	'Config',
+	new Schema({
+		name: String,
+		revision: {
+			type: Number,
+			"default": 0
+		}
+	})
+);
+
 module.exports = {
 	init: function(app, object) {
 		var me = this;
 		var name = object.name;
-		var fields = object.fields;
 		
+		ConfigModel.update(
+			{ name: name },
+			{
+				name: name,
+				$setOnInsert: { revision: 0 }
+			},
+			{ upsert: true },
+			function(err) {
+				if (err) {
+					console.error(err);
+				}
+			}
+		);
+		
+		var fields = object.fields;
 		var Model = this.createModel(object.model, fields);
 		
 		app.get('/api/' + name, function(req, res) {
@@ -33,10 +58,19 @@ module.exports = {
 				)
 			);
 			
-			return record.save(function(err) {
-				return err
-					? me.failure(res, err)
-					: me.success(res, fields, { records: record });
+			return me.nextRevision(name, record, function(err) {
+				if (err) {
+					return me.failure(res, err);
+				}
+				
+				console.log('Creating ' + name + ' with revision: ' + record.revision);
+				console.log(record);
+				
+				return record.save(function(err) {
+					return err
+						? me.failure(res, err)
+						: me.success(res, fields, { records: record });
+				});
 			});
 		});
 		
@@ -50,13 +84,27 @@ module.exports = {
 		
 		app.put('/api/' + name + '/:id', function(req, res) {
 			return Model.findById(req.params.id, function(err, record) {
-				me.updateData(fields, record, req.body);
-				
-				return record.save(function(err) {
-					return err
-						? me.failure(res, err)
-						: me.success(res, fields, { records: record });
-				});
+				if (err) {
+					return me.failure(res, err);
+				}
+				else {
+					return me.nextRevision(name, record, function(err) {
+						if (err) {
+							return me.failure(res, err);
+						}
+						
+						me.updateData(fields, record, req.body);
+						
+						console.log('Updating ' + name + ' with revision: ' + record.revision);
+						console.log(record);
+						
+						return record.save(function(err) {
+							return err
+								? me.failure(res, err)
+								: me.success(res, fields, { records: record });
+						});
+					});
+				}
 			});
 		});
 		
@@ -73,19 +121,37 @@ module.exports = {
 		});
 		
 		object.reset = function(callback) {
-			Model.remove({}, callback);
+			ConfigModel.findOneAndUpdate(
+				{ name: name },
+				{ revision: 0 },
+				function(err) {
+					if (err) {
+						console.error(err);
+					}
+					
+					Model.remove({}, callback);
+				}
+			);
 		};
 	},
 	
 	createModel: function(name, fields) {
-		fields = _.clone(fields);
-		
-		fields.owner = {
-			type: Schema.Types.ObjectId,
-			required: true
-		};
-		
-		return mongoose.model(name, new Schema(fields));
+		return mongoose.model(
+			name,
+			new Schema(
+				_.assign(
+					_.clone(fields),
+					{
+						owner: {
+							type: Schema.Types.ObjectId,
+							required: true
+						},
+						
+						revision: Number
+					}
+				)
+			)
+		);
 	},
 	
 	updateData: function(fields, record, updates) {
@@ -96,6 +162,28 @@ module.exports = {
 				_.keys(fields)
 			)
 		);
+	},
+	
+	nextRevision: function(name, record, callback) {
+		return record.validate(function(err) {
+			if (err) {
+				callback(err, null);
+			}
+			else {
+				ConfigModel.findOneAndUpdate(
+					{ name: name },
+					{ $inc: { revision: 1 } },
+					{
+						select: 'revision',
+						'new': true
+					},
+					function(err, result) {
+						record.revision = result.revision;
+						callback(err, record);
+					}
+				);
+			}
+		});
 	},
 	
 	getData: function(fields, record) {
@@ -113,6 +201,7 @@ module.exports = {
 		}
 		
 		delete data.owner;
+		data.revision = record.revision;
 		
 		return data;
 	},

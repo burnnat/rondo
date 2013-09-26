@@ -22,7 +22,6 @@ module.exports = {
 		var path = setup.path;
 		
 		describe(setup.name + ' API', function() {
-			
 			before(app.reset);
 			before(app.login);
 			
@@ -63,12 +62,13 @@ module.exports = {
 					}
 					
 					for (var field in record) {
-						if (!(field in data) && field !== 'id') {
+						if (!(field in data) && field !== 'id' && field !== 'revision') {
 							assert.fail(field, null, 'Unmatched field encountered: ' + field, '<=>');
 						}
 					}
 					
 					assert.ok(record.id);
+					assert.equal(record.revision, 1);
 				};
 				
 				app.post('/api/' + path)
@@ -147,6 +147,7 @@ module.exports = {
 				
 				it('updates ' + path + ' by ID', function(done) {
 					setup.updateRecord(record);
+					record.revision++;
 					
 					app.put('/api/' + path + '/' + record.id)
 						.send(record)
