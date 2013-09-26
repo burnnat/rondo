@@ -1,4 +1,5 @@
 var passport = require("passport");
+var winston = require("winston");
 var User = require("./user");
 
 module.exports = {
@@ -8,8 +9,11 @@ module.exports = {
 		provider = provider.init(options);
 		
 		if (!provider) {
-			console.warn("Ignoring authentication provider: " + name);
+			winston.warn("Ignoring authentication provider: %s", name);
 			return;
+		}
+		else {
+			winston.debug("Loading authentication provider: %s", name)
 		}
 		
 		var strategy = 

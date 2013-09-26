@@ -7,11 +7,19 @@ if (args.length > 0) {
 var fs = require("fs");
 var express = require("express");
 var mongoose = require("mongoose");
+var winston = require("winston");
+
+// Remove default transport so we can replace it with our own.
+winston.remove(winston.transports.Console);
+winston.add(winston.transports.Console, {
+	level: 'info',
+	colorize: true
+});
 
 var app = express();
 var env = app.get('env');
 
-console.log('Loading server for environment: ' + env);
+winston.info('Loading server for environment: ' + env);
 
 var locals = {};
 
@@ -24,6 +32,8 @@ if (env != 'production') {
 }
 
 var options = {
+	logFile: 'rondo.log',
+	
 	port: process.env.PORT || 8080,
 	secret: process.env.APP_SECRET || 'insecure',
 	appDomain: locals['app.domain'] || process.env.APP_DOMAIN,
@@ -40,6 +50,18 @@ if (!options.appDomain) {
 	options.appDomain = 'http://localhost:' + options.port;
 }
 
+if (env == 'production') {
+	winston.add(winston.transports.File, {
+		filename: options.logFile,
+		level: 'verbose',
+		timestamp: true
+	});
+	
+	if (options.secret == 'insecure') {
+		winston.warn('Warning: using insecure salt on production server');
+	}
+}
+
 app.use(express.cookieParser());
 app.use(express.bodyParser());
 app.use(express.session({ secret: options.secret }));
@@ -51,10 +73,6 @@ var api = require("./api");
 api.init(app, options);
 
 if (env == 'production') {
-	if (options.secret == 'insecure') {
-		console.warn('Warning: using insecure salt on production server');
-	}
-	
 	app.use(express.logger());
 	app.use(express.static('build'));
 }
@@ -87,11 +105,11 @@ else if (env == 'development' || env == 'staging') {
 	}
 }
 else {
-	console.error('Unknown environment type');
+	winston.error('Unknown environment type: %s', env);
 	return false;
 }
 
-console.log("Connecting to database at: " + options.databaseURL);
+winston.info("Connecting to database at: %s", options.databaseURL);
 
 var attempts = 0;
 
@@ -101,11 +119,11 @@ var connectWithRetry = function() {
 	return mongoose.connect(options.databaseURL, function(err) {
 		if (err) {
 			if (attempts <= options.databaseMaxAttempts) {
-				console.error("Database connection failed, retrying in " + options.databaseRetry + " seconds");
+				winston.warn("Database connection failed, retrying in %d seconds", options.databaseRetry);
 			}
 			
 			if (attempts == options.databaseMaxAttempts) {
-				console.log("Maximum connection attempts (" + options.databaseMaxAttempts + ") reached, hush mode activated");
+				winston.warn("Maximum connection attempts (%d) reached, hush mode activated", options.databaseMaxAttempts);
 			}
 			
 			setTimeout(connectWithRetry, options.databaseRetry * 1000);
@@ -124,12 +142,15 @@ if (env == 'development') {
 	app.use(express.errorHandler());
 }
 
-db.on('error', console.error.bind(console, 'Database connection error:'));
+db.on('error', function(err) {
+	winston.error("Database connection error: %s", err);
+});
+
 db.once('open', function() {
-	console.log("Database connection opened");
+	winston.info("Database connection opened");
 });
 
 app.listen(options.port, function() {
-	console.log("Listening on port " + options.port + " using host: " + options.appDomain);
+	winston.info("Listening on port %d using host: %s", options.port, options.appDomain);
 });
 

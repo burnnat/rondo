@@ -43,10 +43,10 @@ module.exports = {
 					);
 				}
 				else if (req.body.close === true) {
-					console.log("Closing database connection");
+					winston.info("Closing database connection");
 					
 					mongoose.disconnect(function() {
-						console.log("Database connection closed");
+						winston.info("Database connection closed");
 						finalize();
 					});
 				}

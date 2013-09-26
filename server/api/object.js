@@ -1,4 +1,5 @@
 var _ = require("lodash");
+var winston = require("winston");
 var mongoose = require("mongoose");
 var Schema = mongoose.Schema;
 
@@ -27,7 +28,7 @@ module.exports = {
 			{ upsert: true },
 			function(err) {
 				if (err) {
-					console.error(err);
+					winston.error(err);
 				}
 			}
 		);
@@ -63,8 +64,7 @@ module.exports = {
 					return me.failure(res, err);
 				}
 				
-				console.log('Creating ' + name + ' with revision: ' + record.revision);
-				console.log(record);
+				winston.debug('Creating %s for owner %s', name, req.user._id, record);
 				
 				return record.save(function(err) {
 					return err
@@ -95,8 +95,7 @@ module.exports = {
 						
 						me.updateData(fields, record, req.body);
 						
-						console.log('Updating ' + name + ' with revision: ' + record.revision);
-						console.log(record);
+						winston.debug('Updating %s for owner %s', name, req.user._id, record);
 						
 						return record.save(function(err) {
 							return err
@@ -110,7 +109,7 @@ module.exports = {
 		
 		app['delete']('/api/' + name + '/:id', function(req, res) {
 			return Model.findById(req.params.id, function(err, record) {
-				me.updateData(fields, record, req.body);
+				winston.debug('Deleting %s for owner %s with id: %s', name, req.user._id, req.params.id);
 				
 				return record.remove(function(err) {
 					return err
@@ -126,7 +125,7 @@ module.exports = {
 				{ revision: 0 },
 				function(err) {
 					if (err) {
-						console.error(err);
+						winston.error(err);
 					}
 					
 					Model.remove({}, callback);
@@ -218,7 +217,17 @@ module.exports = {
 	},
 	
 	failure: function(res, err) {
-		console.error(err);
+		if (err.name == 'ValidationError') {
+			winston.debug(err.message);
+			
+			_.each(err.errors, function(detail) {
+				winston.debug(detail.message);
+			});
+		}
+		else {
+			winston.error(err);
+		}
+		
 		return res.send(400, { success: false });
 	}
 };
