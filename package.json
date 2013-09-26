@@ -16,7 +16,7 @@
 		"passport-facebook": "~1.0.1",
 		
 		"async": "~0.2.9",
-		"lodash": "~2.0.0"
+		"lodash": "~2.1.0"
 	},
 	
 	"devDependencies": {
@@ -30,10 +30,10 @@
 		"grunt-bg-shell": "~2.1.0",
 		"grunt-express-server": "~0.4.3",
 		"grunt-saucelabs": "~4.0.4",
-		"grunt-mocha-test": "~0.6.3",
+		"grunt-mocha-test": "~0.7.0",
 		
-		"mocha": "~1.12.1",
-		"supertest": "~0.7.1",
+		"mocha": "~1.13.0",
+		"supertest": "~0.8.0",
 		
 		"glob": "~3.2.6",
 		"mustache": "~0.7.2",
@@ -42,7 +42,7 @@
 		
 		"saucelabs": "~0.1.0",
 		"sauce-tunnel": "~1.0.1",
-		"wd": "~0.1.4"
+		"wd": "~0.1.5"
 	},
 	
 	"scripts": {
