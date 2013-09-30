@@ -13,7 +13,15 @@ Ext.define('Tutti.model.Staff', {
 		
 		proxy: {
 			type: 'sync',
-			id: 'staves'
+			id: 'staves',
+			remoteProxy: {
+				type: 'rest',
+				url: '/api/staves',
+				reader: {
+					type: 'json',
+					rootProperty: 'records'
+				}
+			}
 		},
 		
 		fields: [

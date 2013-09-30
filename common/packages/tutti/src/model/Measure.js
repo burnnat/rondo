@@ -15,7 +15,15 @@ Ext.define('Tutti.model.Measure', {
 		
 		proxy: {
 			type: 'sync',
-			id: 'measures'
+			id: 'measures',
+			remoteProxy: {
+				type: 'rest',
+				url: '/api/measures',
+				reader: {
+					type: 'json',
+					rootProperty: 'records'
+				}
+			}
 		},
 		
 		fields: [

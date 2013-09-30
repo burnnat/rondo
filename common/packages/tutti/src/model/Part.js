@@ -15,7 +15,15 @@ Ext.define('Tutti.model.Part', {
 		
 		proxy: {
 			type: 'sync',
-			id: 'parts'
+			id: 'parts',
+			remoteProxy: {
+				type: 'rest',
+				url: '/api/parts',
+				reader: {
+					type: 'json',
+					rootProperty: 'records'
+				}
+			}
 		},
 		
 		fields: [

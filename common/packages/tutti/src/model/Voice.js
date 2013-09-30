@@ -21,7 +21,15 @@ Ext.define('Tutti.model.Voice', {
 		
 		proxy: {
 			type: 'sync',
-			id: 'voices'
+			id: 'voices',
+			remoteProxy: {
+				type: 'rest',
+				url: '/api/voices',
+				reader: {
+					type: 'json',
+					rootProperty: 'records'
+				}
+			}
 		},
 		
 		associations: [

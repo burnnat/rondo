@@ -16,7 +16,15 @@ Ext.define('Tutti.model.Sketch', {
 		
 		proxy: {
 			type: 'sync',
-			id: 'sketches'
+			id: 'sketches',
+			remoteProxy: {
+				type: 'rest',
+				url: '/api/sketches',
+				reader: {
+					type: 'json',
+					rootProperty: 'records'
+				}
+			}
 		},
 		
 		fields: [
