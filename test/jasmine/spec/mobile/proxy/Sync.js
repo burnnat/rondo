@@ -267,5 +267,73 @@ describe("Tutti.proxy.Sync", function() {
 			
 			expect(data.id).toEqual(original[2].id);
 		});
+		
+		it("should handle remote creation", function() {
+			var response = Ext.clone(original);
+			var id = store.first().getIdentifier().generate();
+			
+			response.push({
+				id: id,
+				fruit: 'apple',
+				dessert: 'fritter',
+				version: 6
+			});
+			
+			proxy.sync(store);
+			remote.respond(response);
+			
+			expect(remote.created.length).toEqual(0);
+			expect(remote.updated.length).toEqual(0);
+			expect(remote.destroyed.length).toEqual(0);
+			
+			expect(store.getCount()).toEqual(4);
+			
+			var record = store.getById(id);
+			
+			expect(record.get('fruit')).toEqual('apple');
+			expect(record.get('dessert')).toEqual('fritter');
+			expect(record.get('version')).toEqual(6);
+		});
+		
+		it("should handle remote updates", function() {
+			var response = Ext.clone(original);
+			
+			Ext.apply(
+				response[2],
+				{
+					fruit: 'blueberry',
+					version: 6
+				}
+			);
+			
+			proxy.sync(store);
+			remote.respond(response);
+			
+			expect(remote.created.length).toEqual(0);
+			expect(remote.updated.length).toEqual(0);
+			expect(remote.destroyed.length).toEqual(0);
+			
+			expect(store.getCount()).toEqual(3);
+			
+			var record = store.getAt(2);
+			
+			expect(record.get('fruit')).toEqual('blueberry');
+			expect(record.get('dessert')).toEqual('pie');
+			expect(record.get('version')).toEqual(6);
+		});
+		
+		it("should handle remote removal", function() {
+			var response = Ext.clone(original);
+			Ext.Array.splice(response, 1, 1);
+			
+			proxy.sync(store);
+			remote.respond(response);
+			
+			expect(remote.created.length).toEqual(0);
+			expect(remote.updated.length).toEqual(0);
+			expect(remote.destroyed.length).toEqual(0);
+			
+			expect(store.getCount()).toEqual(2);
+		});
 	})
 });

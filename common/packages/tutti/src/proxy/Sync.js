@@ -81,6 +81,10 @@ Ext.define('Tutti.proxy.Sync', {
 		Ext.Array.forEach(
 			operation.getRecords(),
 			function(record) {
+				if (record.isModified(revisionKey)) {
+					return;
+				}
+				
 				record.beginEdit();
 				record.set(revisionKey, null);
 				record.endEdit(true);
@@ -241,13 +245,17 @@ Ext.define('Tutti.proxy.Sync', {
 							changes.update.push(local);
 						}
 					}
+					else if (remoteRevision > localRevision) {
+						local.set(remote.getData());
+					}
 				}
 				else {
 					if (Ext.Array.contains(removed, id)) {
 						changes.destroy.push(remote);
 					}
 					else {
-						// add to current store
+						store.add(remote);
+						existing[id] = true;
 					}
 				}
 			}
@@ -255,7 +263,12 @@ Ext.define('Tutti.proxy.Sync', {
 		
 		store.each(function(record) {
 			if (!existing[record.getId()]) {
-				changes.create.push(record);
+				if (record.get(revisionKey) == null) {
+					changes.create.push(record);
+				}
+				else {
+					store.remove(record);
+				}
 			}
 		});
 		
