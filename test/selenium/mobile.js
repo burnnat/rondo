@@ -99,7 +99,7 @@ module.exports = {
 				.log('Logout')
 				
 				.elementByXPath(xpath.buttonText('Logout'), clickEl('logout button'))
-				.elementByXPath(xpath.buttonText('Login'));
+				.waitForElementByXPath(xpath.buttonText('Login'), timeout);
 		};
 	}
 }
