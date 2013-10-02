@@ -175,7 +175,7 @@ describe("Tutti.proxy.Sync", function() {
 	});
 	
 	describe("when parsing sync data", function() {
-		var store, proxy, original;
+		var store, proxy, spy, original;
 		
 		beforeEach(function() {
 			store = new Ext.data.Store({
@@ -211,6 +211,13 @@ describe("Tutti.proxy.Sync", function() {
 			
 			proxy = store.getProxy();
 			
+			// Reset proxy sync status
+			proxy.setTracking(proxy.getCreatedKey(), []);
+			proxy.setTracking(proxy.getRemovedKey(), []);
+			
+			spy = jasmine.createSpy('conflictListener');
+			proxy.on('conflict', spy);
+			
 			Ext.apply(remote, {
 				created: [],
 				updated: [],
@@ -227,6 +234,7 @@ describe("Tutti.proxy.Sync", function() {
 			proxy.sync(store);
 			remote.respond(original);
 			
+			expect(spy).not.toHaveBeenCalled();
 			expect(remote.created.length).toEqual(1);
 			expect(remote.updated.length).toEqual(0);
 			expect(remote.destroyed.length).toEqual(0);
@@ -243,6 +251,7 @@ describe("Tutti.proxy.Sync", function() {
 			proxy.sync(store);
 			remote.respond(original);
 			
+			expect(spy).not.toHaveBeenCalled();
 			expect(remote.created.length).toEqual(0);
 			expect(remote.updated.length).toEqual(1);
 			expect(remote.destroyed.length).toEqual(0);
@@ -259,6 +268,7 @@ describe("Tutti.proxy.Sync", function() {
 			proxy.sync(store);
 			remote.respond(original);
 			
+			expect(spy).not.toHaveBeenCalled();
 			expect(remote.created.length).toEqual(0);
 			expect(remote.updated.length).toEqual(0);
 			expect(remote.destroyed.length).toEqual(1);
@@ -282,6 +292,7 @@ describe("Tutti.proxy.Sync", function() {
 			proxy.sync(store);
 			remote.respond(response);
 			
+			expect(spy).not.toHaveBeenCalled();
 			expect(remote.created.length).toEqual(0);
 			expect(remote.updated.length).toEqual(0);
 			expect(remote.destroyed.length).toEqual(0);
@@ -309,6 +320,7 @@ describe("Tutti.proxy.Sync", function() {
 			proxy.sync(store);
 			remote.respond(response);
 			
+			expect(spy).not.toHaveBeenCalled();
 			expect(remote.created.length).toEqual(0);
 			expect(remote.updated.length).toEqual(0);
 			expect(remote.destroyed.length).toEqual(0);
@@ -328,6 +340,99 @@ describe("Tutti.proxy.Sync", function() {
 			
 			proxy.sync(store);
 			remote.respond(response);
+			
+			expect(spy).not.toHaveBeenCalled();
+			expect(remote.created.length).toEqual(0);
+			expect(remote.updated.length).toEqual(0);
+			expect(remote.destroyed.length).toEqual(0);
+			
+			expect(store.getCount()).toEqual(2);
+		});
+		
+		it("should handle update conflicts", function() {
+			store.getAt(2).set('dessert', 'cobbler');
+			
+			var response = Ext.clone(original);
+			
+			Ext.apply(
+				response[2],
+				{
+					fruit: 'blueberry',
+					version: 6
+				}
+			);
+			
+			proxy.sync(store);
+			remote.respond(response);
+			
+			expect(spy).toHaveBeenCalled();
+			expect(spy.mostRecentCall.args[0]).toBe(proxy);
+			expect(spy.mostRecentCall.args[1]).toBe(store);
+			
+			var conflicts = spy.mostRecentCall.args[2];
+			
+			expect(conflicts.length).toEqual(1);
+			expect(conflicts[0].local).not.toBeNull();
+			expect(conflicts[0].remote).not.toBeNull();
+			
+			expect(remote.created.length).toEqual(0);
+			expect(remote.updated.length).toEqual(0);
+			expect(remote.destroyed.length).toEqual(0);
+			
+			expect(store.getCount()).toEqual(3);
+		});
+		
+		it("should handle remote removal conflicts", function() {
+			store.getAt(1).set('dessert', 'split');
+			
+			var response = Ext.clone(original);
+			Ext.Array.splice(response, 1, 1);
+			
+			proxy.sync(store);
+			remote.respond(response);
+			
+			expect(spy).toHaveBeenCalled();
+			expect(spy.mostRecentCall.args[0]).toBe(proxy);
+			expect(spy.mostRecentCall.args[1]).toBe(store);
+			
+			var conflicts = spy.mostRecentCall.args[2];
+			
+			expect(conflicts.length).toEqual(1);
+			expect(conflicts[0].local).not.toBeNull();
+			expect(conflicts[0].remote).toBeNull();
+			
+			expect(remote.created.length).toEqual(0);
+			expect(remote.updated.length).toEqual(0);
+			expect(remote.destroyed.length).toEqual(0);
+			
+			expect(store.getCount()).toEqual(3);
+		});
+		
+		it("should handle local removal conflicts", function() {
+			store.removeAt(0);
+			
+			var response = Ext.clone(original);
+			
+			Ext.apply(
+				response[0],
+				{
+					dessert: 'crisp',
+					version: 6
+				}
+			);
+			
+			proxy.sync(store);
+			remote.respond(response);
+			
+			expect(spy).toHaveBeenCalled();
+			expect(spy.mostRecentCall.args[0]).toBe(proxy);
+			expect(spy.mostRecentCall.args[1]).toBe(store);
+			
+			var conflicts = spy.mostRecentCall.args[2];
+			
+			expect(conflicts.length).toEqual(1);
+			expect(conflicts[0].local).toBeNull();
+			expect(conflicts[0].remote).not.toBeNull();
 			
 			expect(remote.created.length).toEqual(0);
 			expect(remote.updated.length).toEqual(0);

@@ -52,25 +52,11 @@ Ext.define('Tutti.proxy.Sync', {
 	},
 	
 	create: function(operation) {
-		var removed = this.getRemoved();
-		var modified = false;
-		
-		Ext.Array.forEach(
-			operation.getRecords(),
-			function(record) {
-				var id = record.getId();
-				var index = Ext.Array.indexOf(removed, id);
-				
-				if (index > -1) {
-					modified = true;
-					Ext.Array.splice(removed, index, 1);
-				}
-			}
+		this.updateTracking(
+			this.getCreatedKey(),
+			this.getRemovedKey(),
+			operation.getRecords()
 		);
-		
-		if (modified) {
-			this.setRemoved(removed);
-		}
 		
 		this.callParent(arguments);
 	},
@@ -95,18 +81,40 @@ Ext.define('Tutti.proxy.Sync', {
 	},
 	
 	destroy: function(operation) {
-		var removed = this.getRemoved();
+		this.updateTracking(
+			this.getRemovedKey(),
+			this.getCreatedKey(),
+			operation.getRecords()
+		);
+		
+		this.callParent(arguments);
+	},
+	
+	updateTracking: function(addKey, removeKey, records) {
+		var add = this.getTracking(addKey);
+		var remove = this.getTracking(removeKey);
 		
 		Ext.Array.forEach(
-			operation.getRecords(),
+			records,
 			function(record) {
-				removed.push(record.getId());
+				var id = record.getId();
+				
+				Ext.Array.include(add, id);
+				Ext.Array.remove(remove, id);
 			}
 		);
 		
-		this.setRemoved(removed);
-		
-		this.callParent(arguments);
+		this.setTracking(addKey, add);
+		this.setTracking(removeKey, remove);
+	},
+	
+	/**
+	 * @private
+	 * 
+	 * @return {String}
+	 */
+	getCreatedKey: function() {
+		return this.getId() + '-created';
 	},
 	
 	/**
@@ -121,10 +129,12 @@ Ext.define('Tutti.proxy.Sync', {
 	/**
 	 * @private
 	 * 
+	 * @param {String} key
+	 * 
 	 * @return {Number[]}
 	 */
-	getRemoved: function() {
-		var ids	= (this.getStorageObject().getItem(this.getRemovedKey()) || "").split(",");
+	getTracking: function(key) {
+		var ids	= (this.getStorageObject().getItem(key) || "").split(",");
 		
 		if (ids.length == 1 && ids[0] === "") {
 			ids = [];
@@ -136,12 +146,12 @@ Ext.define('Tutti.proxy.Sync', {
 	/**
 	 * @private
 	 * 
+	 * @param {String} key
 	 * @param {Number[]} ids
 	 */
-	setRemoved: function(ids) {
+	setTracking: function(key, ids) {
 		var obj = this.getStorageObject();
 		var str = ids.join(",");
-		var key = this.getRemovedKey();
 		
 		obj.removeItem(key);
 		
@@ -210,7 +220,9 @@ Ext.define('Tutti.proxy.Sync', {
 	processSyncResponse: function(operation, store, callback, scope) {
 		var revisionKey = this.getRevisionKey();
 		var maxRevision = operation.getParams()[revisionKey] || 0;
-		var removed = this.getRemoved();
+		
+		var created = this.getTracking(this.getCreatedKey());
+		var removed = this.getTracking(this.getRemovedKey());
 		
 		var existing = {};
 		var conflicts = [];
@@ -225,17 +237,17 @@ Ext.define('Tutti.proxy.Sync', {
 			operation.getRecords(),
 			function(remote) {
 				var id = remote.getId();
+				var remoteRevision = remote.get(revisionKey);
+				
 				var local = store.getById(id);
 				
 				if (local) {
 					existing[id] = true;
 					
 					var localRevision = local.get(revisionKey);
-					var remoteRevision = remote.get(revisionKey);
 					
 					if (localRevision == null) {
 						if (remoteRevision > maxRevision) {
-							// conflicting changes
 							conflicts.push({
 								local: local,
 								remote: remote
@@ -251,7 +263,15 @@ Ext.define('Tutti.proxy.Sync', {
 				}
 				else {
 					if (Ext.Array.contains(removed, id)) {
-						changes.destroy.push(remote);
+						if (remoteRevision > maxRevision) {
+							conflicts.push({
+								local: null,
+								remote: remote
+							});
+						}
+						else {
+							changes.destroy.push(remote);
+						}
 					}
 					else {
 						store.add(remote);
@@ -262,9 +282,19 @@ Ext.define('Tutti.proxy.Sync', {
 		);
 		
 		store.each(function(record) {
-			if (!existing[record.getId()]) {
+			var id = record.getId();
+			
+			if (!existing[id]) {
 				if (record.get(revisionKey) == null) {
-					changes.create.push(record);
+					if (Ext.Array.contains(created, id)) {
+						changes.create.push(record);
+					}
+					else {
+						conflicts.push({
+							local: record,
+							remote: null
+						});
+					}
 				}
 				else {
 					store.remove(record);
@@ -272,11 +302,13 @@ Ext.define('Tutti.proxy.Sync', {
 			}
 		});
 		
-		//<feature logger>
 		if (conflicts.length > 0) {
+			//<feature logger>
 			Ext.Logger.warn("Sync conflict detected", conflicts);
+			//</feature>
+			
+			this.fireEvent('conflict', this, store, conflicts);
 		}
-		//</feature>
 		
 		if (changes.create.length > 0 || changes.update.length > 0 || changes.destroy.length > 0) {
 			this.getRemoteProxy().batch({
@@ -310,6 +342,9 @@ Ext.define('Tutti.proxy.Sync', {
 		//<feature logger>
 		Ext.Logger.info("Sync complete for store '" + store.getStoreId() + "'");
 		//</feature>
+		
+		this.setTracking(this.getCreatedKey(), []);
+		this.setTracking(this.getRemovedKey(), []);
 		
 		Ext.callback(callback, scope, [this, store]);
 	},
