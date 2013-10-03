@@ -32,6 +32,14 @@ describe("Tutti.proxy.Sync", function() {
 				Ext.callback(this.callback, this.scope, [operation]);
 			},
 			
+			reset: function() {
+				Ext.apply(this, {
+					created: [],
+					updated: [],
+					destroyed: []
+				});
+			},
+			
 			create: function(operation, callback, scope) {
 				this.created = operation.getRecords();
 				Ext.callback(callback, scope, [operation]);
@@ -218,11 +226,7 @@ describe("Tutti.proxy.Sync", function() {
 			spy = jasmine.createSpy('conflictListener');
 			proxy.on('conflict', spy);
 			
-			Ext.apply(remote, {
-				created: [],
-				updated: [],
-				destroyed: []
-			})
+			remote.reset();
 		});
 		
 		it("should handle local creation", function() {
@@ -372,8 +376,8 @@ describe("Tutti.proxy.Sync", function() {
 			var conflicts = spy.mostRecentCall.args[2];
 			
 			expect(conflicts.length).toEqual(1);
-			expect(conflicts[0].local).not.toBeNull();
-			expect(conflicts[0].remote).not.toBeNull();
+			expect(conflicts[0].getLocal()).not.toBeNull();
+			expect(conflicts[0].getRemote()).not.toBeNull();
 			
 			expect(remote.created.length).toEqual(0);
 			expect(remote.updated.length).toEqual(0);
@@ -398,8 +402,8 @@ describe("Tutti.proxy.Sync", function() {
 			var conflicts = spy.mostRecentCall.args[2];
 			
 			expect(conflicts.length).toEqual(1);
-			expect(conflicts[0].local).not.toBeNull();
-			expect(conflicts[0].remote).toBeNull();
+			expect(conflicts[0].getLocal()).not.toBeNull();
+			expect(conflicts[0].getRemote()).toBeNull();
 			
 			expect(remote.created.length).toEqual(0);
 			expect(remote.updated.length).toEqual(0);
@@ -431,8 +435,8 @@ describe("Tutti.proxy.Sync", function() {
 			var conflicts = spy.mostRecentCall.args[2];
 			
 			expect(conflicts.length).toEqual(1);
-			expect(conflicts[0].local).toBeNull();
-			expect(conflicts[0].remote).not.toBeNull();
+			expect(conflicts[0].getLocal()).toBeNull();
+			expect(conflicts[0].getRemote()).not.toBeNull();
 			
 			expect(remote.created.length).toEqual(0);
 			expect(remote.updated.length).toEqual(0);
@@ -440,5 +444,5 @@ describe("Tutti.proxy.Sync", function() {
 			
 			expect(store.getCount()).toEqual(2);
 		});
-	})
+	});
 });

@@ -1,7 +1,7 @@
 /**
  * 
  */
-Ext.define('Tutti.store.SyncManager', {
+Ext.define('Tutti.sync.Manager', {
 	singleton: true,
 	
 	uses: ['Tutti.proxy.Sync'],

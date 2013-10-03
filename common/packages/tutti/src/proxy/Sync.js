@@ -5,8 +5,8 @@ Ext.define('Tutti.proxy.Sync', {
 	extend: 'Ext.data.proxy.LocalStorage',
 	alias: 'proxy.sync',
 	
-	requires: [
-		'Ext.data.proxy.Rest'
+	uses: [
+		'Tutti.sync.Conflict'
 	],
 	
 	config: {
@@ -220,6 +220,7 @@ Ext.define('Tutti.proxy.Sync', {
 	processSyncResponse: function(operation, store, callback, scope) {
 		var revisionKey = this.getRevisionKey();
 		var maxRevision = operation.getParams()[revisionKey] || 0;
+		var remoteProxy = this.getRemoteProxy();
 		
 		var created = this.getTracking(this.getCreatedKey());
 		var removed = this.getTracking(this.getRemovedKey());
@@ -248,10 +249,14 @@ Ext.define('Tutti.proxy.Sync', {
 					
 					if (localRevision == null) {
 						if (remoteRevision > maxRevision) {
-							conflicts.push({
-								local: local,
-								remote: remote
-							});
+							conflicts.push(
+								new Tutti.sync.Conflict({
+									local: local,
+									remote: remote,
+									store: store,
+									proxy: remoteProxy
+								})
+							);
 						}
 						else {
 							changes.update.push(local);
@@ -264,10 +269,14 @@ Ext.define('Tutti.proxy.Sync', {
 				else {
 					if (Ext.Array.contains(removed, id)) {
 						if (remoteRevision > maxRevision) {
-							conflicts.push({
-								local: null,
-								remote: remote
-							});
+							conflicts.push(
+								new Tutti.sync.Conflict({
+									local: null,
+									remote: remote,
+									store: store,
+									proxy: remoteProxy
+								})
+							);
 						}
 						else {
 							changes.destroy.push(remote);
@@ -290,10 +299,14 @@ Ext.define('Tutti.proxy.Sync', {
 						changes.create.push(record);
 					}
 					else {
-						conflicts.push({
-							local: record,
-							remote: null
-						});
+						conflicts.push(
+							new Tutti.sync.Conflict({
+								local: record,
+								remote: null,
+								store: store,
+								proxy: remoteProxy
+							})
+						);
 					}
 				}
 				else {

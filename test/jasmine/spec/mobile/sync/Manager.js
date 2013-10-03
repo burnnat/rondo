@@ -5,10 +5,10 @@ Ext.require([
 	'Ext.data.Model',
 	'Ext.data.Store',
 	'Tutti.proxy.Sync',
-	'Tutti.store.SyncManager'
+	'Tutti.sync.Manager'
 ]);
 
-describe("Tutti.store.SyncManager", function() {
+describe("Tutti.sync.Manager", function() {
 	var Proxy, RootModel, HasOneModel, HasManyModel, BelongsToModel;
 	var syncOrder = [];
 	
@@ -124,52 +124,52 @@ describe("Tutti.store.SyncManager", function() {
 	});
 	
 	beforeEach(function() {
-		Tutti.store.SyncManager.reset();
+		Tutti.sync.Manager.reset();
 		syncOrder = [];
 	});
 	
 	it("should handle hasOne assocations", function() {
-		Tutti.store.SyncManager.register([
+		Tutti.sync.Manager.register([
 			Ext.getStore('hasone'),
 			Ext.getStore('root')
 		]);
 		
-		Tutti.store.SyncManager.syncAll();
+		Tutti.sync.Manager.syncAll();
 		
 		expect(syncOrder).toEqual(['root', 'hasone']);
 	});
 	
 	it("should handle hasMany assocations", function() {
-		Tutti.store.SyncManager.register([
+		Tutti.sync.Manager.register([
 			Ext.getStore('root'),
 			Ext.getStore('hasmany')
 		]);
 		
-		Tutti.store.SyncManager.syncAll();
+		Tutti.sync.Manager.syncAll();
 		
 		expect(syncOrder).toEqual(['root', 'hasmany']);
 	});
 	
 	it("should handle belongsTo assocations", function() {
-		Tutti.store.SyncManager.register([
+		Tutti.sync.Manager.register([
 			Ext.getStore('belongsto'),
 			Ext.getStore('root')
 		]);
 		
-		Tutti.store.SyncManager.syncAll();
+		Tutti.sync.Manager.syncAll();
 		
 		expect(syncOrder).toEqual(['root', 'belongsto']);
 	});
 	
 	it("should handle nested assocations", function() {
-		Tutti.store.SyncManager.register([
+		Tutti.sync.Manager.register([
 			Ext.getStore('belongsto'),
 			Ext.getStore('hasmany'),
 			Ext.getStore('hasone'),
 			Ext.getStore('root')
 		]);
 		
-		Tutti.store.SyncManager.syncAll();
+		Tutti.sync.Manager.syncAll();
 		
 		expect(syncOrder).toEqual([
 			'root',
