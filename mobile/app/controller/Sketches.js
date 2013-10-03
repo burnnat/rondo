@@ -5,7 +5,7 @@ Ext.define('Rondo.controller.Sketches', {
 	extend: 'Ext.app.Controller',
 	
 	requires: [
-		'Tutti.store.SyncManager'
+		'Tutti.sync.Manager'
 	],
 	
 	uses: [
@@ -64,7 +64,7 @@ Ext.define('Rondo.controller.Sketches', {
 			scope: this
 		});
 		
-		Tutti.store.SyncManager.register(this.getApplication().getStores());
+		Tutti.sync.Manager.register(this.getApplication().getStores());
 		
 		this.eachStore(
 			function(store) {
@@ -83,7 +83,7 @@ Ext.define('Rondo.controller.Sketches', {
 	},
 	
 	onLogin: function() {
-		Tutti.store.SyncManager.syncAll();
+		Tutti.sync.Manager.syncAll();
 	},
 	
 	onLogout: function() {
