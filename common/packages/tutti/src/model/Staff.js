@@ -5,6 +5,7 @@ Ext.define('Tutti.model.Staff', {
 	extend: 'Ext.data.Model',
 	
 	requires: [
+		'Ext.data.proxy.Rest',
 		'Tutti.proxy.Sync'
 	],
 	

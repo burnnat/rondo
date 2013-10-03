@@ -5,6 +5,7 @@ Ext.define('Tutti.model.Sketch', {
 	extend: 'Ext.data.Model',
 	
 	requires: [
+		'Ext.data.proxy.Rest',
 		'Tutti.association.LocalHasMany',
 		'Tutti.model.Measure',
 		'Tutti.model.Part',

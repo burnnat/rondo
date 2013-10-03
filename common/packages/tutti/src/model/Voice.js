@@ -5,6 +5,7 @@ Ext.define('Tutti.model.Voice', {
 	extend: 'Ext.data.Model',
 	
 	requires: [
+		'Ext.data.proxy.Rest',
 		'Tutti.association.LocalBelongsTo',
 		'Tutti.association.InternalHasMany',
 		'Tutti.model.Staff',

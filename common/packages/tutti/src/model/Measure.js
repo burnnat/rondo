@@ -5,6 +5,7 @@ Ext.define('Tutti.model.Measure', {
 	extend: 'Ext.data.Model',
 	
 	requires: [
+		'Ext.data.proxy.Rest',
 		'Tutti.association.LocalHasMany',
 		'Tutti.model.Voice',
 		'Tutti.proxy.Sync'

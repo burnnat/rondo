@@ -5,6 +5,7 @@ Ext.define('Tutti.model.Part', {
 	extend: 'Ext.data.Model',
 	
 	requires: [
+		'Ext.data.proxy.Rest',
 		'Tutti.association.LocalHasMany',
 		'Tutti.model.Staff',
 		'Tutti.proxy.Sync'
