@@ -5,24 +5,15 @@ Ext.define('Tutti.model.Staff', {
 	extend: 'Ext.data.Model',
 	
 	requires: [
-		'Ext.data.proxy.Rest',
-		'Tutti.proxy.Sync'
+		'Tutti.proxy.RestSync'
 	],
 	
 	config: {
 		identifier: 'uuid',
 		
 		proxy: {
-			type: 'sync',
-			id: 'staves',
-			remoteProxy: {
-				type: 'rest',
-				url: '/api/staves',
-				reader: {
-					type: 'json',
-					rootProperty: 'records'
-				}
-			}
+			type: 'restsync',
+			id: 'staves'
 		},
 		
 		fields: [

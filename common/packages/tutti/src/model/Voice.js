@@ -5,12 +5,11 @@ Ext.define('Tutti.model.Voice', {
 	extend: 'Ext.data.Model',
 	
 	requires: [
-		'Ext.data.proxy.Rest',
 		'Tutti.association.LocalBelongsTo',
 		'Tutti.association.InternalHasMany',
 		'Tutti.model.Staff',
 		'Tutti.model.Note',
-		'Tutti.proxy.Sync'
+		'Tutti.proxy.RestSync'
 	],
 	
 	uses: [
@@ -21,16 +20,8 @@ Ext.define('Tutti.model.Voice', {
 		identifier: 'uuid',
 		
 		proxy: {
-			type: 'sync',
-			id: 'voices',
-			remoteProxy: {
-				type: 'rest',
-				url: '/api/voices',
-				reader: {
-					type: 'json',
-					rootProperty: 'records'
-				}
-			}
+			type: 'restsync',
+			id: 'voices'
 		},
 		
 		associations: [

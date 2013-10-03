@@ -5,27 +5,18 @@ Ext.define('Tutti.model.Sketch', {
 	extend: 'Ext.data.Model',
 	
 	requires: [
-		'Ext.data.proxy.Rest',
 		'Tutti.association.LocalHasMany',
 		'Tutti.model.Measure',
 		'Tutti.model.Part',
-		'Tutti.proxy.Sync'
+		'Tutti.proxy.RestSync'
 	],
 	
 	config: {
 		identifier: 'uuid',
 		
 		proxy: {
-			type: 'sync',
-			id: 'sketches',
-			remoteProxy: {
-				type: 'rest',
-				url: '/api/sketches',
-				reader: {
-					type: 'json',
-					rootProperty: 'records'
-				}
-			}
+			type: 'restsync',
+			id: 'sketches'
 		},
 		
 		fields: [

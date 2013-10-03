@@ -99,7 +99,7 @@ describe("Tutti.proxy.Sync", function() {
 			proxy.sync(store, spy);
 			
 			expect(spy).not.toHaveBeenCalled();
-			expect(remote.params[revisionKey]).toEqual(null);
+			expect(remote.params[revisionKey]).toEqual(0);
 			
 			remote.respond([]);
 			
@@ -121,7 +121,7 @@ describe("Tutti.proxy.Sync", function() {
 			proxy.sync(store, spy);
 			
 			expect(spy).not.toHaveBeenCalled();
-			expect(remote.params[revisionKey]).toEqual(null);
+			expect(remote.params[revisionKey]).toEqual(0);
 			
 			remote.respond([]);
 			

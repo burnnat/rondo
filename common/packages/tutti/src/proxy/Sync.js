@@ -5,14 +5,14 @@ Ext.define('Tutti.proxy.Sync', {
 	extend: 'Ext.data.proxy.LocalStorage',
 	alias: 'proxy.sync',
 	
-	uses: [
+	requires: [
 		'Tutti.sync.Conflict'
 	],
 	
 	config: {
 		revisionKey: 'revision',
 		remoteProxy: null,
-		remote: false
+		remote: true
 	},
 	
 	applyRemoteProxy: function(proxy, currentProxy) {
@@ -27,6 +27,8 @@ Ext.define('Tutti.proxy.Sync', {
 	
 	updateModel: function(model) {
 		this.callParent(arguments);
+		
+		model.setUseCache(false);
 		
 		var key = this.getRevisionKey();
 		var fields = model.getFields();
@@ -113,6 +115,15 @@ Ext.define('Tutti.proxy.Sync', {
 	 * 
 	 * @return {String}
 	 */
+	getMaxRevisionKey: function() {
+		return this.getId() + '-revision';
+	},
+	
+	/**
+	 * @private
+	 * 
+	 * @return {String}
+	 */
 	getCreatedKey: function() {
 		return this.getId() + '-created';
 	},
@@ -124,6 +135,36 @@ Ext.define('Tutti.proxy.Sync', {
 	 */
 	getRemovedKey: function() {
 		return this.getId() + '-removed';
+	},
+	
+	/**
+	 * @private
+	 * 
+	 * @return {Number}
+	 */
+	getMaxRevision: function() {
+		var revision = parseInt(
+			this.getStorageObject()
+				.getItem(this.getMaxRevisionKey())
+		);
+		
+		return isNaN(revision) ? null : revision;
+	},
+	
+	/**
+	 * @private
+	 * 
+	 * @param {Number} revision
+	 */
+	setMaxRevision: function(revision) {
+		var obj = this.getStorageObject();
+		var key = this.getMaxRevisionKey();
+		
+		obj.removeItem(key);
+		
+		if (revision != null) {
+			obj.setItem(key, revision);
+		}
 	},
 	
 	/**
@@ -178,7 +219,11 @@ Ext.define('Tutti.proxy.Sync', {
 		var revisionKey = this.getRevisionKey();
 		var params = {};
 		
-		params[revisionKey] = store.max(revisionKey);
+		var maxRevision = Math.max(this.getMaxRevision(), store.max(revisionKey));
+		
+		// In the event that we deleted the record with the highest revision, it's
+		// possible for the stored revision to be greater than the store maximum.
+		params[revisionKey] = isNaN(maxRevision) ? 0 : maxRevision;
 		
 		var operation = new Ext.data.Operation({
 			action: 'read',
@@ -324,6 +369,15 @@ Ext.define('Tutti.proxy.Sync', {
 		}
 		
 		if (changes.create.length > 0 || changes.update.length > 0 || changes.destroy.length > 0) {
+			//<feature logger>
+			Ext.Logger.info(
+				"Persisting local changes for store '" + store.getStoreId() + "': "
+					+ changes.create.length + " creations, "
+					+ changes.update.length + " updates, "
+					+ changes.destroy.length + " deletions"
+			);
+			//</feature>
+			
 			this.getRemoteProxy().batch({
 				operations: changes,
 				listeners: {
@@ -356,8 +410,32 @@ Ext.define('Tutti.proxy.Sync', {
 		Ext.Logger.info("Sync complete for store '" + store.getStoreId() + "'");
 		//</feature>
 		
+		var revisionKey = this.getRevisionKey();
+		
 		this.setTracking(this.getCreatedKey(), []);
 		this.setTracking(this.getRemovedKey(), []);
+		
+		this.clear();
+		
+		var ids = [];
+		var maxRevision = null;
+		
+		store.each(
+			function(record) {
+				this.setRecord(record);
+				ids.push(record.getId());
+				
+				var revision = record.get(revisionKey);
+				
+				if (revision > maxRevision) {
+					maxRevision = revision;
+				}
+			},
+			this
+		);
+		
+		this.setIds(ids);
+		this.setMaxRevision(maxRevision);
 		
 		Ext.callback(callback, scope, [this, store]);
 	},

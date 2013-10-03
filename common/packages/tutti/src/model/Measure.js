@@ -5,26 +5,17 @@ Ext.define('Tutti.model.Measure', {
 	extend: 'Ext.data.Model',
 	
 	requires: [
-		'Ext.data.proxy.Rest',
 		'Tutti.association.LocalHasMany',
 		'Tutti.model.Voice',
-		'Tutti.proxy.Sync'
+		'Tutti.proxy.RestSync'
 	],
 	
 	config: {
 		identifier: 'uuid',
 		
 		proxy: {
-			type: 'sync',
-			id: 'measures',
-			remoteProxy: {
-				type: 'rest',
-				url: '/api/measures',
-				reader: {
-					type: 'json',
-					rootProperty: 'records'
-				}
-			}
+			type: 'restsync',
+			id: 'measures'
 		},
 		
 		fields: [
