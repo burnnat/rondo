@@ -97,13 +97,15 @@ Ext.define('Rondo.controller.Sketches', {
 	},
 	
 	performSync: function() {
+		if (!Rondo.User.authenticated) {
+			return;
+		}
+		
 		Tutti.sync.Manager.syncAll(
 			function() {
-				if (Rondo.User.authenticated) {
-					this.syncTask.delay(
-						this.getSyncInterval()
-					);
-				}
+				this.syncTask.delay(
+					this.getSyncInterval()
+				);
 			},
 			this
 		);
@@ -116,7 +118,7 @@ Ext.define('Rondo.controller.Sketches', {
 	},
 	
 	onLogin: function() {
-		this.performSync();
+		this.syncTask.delay(0);
 	},
 	
 	onLogout: function() {
