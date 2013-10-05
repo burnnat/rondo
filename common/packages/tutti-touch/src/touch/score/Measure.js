@@ -103,6 +103,19 @@ Ext.define('Tutti.touch.score.Measure', {
 		return staff;
 	},
 	
+	/**
+	 * @param {Tutti.model.Staff} staffData
+	 * 
+	 * @return {Ext.util.MixedCollection}
+	 */
+	getVoicesForStaff: function(staffData) {
+		return this.voices.filterBy(
+			function(voice) {
+				return voice.getData().getStaff().getId() === staffData.getId();
+			}
+		);
+	},
+	
 	addVoice: function(voiceData, index) {
 		this.voices.insert(
 			index,

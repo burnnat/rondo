@@ -220,5 +220,14 @@ Ext.define('Tutti.touch.score.VoiceLink', {
 				return note.getX();
 			}
 		);
+	},
+	
+	/**
+	 * @return {Boolean}
+	 */
+	isComplete: function() {
+		var voice = this.voice;
+		// voice.isComplete() won't work if we're not in "strict" mode
+		return voice.ticksUsed.equals(voice.totalTicks);
 	}
 });

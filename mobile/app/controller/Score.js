@@ -104,10 +104,13 @@ Ext.define('Rondo.controller.Score', {
 		
 		if (active) {
 			if (active.isCursor) {
+				var voice = active.getVoice();
 				var index = active.getIndex();
 				
+				var noteCount = 0;
+				
 				this.modifyPitches(
-					active.getVoice(),
+					voice,
 					this.tappedPitch,
 					function(pitches, notes) {
 						notes.insert(
@@ -119,10 +122,29 @@ Ext.define('Rondo.controller.Score', {
 								})
 							]
 						);
+						
+						noteCount = notes.getCount();
 					}
 				);
 				
-				active.setIndex(index + 1);
+				index += 1;
+				
+				active.setIndex(index);
+				
+				if (voice.isComplete() && index >= noteCount) {
+					var score = this.getScore();
+					
+					var nextMeasure = score.getComponent(score.indexOf(voice.getMeasure()) + 1);
+					var nextVoices = nextMeasure.getVoicesForStaff(
+						voice.getData().getStaff()
+					);
+					
+					if (nextVoices.getCount() > 0) {
+						var cursor = nextVoices.first().cursor;
+						cursor.setIndex(0);
+						score.setActiveBlock(cursor);
+					}
+				}
 			}
 			else if (active.isNote) {
 				this.modifyNotes(
