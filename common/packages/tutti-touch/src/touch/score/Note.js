@@ -15,6 +15,8 @@ Ext.define('Tutti.touch.score.Note', {
 		'Vex.Flow.StaveNote'
 	],
 	
+	isNote: true,
+	
 	precedence: 20,
 	selectable: true,
 	
@@ -23,6 +25,10 @@ Ext.define('Tutti.touch.score.Note', {
 		data: null
 	},
 	
+	/**
+	 * @param {Vex.Flow.Voice} voice
+	 * @param {Number} [index]
+	 */
 	registerWithVoice: function(voice, index) {
 		var data = this.getData();
 		
@@ -40,6 +46,9 @@ Ext.define('Tutti.touch.score.Note', {
 		}
 	},
 	
+	/**
+	 * @param {Vex.Flow.Voice} voice
+	 */
 	deregisterWithVoice: function(voice) {
 		var primitive = this.primitive;
 		
@@ -49,6 +58,9 @@ Ext.define('Tutti.touch.score.Note', {
 		delete this.primitive;
 	},
 	
+	/**
+	 * 
+	 */
 	reregister: function() {
 		var primitive = this.primitive;
 		var voice = primitive.getVoice();
@@ -59,6 +71,9 @@ Ext.define('Tutti.touch.score.Note', {
 		this.registerWithVoice(voice, index);
 	},
 	
+	/**
+	 * 
+	 */
 	clearAccidentals: function() {
 		var primitive = this.primitive;
 		
@@ -70,10 +85,22 @@ Ext.define('Tutti.touch.score.Note', {
 		);
 	},
 	
+	/**
+	 * @param {Number} index
+	 * @param {String} type
+	 */
 	addAccidental: function(index, type) {
 		this.primitive.addAccidental(index, new Vex.Flow.Accidental(type));
 	},
 	
+	/**
+	 * @param {Function} fn
+	 * @param {String} fn.pitch
+	 * @param {Number} fn.index
+	 * @param {Number} fn.length
+	 * 
+	 * @param {Object} scope
+	 */
 	eachPitch: function(fn, scope) {
 		var pitches = this.primitive.keys;
 		var length = pitches.length;
@@ -106,5 +133,12 @@ Ext.define('Tutti.touch.score.Note', {
 	
 	getHeadWidth: function() {
 		return this.primitive.glyph.head_width;
+	},
+	
+	/**
+	 * @return {Boolean}
+	 */
+	isStemUp: function() {
+		return this.primitive.stem_direction > 0;
 	}
 });

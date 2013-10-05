@@ -138,7 +138,8 @@ Ext.define('Tutti.touch.Block', {
 			touchstart: me.onTouchStart,
 			touchmove: me.onTouchMove,
 			touchend: me.onTouchEnd,
-			tap: me.onTap
+			tap: me.onTap,
+			longpress: me.onLongPress
 		};
 		
 		Ext.Object.each(
@@ -377,5 +378,6 @@ Ext.define('Tutti.touch.Block', {
 	onTouchStart: Ext.emptyFn,
 	onTouchMove: Ext.emptyFn,
 	onTouchEnd: Ext.emptyFn,
-	onTap: Ext.emptyFn
+	onTap: Ext.emptyFn,
+	onLongPress: Ext.emptyFn
 });

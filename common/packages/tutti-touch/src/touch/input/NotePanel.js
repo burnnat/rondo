@@ -17,24 +17,46 @@ Ext.define('Tutti.touch.input.NotePanel', {
 	},
 	
 	config: {
+		create: false,
 		duration: 'q'
 	},
 	
 	initialize: function() {
 		this.callParent();
 		
+		var isCreate = this.getCreate();
+		
 		this.add([
 			this.initDurationBar(),
 			{
 				xtype: 'button',
 				ui: 'confirm',
-				text: 'Add',
+				text: isCreate ? 'Add' : 'Update',
 				margin: 10,
-				handler: this.onCreate,
+				handler: this.onSave,
+				scope: this
+			},
+			{
+				xtype: 'button',
+				ui: 'decline',
+				text: 'Delete',
+				hidden: isCreate,
+				margin: 10,
+				handler: this.onDelete,
 				scope: this
 			}
 		]);
 		
+	},
+	
+	updateCreate: function(create) {
+		if (this.rendered) {
+			this.down('button[ui="confirm"]').setText(
+				create ? 'Add' : 'Update'
+			);
+			
+			this.down('button[ui="decline"]').setHidden(create);
+		}
 	},
 	
 	applyDuration: function(duration) {
@@ -116,8 +138,13 @@ Ext.define('Tutti.touch.input.NotePanel', {
 		this.getDuration().dots = pressed ? 1 : 0;
 	},
 	
-	onCreate: function() {
+	onSave: function() {
 		this.hide();
-		this.fireEvent('create', this.getDurationString());
+		this.fireEvent('save', this.getDurationString());
+	},
+	
+	onDelete: function() {
+		this.hide();
+		this.fireEvent('delete');
 	}
 });

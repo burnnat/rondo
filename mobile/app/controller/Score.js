@@ -20,7 +20,8 @@ Ext.define('Rondo.controller.Score', {
 			},
 			
 			measure: {
-				blocktap: 'onMeasureTap'
+				blocktap: 'onMeasureTap',
+				blockhold: 'onMeasureHold'
 			}
 		},
 		
@@ -31,34 +32,51 @@ Ext.define('Rondo.controller.Score', {
 		}
 	},
 	
+	/**
+	 * @private
+	 * 
+	 * @param {Boolean} create
+	 * 
+	 * @return {Tutti.touch.input.NotePanel}
+	 */
+	getNotePanel: function(create) {
+		var panel = this.notePanel;
+		
+		if (!panel) {
+			panel = this.notePanel = new Tutti.touch.input.NotePanel({
+				modal: true,
+				hideOnMaskTap: true,
+				listeners: {
+					'save': this.onNoteSave,
+					'delete': this.onNoteDelete,
+					scope: this
+				}
+			});
+		}
+		
+		panel.setCreate(create);
+		
+		return panel;
+	},
+	
 	onKeyTap: function(key) {
 		var pitch = key.getPitch();
 		var active = this.getScore().getActiveBlock();
 		
-		if (active && active.isCursor) {
-			this.tappedPitch = pitch;
-			
-			if (!this.notePanel) {
-				this.notePanel = new Tutti.touch.input.NotePanel({
-					modal: true,
-					hideOnMaskTap: true,
-					listeners: {
-						create: this.onCreate,
-						scope: this
-					}
-				});
+		if (active) {
+			if (active.isCursor) {
+				this.tappedPitch = pitch;
+				this.getNotePanel(true).showBy(key, 'bc-tc?');
 			}
-			
-			this.notePanel.showBy(key, 'bc-tc?');
-		}
-		else {
-			this.modifyNotes(
-				active.getVoice(),
-				pitch,
-				function(pitches) {
-					active.getData().set('pitches', pitches);
-				}
-			);
+			else if (active.isNote) {
+				this.modifyPitches(
+					active.getVoice(),
+					pitch,
+					function(pitches) {
+						active.getData().set('pitches', pitches);
+					}
+				);
+			}
 		}
 	},
 	
@@ -74,35 +92,73 @@ Ext.define('Rondo.controller.Score', {
 		this.getScore().setActiveBlock(item);
 	},
 	
-	onCreate: function(duration) {
-		var active = this.getScore().getActiveBlock();
-		
-		if (active && active.isCursor) {
-			var index = active.getIndex();
-			
-			this.modifyNotes(
-				active.getVoice(),
-				this.tappedPitch,
-				function(pitches, notes) {
-					notes.insert(
-						index,
-						[
-							new Tutti.model.Note({
-								pitches: pitches,
-								duration: duration
-							})
-						]
-					);
-				}
-			);
-			
-			active.setIndex(index + 1);
+	onMeasureHold: function(item, event) {
+		if (item && item.isNote) {
+			this.getScore().setActiveBlock(item);
+			this.getNotePanel(false).showBy(item, item.isStemUp() ? 'tc-bc?' : 'bc-tc?');
 		}
 	},
 	
-	modifyNotes: function(voice, rawPitch, fn) {
+	onNoteSave: function(duration) {
+		var active = this.getScore().getActiveBlock();
+		
+		if (active) {
+			if (active.isCursor) {
+				var index = active.getIndex();
+				
+				this.modifyPitches(
+					active.getVoice(),
+					this.tappedPitch,
+					function(pitches, notes) {
+						notes.insert(
+							index,
+							[
+								new Tutti.model.Note({
+									pitches: pitches,
+									duration: duration
+								})
+							]
+						);
+					}
+				);
+				
+				active.setIndex(index + 1);
+			}
+			else if (active.isNote) {
+				this.modifyNotes(
+					active.getVoice(),
+					function(pitches) {
+						active.getData().set('duration', duration);
+					}
+				);
+			}
+		}
+	},
+	
+	onNoteDelete: function() {
+		var active = this.getScore().getActiveBlock();
+		
+		if (active && active.isNote) {
+			var note = active.getData();
+			
+			this.modifyNotes(
+				active.getVoice(),
+				function(notes) {
+					notes.remove(note);
+				}
+			);
+		}
+	},
+	
+	modifyNotes: function(voice, fn) {
 		var notes = voice.getData().notes();
 		
+		fn(notes);
+		
+		notes.sync();
+	},
+	
+	modifyPitches: function(voice, rawPitch, fn) {
 		var pitches = [
 			Tutti.Theory.getNoteFromPitch(
 				rawPitch,
@@ -110,8 +166,11 @@ Ext.define('Rondo.controller.Score', {
 			)
 		];
 		
-		fn(pitches, notes);
-		
-		notes.sync();
+		this.modifyNotes(
+			voice,
+			function(notes) {
+				fn(pitches, notes);
+			}
+		);
 	}
 });

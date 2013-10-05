@@ -52,6 +52,12 @@ Ext.define('Tutti.touch.score.VoiceLink', {
 		});
 	},
 	
+	/**
+	 * @private
+	 * 
+	 * @param {Tutti.model.Note} note
+	 * @param {Number} index
+	 */
 	addNote: function(note, index) {
 		var note = new Tutti.touch.score.Note({
 			voice: this,
@@ -69,8 +75,30 @@ Ext.define('Tutti.touch.score.VoiceLink', {
 		);
 	},
 	
+	/**
+	 * @private
+	 * 
+	 * @param {Tutti.model.Note} note
+	 */
 	removeNote: function(note) {
-		// TODO: implement this method
+		var notes = this.notes;
+		
+		var match = Ext.Array.each(
+			notes,
+			function(noteLink) {
+				return !(noteLink.getData() == note);
+			}
+		);
+		
+		if (match === true) {
+			return;
+		}
+		
+		var removed = Ext.Array.splice(notes, match, 1)[0];
+		
+		removed.deregisterWithVoice(this.voice);
+		
+		this.getMeasure().items.remove(removed);
 	},
 	
 	updateLayout: function() {
@@ -108,6 +136,12 @@ Ext.define('Tutti.touch.score.VoiceLink', {
 		this.cursor.updateLayout();
 	},
 	
+	/**
+	 * @private
+	 * 
+	 * @param {Ext.data.Store} store
+	 * @param {Ext.data.Model[]} records
+	 */
 	addNotes: function(store, records) {
 		Ext.Array.forEach(
 			records,
@@ -123,10 +157,31 @@ Ext.define('Tutti.touch.score.VoiceLink', {
 		});
 	},
 	
+	/**
+	 * @private
+	 * 
+	 * @param {Ext.data.Store} store
+	 * @param {Ext.data.Model[]} records
+	 */
 	removeNotes: function(store, records) {
 		Ext.Array.forEach(records, this.removeNote, this);
+		
+		this.getMeasure().refresh({
+			format: true,
+			repaint: true
+		});
 	},
 	
+	/**
+	 * @private
+	 * 
+	 * @param {Ext.data.Store} store
+	 * @param {Ext.data.Model} record
+	 * @param {Number} newIndex
+	 * @param {Number} oldIndex
+	 * @param {String[]} fieldNames
+	 * @param {Object} fieldValues
+	 */
 	updateNote: function(store, record, newIndex, oldIndex, fieldNames, fieldValues) {
 		var notes = this.notes;
 		var note = notes[oldIndex];
@@ -143,10 +198,20 @@ Ext.define('Tutti.touch.score.VoiceLink', {
 		});
 	},
 	
+	/**
+	 * @param {Number} index
+	 * 
+	 * @return {Tutti.touch.score.Note}
+	 */
 	getNote: function(index) {
 		return this.notes[index];
 	},
 	
+	/**
+	 * @param {Number} x
+	 * 
+	 * @return {Number}
+	 */
 	findInsertionPoint: function(x) {
 		return Tutti.Util.findInsertionPoint(
 			this.notes,

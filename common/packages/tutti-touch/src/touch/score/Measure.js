@@ -317,5 +317,14 @@ Ext.define('Tutti.touch.score.Measure', {
 	onTap: function(item, event) {
 		this.fireEvent('blocktap', item, event);
 		event.stopEvent();
+	},
+	
+	/**
+	 * @param {Tutti.touch.BlockItem} item
+	 * @param {Ext.event.Event} event
+	 */
+	onLongPress: function(item, event) {
+		this.fireEvent('blockhold', item, event);
+		event.stopEvent();
 	}
 });

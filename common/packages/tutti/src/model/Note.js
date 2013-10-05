@@ -12,10 +12,6 @@ Ext.define('Tutti.model.Note', {
 				name: 'id',
 				persist: false
 			},
-//			{
-//				name: 'voice_id',
-//				persist: false
-//			},
 			{
 				name: 'pitches',
 				type: 'auto'
