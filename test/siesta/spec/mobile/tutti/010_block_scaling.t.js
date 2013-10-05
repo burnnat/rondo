@@ -46,10 +46,11 @@ StartTest(function(t) {
 			};
 			
 			t.describe("Unscaled blocks", function(t) {
+				// Scale: 100%
+				var scale = 1;
+				var block = makeBlock(t, scale);
+				
 				t.it("should handle taps", function(t) {
-					// Scale: 100%
-					var block = makeBlock(t, 1);
-					
 					t.chain(
 						function(next) {
 							block.expect(0);
@@ -73,14 +74,35 @@ StartTest(function(t) {
 						}
 					);
 				});
+				
+				t.it("should report correct positions", function(t) {
+					block.items.each(function(item) {
+						if (!(item instanceof Test.BlockItem)) {
+							return;
+						}
+						
+						var root = block.renderElement.getPageBox();
+						var box = item.getPageBox();
+						
+						t.is(box.left, root.left + item.getX() * scale, 'Correct X position');
+						t.is(box.top, root.top + item.getY() * scale, 'Correct Y position');
+						t.is(box.width, item.getWidth() * scale, 'Correct width');
+						t.is(box.height, item.getHeight() * scale, 'Correct height');
+						t.is(box.right, box.left + box.width, 'Correct right bound');
+						t.is(box.bottom, box.top + box.height, 'Correct bottom bound');
+					});
+					
+					t.done();
+				});
 			});
 			
 			t.describe("Scaled blocks", function(t) {
 				t.describe("at half size", function(t) {
+					// Scale: 50%
+					var scale = 0.5;
+					var block = makeBlock(t, scale);
+					
 					t.it("should handle taps", function(t) {
-						// Scale: 50%
-						var block = makeBlock(t, .5);
-						
 						t.chain(
 							function(next) {
 								block.expect(0);
@@ -104,13 +126,34 @@ StartTest(function(t) {
 							}
 						);
 					});
+					
+					t.it("should report correct positions", function(t) {
+						block.items.each(function(item) {
+							if (!(item instanceof Test.BlockItem)) {
+								return;
+							}
+							
+							var root = block.renderElement.getPageBox();
+							var box = item.getPageBox();
+							
+							t.is(box.left, root.left + item.getX() * scale, 'Correct X position');
+							t.is(box.top, root.top + item.getY() * scale, 'Correct Y position');
+							t.is(box.width, item.getWidth() * scale, 'Correct width');
+							t.is(box.height, item.getHeight() * scale, 'Correct height');
+							t.is(box.right, box.left + box.width, 'Correct right bound');
+							t.is(box.bottom, box.top + box.height, 'Correct bottom bound');
+						});
+						
+						t.done();
+					});
 				});
 				
 				t.describe("at double size", function(t) {
+					// Scale: 200%
+					var scale = 2;
+					var block = makeBlock(t, scale);
+					
 					t.it("should handle taps", function(t) {
-						// Scale: 200%
-						var block = makeBlock(t, 2);
-						
 						t.chain(
 							function(next) {
 								block.expect(0);
@@ -133,6 +176,26 @@ StartTest(function(t) {
 								t.done();
 							}
 						);
+					});
+					
+					t.it("should report correct positions", function(t) {
+						block.items.each(function(item) {
+							if (!(item instanceof Test.BlockItem)) {
+								return;
+							}
+							
+							var root = block.renderElement.getPageBox();
+							var box = item.getPageBox();
+							
+							t.is(box.left, root.left + item.getX() * scale, 'Correct X position');
+							t.is(box.top, root.top + item.getY() * scale, 'Correct Y position');
+							t.is(box.width, item.getWidth() * scale, 'Correct width');
+							t.is(box.height, item.getHeight() * scale, 'Correct height');
+							t.is(box.right, box.left + box.width, 'Correct right bound');
+							t.is(box.bottom, box.top + box.height, 'Correct bottom bound');
+						});
+						
+						t.done();
 					});
 				});
 			});

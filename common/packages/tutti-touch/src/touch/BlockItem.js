@@ -25,19 +25,25 @@ Ext.define('Tutti.touch.BlockItem', {
 	},
 	
 	getPageBox: function() {
-		var xy = this.parent.canvasEl.getXY();
-		var bounds = this.getBoundingBox()
+		var bounds = this.getBoundingBox();
 		
-		var x = xy[0] + bounds.x;
-		var y = xy[1] + bounds.y;
+		var parent = this.parent;
+		var xy = parent.canvasEl.getXY();
+		var scale = parent.getScale();
+		
+		var x = xy[0] + bounds.x * scale;
+		var y = xy[1] + bounds.y * scale;
+		
+		var width = bounds.w * scale;
+		var height = bounds.h * scale;
 		
 		return {
 			left: x,
-			right: x + bounds.w,
+			right: x + width,
 			top: y,
-			bottom: y + bounds.h,
-			width: bounds.w,
-			height: bounds.h
+			bottom: y + height,
+			width: width,
+			height: height
 		};
 	}
 });
