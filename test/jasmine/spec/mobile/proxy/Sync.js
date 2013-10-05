@@ -85,6 +85,8 @@ describe("Tutti.proxy.Sync", function() {
 		var store, proxy, spy;
 		
 		beforeEach(function() {
+			localStorage.clear();
+			
 			store = new Ext.data.Store({
 				model: ModelClass,
 				autoSync: true
@@ -186,6 +188,8 @@ describe("Tutti.proxy.Sync", function() {
 		var store, proxy, spy, original;
 		
 		beforeEach(function() {
+			localStorage.clear();
+			
 			store = new Ext.data.Store({
 				model: ModelClass,
 				

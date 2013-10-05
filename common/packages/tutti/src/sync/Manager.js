@@ -165,12 +165,17 @@ Ext.define('Tutti.sync.Manager', {
 	/**
 	 * 
 	 */
-	syncAll: function() {
+	syncAll: function(callback, scope) {
 		if (this.session) {
 			return;
 		}
 		
-		this.session = Ext.clone(this.prereqs);
+		this.session = {
+			prereqs: Ext.clone(this.prereqs),
+			callback: callback,
+			scope: scope
+		};
+		
 		this.syncNext();
 	},
 	
@@ -179,13 +184,13 @@ Ext.define('Tutti.sync.Manager', {
 	 */
 	syncNext: function() {
 		var me = this;
-		var session = this.session;
+		var sessionDeps = this.session.prereqs;
 		
 		Ext.Object.each(
-			session,
+			sessionDeps,
 			function(storeId, prereqs) {
 				if (prereqs.length === 0) {
-					delete session[storeId];
+					delete sessionDeps[storeId];
 					
 					var store = Ext.getStore(storeId);
 					
@@ -213,15 +218,16 @@ Ext.define('Tutti.sync.Manager', {
 		var empty = true;
 		
 		Ext.Object.each(
-			session,
-			function(store, prereqs) {
+			session.prereqs,
+			function(store, array) {
 				empty = false;
-				Ext.Array.remove(prereqs, storeId);
+				Ext.Array.remove(array, storeId);
 			}
 		);
 		
 		if (empty) {
 			this.session = null;
+			Ext.callback(session.callback, session.scope);
 		}
 		else {
 			this.syncNext();

@@ -219,7 +219,7 @@ Ext.define('Tutti.proxy.Sync', {
 		var revisionKey = this.getRevisionKey();
 		var params = {};
 		
-		var maxRevision = Math.max(this.getMaxRevision(), store.max(revisionKey));
+		var maxRevision = Math.max(this.getMaxRevision(), store.max(revisionKey) || null);
 		
 		// In the event that we deleted the record with the highest revision, it's
 		// possible for the stored revision to be greater than the store maximum.

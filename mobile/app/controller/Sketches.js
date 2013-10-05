@@ -5,6 +5,7 @@ Ext.define('Rondo.controller.Sketches', {
 	extend: 'Ext.app.Controller',
 	
 	requires: [
+		'Ext.util.DelayedTask',
 		'Tutti.sync.Manager'
 	],
 	
@@ -14,6 +15,12 @@ Ext.define('Rondo.controller.Sketches', {
 	],
 	
 	config: {
+		// Auto-sync every two minutes
+		syncInterval: 2 * 60 * 1000,
+		
+		// Sync one second after local modifications
+		writeDelay: 1000,
+		
 		stores: [
 			'Tutti.store.Sketches',
 			'Tutti.store.Parts',
@@ -66,8 +73,14 @@ Ext.define('Rondo.controller.Sketches', {
 		
 		Tutti.sync.Manager.register(this.getApplication().getStores());
 		
+		this.syncTask = new Ext.util.DelayedTask(
+			this.performSync,
+			this
+		);
+		
 		this.eachStore(
 			function(store) {
+				store.on('write', this.onStoreWrite, this);
 				store.load();
 			}
 		);
@@ -78,12 +91,32 @@ Ext.define('Rondo.controller.Sketches', {
 			this.getApplication().getStores(),
 			function(store) {
 				fn.call(this, store);
-			}
+			},
+			this
+		);
+	},
+	
+	performSync: function() {
+		Tutti.sync.Manager.syncAll(
+			function() {
+				if (Rondo.User.authenticated) {
+					this.syncTask.delay(
+						this.getSyncInterval()
+					);
+				}
+			},
+			this
+		);
+	},
+	
+	onStoreWrite: function() {
+		this.syncTask.delay(
+			this.getWriteDelay()
 		);
 	},
 	
 	onLogin: function() {
-		Tutti.sync.Manager.syncAll();
+		this.performSync();
 	},
 	
 	onLogout: function() {
@@ -104,6 +137,8 @@ Ext.define('Rondo.controller.Sketches', {
 	},
 	
 	onRefresh: function() {
+		this.syncTask.delay(0);
+		
 		this.eachStore(
 			function(store) {
 				var storeId = store.getStoreId();
@@ -136,31 +171,6 @@ Ext.define('Rondo.controller.Sketches', {
 		
 		store.add(sketch);
 		store.sync();
-		/*
-		var coordinator = new Tutti.Coordinator({
-			callback: function() {
-				Ext.getStore('voices').sync();
-			},
-			taskCount: 2
-		});
-		
-		store.add(sketch);
-		store.sync({
-			callback: function() {
-				Ext.getStore('parts').sync({
-					callback: function() {
-						Ext.getStore('staves').sync({
-							callback: coordinator.getTask()
-						});
-					}
-				});
-				
-				Ext.getStore('measures').sync({
-					callback: coordinator.getTask()
-				});
-			}
-		});
-		*/
 	},
 	
 	onViewSketch: function(list, index, target, sketch) {
