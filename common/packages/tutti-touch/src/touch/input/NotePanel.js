@@ -50,12 +50,16 @@ Ext.define('Tutti.touch.input.NotePanel', {
 	},
 	
 	updateCreate: function(create) {
-		if (this.rendered) {
-			this.down('button[ui="confirm"]').setText(
-				create ? 'Add' : 'Update'
-			);
-			
-			this.down('button[ui="decline"]').setHidden(create);
+		var saveButton = this.down('button[ui="confirm"]');
+		
+		if (saveButton) {
+			saveButton.setText(create ? 'Add' : 'Update');
+		}
+		
+		var deleteButton = this.down('button[ui="decline"]');
+		
+		if (deleteButton) {
+			deleteButton.setHidden(create);
 		}
 	},
 	
