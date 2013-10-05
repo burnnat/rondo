@@ -132,8 +132,14 @@ StartTest(function(t) {
 						chain,
 						chain.length,
 						[
+							{
+								desc: 'Measure shrank correct amount',
+								waitFor: function() {
+									return target.getBlockWidth() === width - delta;
+								},
+								timeout: 250
+							},
 							function(next) {
-								t.is(target.getBlockWidth(), width - delta, 'Measure shrank correct amount');
 								t.mouseDown();
 								
 								target.parent.checkEvents = true;
@@ -146,8 +152,14 @@ StartTest(function(t) {
 								t.mouseUp();
 								
 								target.parent.checkEvents = false;
-								
-								t.is(target.getBlockWidth(), width, 'Measure grew correct amount');
+								next();
+							},
+							{
+								desc: 'Measure grew correct amount',
+								waitFor: function() {
+									return target.getBlockWidth() === width;
+								},
+								timeout: 250
 							}
 						]
 					);
