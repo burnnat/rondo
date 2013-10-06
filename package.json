@@ -30,8 +30,8 @@
 		
 		"grunt-bg-shell": "~2.1.0",
 		"grunt-express-server": "~0.4.3",
-		"grunt-saucelabs": "~4.1.0",
 		"grunt-mocha-test": "~0.7.0",
+		"grunt-sauce-driver": "~0.0.1",
 		
 		"mocha": "~1.13.0",
 		"supertest": "~0.8.0",
@@ -39,11 +39,7 @@
 		"glob": "~3.2.6",
 		"mustache": "~0.7.2",
 		"escape-regexp": "~0.0.1",
-		"properties-parser": "~0.1.1",
-		
-		"saucelabs": "~0.1.0",
-		"sauce-tunnel": "~1.0.1",
-		"wd": "~0.1.5"
+		"properties-parser": "~0.1.1"
 	},
 	
 	"scripts": {

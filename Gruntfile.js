@@ -3,6 +3,7 @@ var glob = require('glob');
 var path = require('path');
 var properties = require('properties-parser');
 var tests = require('./server/lib/tests.js');
+var saucedriver = require('grunt-sauce-driver');
 
 module.exports = function(grunt) {
 	var _ = grunt.util._;
@@ -22,8 +23,6 @@ module.exports = function(grunt) {
 	}
 	
 	var mobileOptions = {
-		username: local['sauce.user'] || process.env.SAUCE_USERNAME,
-		key: local['sauce.key'] || process.env.SAUCE_ACCESS_KEY,
 		browsers: [
 //			{
 //				browserName: 'android',
@@ -36,10 +35,6 @@ module.exports = function(grunt) {
 				platform: 'Windows 7'
 			}
 		],
-		tunneled: local['sauce.tunnel'] !== 'false',
-		tunnelTimeout: 5,
-		build: process.env.TRAVIS_JOB_ID,
-		concurrency: 3,
 		tags: [
 			"master",
 			"mobile"
@@ -137,29 +132,38 @@ module.exports = function(grunt) {
 			}
 		},
 		
-		'saucelabs-jasmine': {
-			mobile: {
+		saucedriver: {
+			options: {
+				username: local['sauce.user'] || process.env.SAUCE_USERNAME,
+				key: local['sauce.key'] || process.env.SAUCE_ACCESS_KEY,
+				tunneled: local['sauce.tunnel'] !== 'false',
+				tunnelTimeout: 5,
+				build: process.env.TRAVIS_JOB_ID,
+				local: grunt.option('local'),
+				concurrency: 3
+			},
+			
+			"jasmine-mobile": {
 				options: sauceOptions({
-					urls: ['<%= domain %>/test/jasmine/mobile.html'],
+					url: '<%= domain %>/test/jasmine/mobile.html',
+					script: saucedriver.jasmine,
 					testname: "mobile unit tests",
 					tags: ["unit"]
 				})
-			}
-		},
-		
-		'saucelabs-siesta': {
-			mobile: {
+			},
+			
+			"siesta-mobile": {
 				options: sauceOptions({
 					url: '<%= domain %>/test/siesta/mobile.html',
+					script: saucedriver.siesta,
 					local: grunt.option('local'),
+					autoclose: false,
 					testname: "mobile component tests",
 					tags: ["component"]
 				})
-			}
-		},
-		
-		'saucelabs-selenium': {
-			mobile: {
+			},
+			
+			"selenium-mobile": {
 				options: sauceOptions({
 					url: '<%= domain %>/mobile/',
 					script: require('./test/selenium/mobile.js')
@@ -255,16 +259,16 @@ module.exports = function(grunt) {
 	grunt.registerTask("staging", ["bgShell:mongo", "express:build", "watch"]);
 	
 	grunt.registerTask("mocha", ["bgShell:mongo", "express:build", "mochaTest:server", "bgShell:mongoStop"]);
-	grunt.registerTask("jasmine", ["express:build", "saucelabs-jasmine:mobile"]);
-	grunt.registerTask("siesta", ["express:build", "saucelabs-siesta:mobile"]);
-	grunt.registerTask("selenium", ["express:build", "saucelabs-selenium:mobile"]);
+	grunt.registerTask("jasmine", ["express:build", "saucedriver:jasmine-mobile"]);
+	grunt.registerTask("siesta", ["express:build", "saucedriver:siesta-mobile"]);
+	grunt.registerTask("selenium", ["express:build", "saucedriver:selenium-mobile"]);
 	
 	grunt.registerTask("test", [
 		"express:build",
 		"mochaTest:server",
-		"saucelabs-jasmine:mobile",
-//		"saucelabs-siesta:mobile",
-		"saucelabs-selenium:mobile"
+		"saucedriver:jasmine-mobile",
+//		"saucedriver:siesta-mobile",
+		"saucedriver:selenium-mobile"
 	]);
 	
 	grunt.registerTask("deploy", [
