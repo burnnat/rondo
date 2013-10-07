@@ -32,6 +32,7 @@
 		"grunt-express-server": "~0.4.3",
 		"grunt-mocha-test": "~0.7.0",
 		"grunt-sauce-driver": "~0.0.1",
+		"grunt-debug": "~0.0.1",
 		
 		"mocha": "~1.13.0",
 		"supertest": "~0.8.0",

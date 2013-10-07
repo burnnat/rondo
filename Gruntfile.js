@@ -253,8 +253,6 @@ module.exports = function(grunt) {
 		}
 	}
 	
-	grunt.loadTasks('./server/tasks');
-	
 	grunt.registerTask("dev", ["bgShell:mongo", "express:dev", "watch"]);
 	grunt.registerTask("staging", ["bgShell:mongo", "express:build", "watch"]);
 	
