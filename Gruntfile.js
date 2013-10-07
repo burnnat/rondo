@@ -8,6 +8,22 @@ var saucedriver = require('grunt-sauce-driver');
 module.exports = function(grunt) {
 	var _ = grunt.util._;
 	
+	/*
+	 * Work around a bug in node.js where the grunt-express-server plugin
+	 * calls removeAllListeners() after some listeners have already been
+	 * removed, causing a fatal undefined reference error.
+	 * 
+	 * See: https://github.com/joyent/node/issues/6056
+	 */
+	process.on('exit', function() {
+		process._events = _.omit(
+			process._events,
+			function(event) {
+				return _.isUndefined(event);
+			}
+		);
+	});
+	
 	var propFile = 'local.properties';
 	
 	var local = {
