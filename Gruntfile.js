@@ -213,6 +213,11 @@ module.exports = function(grunt) {
 				dest: '<%= deployTarget %>/build/desktop/'
 			},
 			
+			prepublish: {
+				src: 'node_modules/grunt-sauce-driver/reporters/siesta.js',
+				dest: 'test/siesta/reporter.js'
+			},
+			
 			deploy: {
 				expand: true,
 				cwd: '<%= deployTarget %>/node_modules/rondo/',

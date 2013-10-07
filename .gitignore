@@ -3,6 +3,7 @@
 /bundle
 /node_modules
 /.c9revisions
+/test/siesta/reporter.js
 local.properties
 *.pyc
 *.log
