@@ -286,7 +286,7 @@ module.exports = function(grunt) {
 		"express:build",
 		"mochaTest:server",
 		"saucedriver:jasmine-mobile",
-//		"saucedriver:siesta-mobile",
+		"saucedriver:siesta-mobile",
 		"saucedriver:selenium-mobile"
 	]);
 	

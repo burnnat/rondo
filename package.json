@@ -31,7 +31,7 @@
 		"grunt-bg-shell": "~2.1.0",
 		"grunt-express-server": "~0.4.3",
 		"grunt-mocha-test": "~0.7.0",
-		"grunt-sauce-driver": "~0.0.1",
+		"grunt-sauce-driver": "~0.0.3",
 		"grunt-debug": "~0.0.1",
 		
 		"mocha": "~1.13.0",
