@@ -6,6 +6,8 @@ if which scons
 then
 	echo "SCons is already installed"
 else
+	echo "Installing SCons..."
+	
 	# Download and Install SCons
 	curl -o bundle/scons.tar.gz -L http://sourceforge.net/projects/scons/files/scons/2.3.0/scons-2.3.0.tar.gz/download
 	tar -xf bundle/scons.tar.gz -C bundle/
@@ -17,6 +19,8 @@ if which sencha
 then
 	echo "Sencha Cmd is already installed"
 else
+	echo "Installing Sencha Cmd..."
+	
 	if [ $1 ]
 	then
 		# Travis Setup
@@ -35,6 +39,8 @@ else
 	bundle/sencha-cmd.run --mode $mode --prefix bundle
 	rm bundle/sencha-cmd.run
 fi
+
+echo "Initializing Vexflow sources..."
 
 # Install Vexflow Repo
 git clone git://github.com/burnnat/vexflow.git bundle/vexflow
