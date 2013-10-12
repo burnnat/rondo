@@ -24,7 +24,8 @@ Ext.define('Rondo.view.sketch.Editor', {
 			{
 				xtype: 'textfield',
 				name: 'title',
-				label: 'Title'
+				label: 'Title',
+				itemId: 'title'
 			},
 			{
 				xtype: 'selectfield',
@@ -50,6 +51,8 @@ Ext.define('Rondo.view.sketch.Editor', {
 	},
 	
 	initialize: function() {
+		this.callParent();
+		
 		this.getComponent('bbar').add([
 			{
 				text: 'Cancel',
@@ -64,10 +67,15 @@ Ext.define('Rondo.view.sketch.Editor', {
 				scope: this
 			}
 		]);
+		
+		this.getComponent('title').on({
+			keypress: 'onKeyPress',
+			scope: this
+		});
 	},
 	
 	onCancel: function() {
-		this.hide();
+		this.fireEvent('cancel', this);
 	},
 	
 	onCreate: function() {
@@ -130,8 +138,7 @@ Ext.define('Rondo.view.sketch.Editor', {
 			
 			sketch.measures().sync();
 			
-			this.hide();
-			this.fireEvent('save', sketch);
+			this.fireEvent('save', this, sketch);
 		}
 	},
 	
@@ -140,5 +147,12 @@ Ext.define('Rondo.view.sketch.Editor', {
 		this.getComponent('keySig').reset();
 		
 		this.callParent(arguments);
+	},
+	
+	onKeyPress: function(e) {
+		if (e.browserEvent.keyCode == 13) {
+			// Block enter key from reloading the page
+			e.stopEvent();
+		}
 	}
 });

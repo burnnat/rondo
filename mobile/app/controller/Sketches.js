@@ -43,6 +43,7 @@ Ext.define('Rondo.controller.Sketches', {
 				tap: 'onRefresh'
 			},
 			editor: {
+				cancel: 'onCancelSketch',
 				save: 'onSaveSketch'
 			}
 		},
@@ -55,10 +56,7 @@ Ext.define('Rondo.controller.Sketches', {
 				selector: 'sketcheditor',
 				xtype: 'sketcheditor',
 				autoCreate: true,
-				modal: true,
 				hideOnMaskTap: false,
-				centered: true,
-				width: 500,
 				scrollable: null
 			}
 		}
@@ -162,17 +160,21 @@ Ext.define('Rondo.controller.Sketches', {
 		editor.setRecord(new Tutti.model.Sketch());
 		
 		if (!editor.getParent()) {
-			Ext.Viewport.add(editor);
+			this.onAddEditor(editor);
 		}
-		
-		editor.show();
 	},
 	
-	onSaveSketch: function(sketch) {
+	onAddEditor: Ext.emptyFn,
+	
+	onCancelSketch: Ext.emptyFn,
+	
+	onSaveSketch: function(editor, sketch) {
 		var store = Ext.getStore('sketches');
 		
 		store.add(sketch);
 		store.sync();
+		
+		this.onCancelSketch(editor);
 	},
 	
 	onViewSketch: function(list, index, target, sketch) {

@@ -33,13 +33,17 @@ Ext.application({
 		'Rondo.login.Toggler'
 	],
 	
+	profiles: [
+		'Phone',
+		'Tablet'
+	],
+	
 	views: [
 		'Sketches'
 	],
 	
 	controllers: [
 		'Login',
-		'Sketches',
 		'Score'
 	],
 	
