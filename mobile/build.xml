@@ -2,7 +2,6 @@
 <project name="RondoMobile" default=".help">
 	<import file="${basedir}/../.sencha/workspace/build-impl.xml"/>
 	<import file="${basedir}/.sencha/app/build-impl.xml"/>
-	<import file="${basedir}/cordova/build/build-cordova.xml"/>
 
 	<!--
 	The following targets can be provided to inject logic before and/or after key steps
@@ -35,58 +34,5 @@
 			<target name="-before-build"/>
 			<target name="-after-build"/>
 	-->
-
-	<target name="-after-init">
-		<script language="javascript">
-			project.setProperty("app.build.dir", project.getProperty("workspace.build.dir"));
-		</script>
-	</target>
-
-	<target name="-after-page">
-		<property name="build.basedir" location="${basedir}" />
-		
-		<if>
-			<available file="${build.basedir}/${test.file}" />
-			<then>
-				<move file="${build.basedir}/${test.file}" todir="${app.build.dir}/${args.environment}" />
-			</then>
-		</if>
-	</target>
-
-	<target name="-after-build">
-		<if>
-			<and>
-				<isset property="cordova.lib" />
-				<isset property="build.cordova.platform" />
-			</and>
-			<then>
-				<antcall target="-build-${build.cordova.platform}" />
-			</then>
-		</if>
-	</target>
-
-	<target name="-after-build-android">
-		<delete file="${app.dir}/cordova-android.js" />
-		
-		<copy todir="${cordova.android.project}/res" overwrite="true">
-			<fileset dir="${app.dir}/cordova/res" />
-			<filterset begintoken="__" endtoken="__">
-				<filter token="ID" value="${cordova.android.project.namespace}" />
-				<filter token="NAME" value="${app.name}" />
-			</filterset>
-		</copy>
-		
-		<if>
-			<isset property="cordova.os.is-windows" />
-			<then>
-				<property name="cordova.android.project.build" location="${cordova.android.project}\\cordova\\build.bat" />
-			</then>
-			<else>
-				<property name="cordova.android.project.build" location="${cordova.android.project}/cordova/build" />
-			</else>
-		</if>
-		
-		<exec executable="${cordova.android.project.build}" />
-	</target>
 
 </project>

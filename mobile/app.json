@@ -135,5 +135,5 @@
 	 * Uniquely generated id for this application, used as prefix for localStorage keys.
 	 * Normally you should never change this value.
 	 */
-	"id": "rondo-mobile"
+	"id": "43fdf282-f510-45cd-aca3-c8bbcc532dd9"
 }

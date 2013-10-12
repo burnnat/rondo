@@ -1,3 +1,5 @@
 /project.jsb2
 /archive
 *.built
+/bootstrap.js
+/bootstrap.json
