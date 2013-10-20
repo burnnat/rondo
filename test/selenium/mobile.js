@@ -4,7 +4,7 @@ var xpath = require('./xpath.js');
 
 module.exports = {
 	init: function(username, password) {
-		return function(browser, chain) {
+		return function(browser) {
 			if (!username) {
 				return 'No username supplied';
 			}
@@ -13,26 +13,23 @@ module.exports = {
 				return 'No password supplied';
 			}
 			
-			chain.log = function(message) {
-				this.queueAddAsync(function(next) {
+			var log = function(message) {
+				return function() {
 					browser.emit('log', message);
-					next();
-				});
-				
-				return this;
+				};
 			};
 			
 			var clickEl = function(description) {
-				return function(err, el) {
+				return function(el) {
 					assert.ok(el, 'Element not found: ' + description);
-					browser.next('clickElement', el);
+					return browser.clickElement(el);
 				};
 			};
 			
 			var typeEl = function(text, description) {
-				return function(err, el) {
+				return function(el) {
 					assert.ok(el, 'Element not found: ' + description);
-					browser.next('type', el, text);
+					return browser.type(el, text);
 				}
 			}
 			
@@ -40,66 +37,87 @@ module.exports = {
 			var pageTimeout = 60000;
 			var timeout = 2500;
 			
-			chain
-				.title(function(err, title) {
+			return (
+				browser
+				.title()
+				.then(function(title) {
 					assert.equal(title, 'Rondo', 'Incorrect title');
 				})
 				
-				.log('Open login pane, click Cancel')
-				
+				.then(log('Open login pane, click Cancel'))
 				.waitForElementByXPath(xpath.buttonText('Login'), pageTimeout)
-				.elementByXPath(xpath.buttonText('Login'), clickEl('login button'))
+				
+				.elementByXPath(xpath.buttonText('Login'))
+				.then(clickEl('login button'))
 				.waitForCondition('Ext.AnimationQueue.isIdle', timeout)
 				
-				.elementByXPath(xpath.buttonText('Cancel'), clickEl('cancel button'))
+				.elementByXPath(xpath.buttonText('Cancel'))
+				.then(clickEl('cancel button'))
 				.waitForCondition('Ext.AnimationQueue.isIdle', timeout)
 				
-				.log('Create sketch')
+				.then(log('Create sketch'))
 				
-				.elementByXPath(xpath.buttonIcon('add'), clickEl('add sketch button'))
+				.elementByXPath(xpath.buttonIcon('add'))
+				.then(clickEl('add sketch button'))
 				
-				.elementByXPath(xpath.textField('Title'), typeEl(sketchTitle, 'title textfield'))
-				.elementByXPath(xpath.buttonText('Create'), clickEl('create button'))
+				.elementByXPath(xpath.textField('Title'))
+				.then(typeEl(sketchTitle, 'title textfield'))
 				
-				.log('Open sketch')
+				.elementByXPath(xpath.buttonText('Create'))
+				.then(clickEl('create button'))
 				
-				.elementByXPath(xpath.listItem(sketchTitle), clickEl('sketch list entry'))
+				.then(log('Open sketch'))
+				
+				.elementByXPath(xpath.listItem(sketchTitle))
+				.then(clickEl('sketch list entry'))
 				.waitForCondition('Ext.AnimationQueue.isIdle', timeout)
 				
-				.log('Close sketch')
+				.then(log('Close sketch'))
 				
-				.elementByXPath(xpath.buttonText('Back'), clickEl('back button'))
+				.elementByXPath(xpath.buttonText('Back'))
+				.then(clickEl('back button'))
 				.waitForCondition('Ext.AnimationQueue.isIdle', timeout)
 				
-				.log('Open login pane, select Facebook')
+				.then(log('Open login pane, select Facebook'))
 				
-				.elementByXPath(xpath.buttonText('Login'), clickEl('login button'))
+				.elementByXPath(xpath.buttonText('Login'))
+				.then(clickEl('login button'))
 				.waitForCondition('Ext.AnimationQueue.isIdle', timeout)
 				
-				.elementByCss('button.facebook', clickEl('Facebook sign-in button'))
+				.elementByCss('button.facebook')
+				.then(clickEl('Facebook sign-in button'))
 				.waitForElementByCss('#login_form', pageTimeout)
 				
-				.log('Login to Facebook')
+				.then(log('Login to Facebook'))
 				
-				.url(function(err, loc) {
+				.url()
+				.then(function(loc) {
 					assert.equal(url.parse(loc).hostname, 'www.facebook.com', 'Did not redirect to Facebook');
 				})
 				
-				.elementByCss('#email', typeEl(username, 'email field'))
-				.elementByCss('#pass', typeEl(password, 'password field'))
-				.elementByCss('input[type=submit]', clickEl('submit button'))
+				.elementByCss('#email')
+				.then(typeEl(username, 'email field'))
+				
+				.elementByCss('#pass')
+				.then(typeEl(password, 'password field'))
+				
+				.elementByCss('input[type=submit]')
+				.then(clickEl('submit button'))
 				
 				.waitForElementByXPath(xpath.buttonText('Logout'), pageTimeout)
 				
-				.log('Re-open sketch')
+				.then(log('Re-open sketch'))
 				
-				.elementByXPath(xpath.listItem(sketchTitle), clickEl('sketch list entry'))
+				.elementByXPath(xpath.listItem(sketchTitle))
+				.then(clickEl('sketch list entry'))
 				.waitForCondition('Ext.AnimationQueue.isIdle', timeout)
 				
-				.log('Logout')
+				.then(log('Logout'))
 				
-				.elementByXPath(xpath.buttonText('Logout'), clickEl('logout button'))
-				.waitForElementByXPath(xpath.buttonText('Login'), timeout);
+				.elementByXPath(xpath.buttonText('Logout'))
+				.then(clickEl('logout button'))
+				.waitForElementByXPath(xpath.buttonText('Login'), timeout)
+			);
 		};
 	}
 }

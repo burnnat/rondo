@@ -63,7 +63,7 @@ if (env == 'production') {
 }
 
 app.use(express.cookieParser());
-app.use(express.bodyParser());
+app.use(express.json());
 app.use(express.session({ secret: options.secret }));
 
 var auth = require("./auth");
