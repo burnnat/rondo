@@ -95,11 +95,17 @@ Ext.define('Rondo.controller.Score', {
 	onMeasureHold: function(item, event) {
 		if (item && item.isNote) {
 			this.getScore().setActiveBlock(item);
-			this.getNotePanel(false).showBy(item, item.isStemUp() ? 'tc-bc?' : 'bc-tc?');
+			
+			var panel = this.getNotePanel(false);
+			
+			panel.setDuration(item.getDuration());
+			panel.setTied(item.isTied(0));
+			
+			panel.showBy(item, item.isStemUp() ? 'tc-bc?' : 'bc-tc?');
 		}
 	},
 	
-	onNoteSave: function(duration) {
+	onNoteSave: function(duration, tied) {
 		var active = this.getScore().getActiveBlock();
 		
 		if (active) {
@@ -118,6 +124,7 @@ Ext.define('Rondo.controller.Score', {
 							[
 								new Tutti.model.Note({
 									pitches: pitches,
+									ties: Ext.Array.map(pitches, function() { return tied; }),
 									duration: duration
 								})
 							]
@@ -150,7 +157,16 @@ Ext.define('Rondo.controller.Score', {
 				this.modifyNotes(
 					active.getVoice(),
 					function(pitches) {
-						active.getData().set('duration', duration);
+						var ties = [];
+						
+						for (var i = 0; i < pitches.getCount(); i++) {
+							ties[i] = tied;
+						}
+						
+						active.getData().set({
+							duration: duration,
+							ties: ties
+						});
 					}
 				);
 			}

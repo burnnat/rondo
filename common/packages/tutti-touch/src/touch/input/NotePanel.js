@@ -18,7 +18,8 @@ Ext.define('Tutti.touch.input.NotePanel', {
 	
 	config: {
 		create: false,
-		duration: 'q'
+		duration: 'q',
+		tied: false
 	},
 	
 	initialize: function() {
@@ -81,6 +82,12 @@ Ext.define('Tutti.touch.input.NotePanel', {
 		}
 	},
 	
+	updateTied: function(tied) {
+		if (this.tieBtn) {
+			this.tieBtn.setPressedButtons(tied ? [0] : []);
+		}
+	},
+	
 	getDurationString: function() {
 		var duration = this.getDuration();
 		return duration.duration + Ext.String.repeat('d', duration.dots);
@@ -117,7 +124,19 @@ Ext.define('Tutti.touch.input.NotePanel', {
 				toggle: this.onDotToggle,
 				scope: this
 			}
-		})
+		});
+		
+		this.tieBtn = new Ext.SegmentedButton({
+			allowMultiple: true,
+			items: {
+				iconCls: 'tie',
+				padding: 0
+			},
+			listeners: {
+				toggle: this.onTieToggle,
+				scope: this
+			}
+		});
 		
 		return {
 			xtype: 'toolbar',
@@ -127,14 +146,20 @@ Ext.define('Tutti.touch.input.NotePanel', {
 					xtype: 'spacer',
 					width: 5
 				},
-				this.dotBtn
+				this.dotBtn,
+				{
+					xtype: 'spacer',
+					width: 5
+				},
+				this.tieBtn
 			]
 		};
 	},
 	
 	onDurationToggle: function(seg, button, pressed) {
 		if (pressed) {
-			this.getDuration().duration = button.getItemId();
+			this.setDuration(button.getItemId());
+			this.setTied(false);
 		}
 	},
 	
@@ -142,9 +167,13 @@ Ext.define('Tutti.touch.input.NotePanel', {
 		this.getDuration().dots = pressed ? 1 : 0;
 	},
 	
+	onTieToggle: function(seg, button, pressed) {
+		this.setTied(pressed);
+	},
+	
 	onSave: function() {
 		this.hide();
-		this.fireEvent('save', this.getDurationString());
+		this.fireEvent('save', this.getDurationString(), this.getTied());
 	},
 	
 	onDelete: function() {

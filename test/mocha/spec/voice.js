@@ -56,10 +56,12 @@ test.run({
 			notes: [
 				{
 					pitches: ['C4', 'Bb3', 'f##3', 'En3'],
+					ties: [true, true, false, true],
 					duration: 'hd'
 				},
 				{
 					pitches: ['d3'],
+					ties: [false],
 					duration: 'qr'
 				}
 			]
@@ -84,6 +86,7 @@ test.run({
 		
 		notes.push({
 			pitches: ['Bb2'],
+			ties: [false],
 			duration: '8'
 		});
 	}

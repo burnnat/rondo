@@ -110,14 +110,26 @@ Ext.define('Tutti.touch.score.VoiceLink', {
 			items.removeAll(this.beams);
 		}
 		
+		if (this.ties) {
+			items.removeAll(this.ties);
+		}
+		
 		var keyManager = new Tutti.KeyManager({
 			key: measure.getData().getResolvedKey()
 		});
+		
+		var ties = [];
+		var nextTies = {};
+		var prevTies;
 		
 		Ext.Array.forEach(this.notes, function(note) {
 			note.updateLayout(voice);
 			
 			note.clearAccidentals();
+			note.clearDots();
+			
+			prevTies = nextTies;
+			nextTies = {};
 			
 			note.eachPitch(function(pitch, index) {
 				var accidental = keyManager.selectAccidental(pitch);
@@ -125,11 +137,44 @@ Ext.define('Tutti.touch.score.VoiceLink', {
 				if (accidental) {
 					note.addAccidental(index, accidental);
 				}
+				
+				if (note.isTied(index)) {
+					if (!nextTies[pitch]) {
+						ties.push(
+							nextTies[pitch] = {
+								first_note: note.primitive,
+								first_indices: [index]
+							}
+						);
+					}
+				}
+				
+				if (prevTies[pitch]) {
+					Ext.apply(
+						prevTies[pitch],
+						{
+							last_note: note.primitive,
+							last_indices: [index]
+						}
+					);
+				}
 			});
+			
+			for (var i = 0; i < note.getDuration().dots; i++) {
+				note.addDot();
+			}
 		});
 		
 		this.beams = Vex.Flow.Beam.applyAndGetBeams(voice);
 		items.addAll(this.beams);
+		
+		this.ties = Ext.Array.map(
+			ties,
+			function(tie) {
+				return new Vex.Flow.StaveTie(tie);
+			}
+		);
+		items.addAll(this.ties);
 	},
 	
 	afterLayout: function() {

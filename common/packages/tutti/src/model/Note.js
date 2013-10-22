@@ -17,6 +17,10 @@ Ext.define('Tutti.model.Note', {
 				type: 'auto'
 			},
 			{
+				name: 'ties',
+				type: 'auto'
+			},
+			{
 				name: 'duration',
 				type: 'string'
 			}

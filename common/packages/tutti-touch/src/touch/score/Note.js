@@ -72,17 +72,32 @@ Ext.define('Tutti.touch.score.Note', {
 	},
 	
 	/**
-	 * 
+	 * @return {Object}
 	 */
-	clearAccidentals: function() {
+	getDuration: function() {
+		return Vex.Flow.parseNoteDurationString(this.getData().get('duration'));
+	},
+	
+	/**
+	 * @private
+	 * @param {Ext.Class} type
+	 */
+	clearModifiers: function(type) {
 		var primitive = this.primitive;
 		
 		primitive.modifiers = Ext.Array.filter(
 			primitive.modifiers,
 			function(modifier) {
-				return !(modifier instanceof Vex.Flow.Accidental);
+				return !(modifier instanceof type);
 			}
 		);
+	},
+	
+	/**
+	 * 
+	 */
+	clearAccidentals: function() {
+		this.clearModifiers(Vex.Flow.Accidental);
 	},
 	
 	/**
@@ -91,6 +106,20 @@ Ext.define('Tutti.touch.score.Note', {
 	 */
 	addAccidental: function(index, type) {
 		this.primitive.addAccidental(index, new Vex.Flow.Accidental(type));
+	},
+	
+	/**
+	 * 
+	 */
+	clearDots: function() {
+		this.clearModifiers(Vex.Flow.Dot);
+	},
+	
+	/**
+	 * 
+	 */
+	addDot: function() {
+		this.primitive.addDotToAll();
 	},
 	
 	/**
@@ -110,6 +139,15 @@ Ext.define('Tutti.touch.score.Note', {
 				break;
 			}
 		}
+	},
+	
+	/**
+	 * @param {Number} index
+	 * 
+	 * @return {Boolean}
+	 */
+	isTied: function(index) {
+		return !!Ext.Array.from(this.getData().get('ties'))[index];
 	},
 	
 	updateLayout: function(voice) {

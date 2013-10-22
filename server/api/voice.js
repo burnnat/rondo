@@ -18,6 +18,10 @@ var Note = new Schema(
 					);
 			}
 		},
+		ties: {
+			type: [Boolean],
+			required: false
+		},
 		duration: {
 			type: String,
 			required: true,
