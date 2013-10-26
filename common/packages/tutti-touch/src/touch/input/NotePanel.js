@@ -4,7 +4,7 @@
 Ext.define('Tutti.touch.input.NotePanel', {
 	extend: 'Ext.Panel',
 	
-	requires: ['Ext.SegmentedButton'],
+	requires: ['Tutti.touch.ToggleButton'],
 	
 	durations: ['16', '8', 'q', 'h', 'w'],
 	
@@ -109,31 +109,31 @@ Ext.define('Tutti.touch.input.NotePanel', {
 			}
 		);
 		
-		this.durationBtn = new Ext.SegmentedButton({
+		this.durationBtn = new Tutti.touch.ToggleButton({
 			items: durations,
 			listeners: {
-				toggle: this.onDurationToggle,
+				toggletap: this.onDurationToggle,
 				scope: this
 			}
 		});
 		
-		this.dotBtn = new Ext.SegmentedButton({
+		this.dotBtn = new Tutti.touch.ToggleButton({
 			allowMultiple: true,
 			items: { text: '&middot;' },
 			listeners: {
-				toggle: this.onDotToggle,
+				toggletap: this.onDotToggle,
 				scope: this
 			}
 		});
 		
-		this.tieBtn = new Ext.SegmentedButton({
+		this.tieBtn = new Tutti.touch.ToggleButton({
 			allowMultiple: true,
 			items: {
 				iconCls: 'tie',
 				padding: 0
 			},
 			listeners: {
-				toggle: this.onTieToggle,
+				toggletap: this.onTieToggle,
 				scope: this
 			}
 		});
