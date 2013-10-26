@@ -192,4 +192,49 @@ describe("Tutti.Theory", function() {
 			expect(format('Bbm')).toEqual('B' + flat + ' Minor');
 		});
 	});
+	
+	describe("when converting ticks to durations", function() {
+		var durations = function() {
+			var total = 0;
+			
+			Ext.Array.each(
+				arguments,
+				function(duration) {
+					total += Vex.Flow.durationToTicks(duration);
+				}
+			);
+			
+			return Tutti.Theory.ticksToDurations(
+				new Vex.Flow.Fraction(total, 1)
+			);
+		};
+		
+		it("should handle single notes", function() {
+			expect(durations('w')).toEqual(['w']);
+			expect(durations('h')).toEqual(['h']);
+			expect(durations('q')).toEqual(['q']);
+			expect(durations('8')).toEqual(['8']);
+			expect(durations('16')).toEqual(['16']);
+		});
+		
+		it("should handle dotted notes", function() {
+			expect(durations('w', 'h')).toEqual(['wd']);
+			expect(durations('h', 'q')).toEqual(['hd']);
+			expect(durations('q', '8')).toEqual(['qd']);
+			expect(durations('8', '16')).toEqual(['8d']);
+			expect(durations('16', '32')).toEqual(['16d']);
+		});
+		
+		it("should handle tied notes", function() {
+			expect(durations('w', 'q', '8')).toEqual(['w', 'qd']);
+			expect(durations('w', '16')).toEqual(['w', '16']);
+			expect(durations('h', 'q', '8', '16')).toEqual(['h', 'q', '8d']);
+			expect(durations('h', 'q', '8')).toEqual(['h', 'qd']);
+			expect(durations('h', 'q', '16')).toEqual(['h', 'q', '16']);
+			expect(durations('h', '8')).toEqual(['h', '8']);
+			expect(durations('h', '16')).toEqual(['h', '16']);
+			expect(durations('q', '8', '16')).toEqual(['q', '8d']);
+			expect(durations('q', '16')).toEqual(['q', '16']);
+		});
+	});
 });

@@ -15,6 +15,21 @@ Ext.define('Tutti.Theory', {
 	 */
 	NUM_SCALE: 7,
 	
+	/**
+	 * @private
+	 * @property
+	 */
+	RESOLUTION_POW: 1,
+	
+	/**
+	 * @private
+	 * @property
+	 * 
+	 * The inverse of Vex.Flow#durationAliases, mapping duration
+	 * values back to their human-friendly, aliased forms.
+	 */
+	ALIASED_DURATIONS: {},
+	
 	init: function() {
 		var roots = Vex.Flow.Music.roots;
 		var scaleLength = roots.length;
@@ -41,6 +56,17 @@ Ext.define('Tutti.Theory', {
 				return this.getNoteValue(note);
 			},
 			this
+		);
+		
+		this.RESOLUTION_POW = Math.log(Vex.Flow.RESOLUTION) / Math.LN2;
+		
+		var aliases = this.ALIASED_DURATIONS;
+		
+		Ext.Object.each(
+			Vex.Flow.durationAliases,
+			function(alias, duration) {
+				aliases[duration] = alias;
+			}
 		);
 	},
 	
@@ -163,5 +189,63 @@ Ext.define('Tutti.Theory', {
 	formatKey: function(key) {
 		var key = this.getKeyParts(key);
 		return this.formatNote(key) + ' ' + (key.type === 'M' ? 'Major' : 'Minor');
+	},
+	
+	/**
+	 * Takes a given number of ticks and divides it into
+	 * a set of discrete note (or rest) durations.
+	 * 
+	 * TODO: Currently assumes a simple, not compound, meter.
+	 * TODO: Has no handling for tuplet durations.
+	 * 
+	 * @param {Vex.Flow.Fraction} ticks
+	 * 
+	 * @return {String[]}
+	 */
+	ticksToDurations: function(ticks) {
+		// Ignore any fractional components, thus prohibiting tuplets.
+		var raw = ticks.quotient();
+		
+		var durations = [];
+		var maxPower, maxTicks, duration;
+		
+		while (raw > 0) {
+			maxPower = Math.floor(Math.log(raw) / Math.LN2);
+			maxTicks = Math.pow(2, maxPower);
+			
+			duration = Math.pow(2, this.RESOLUTION_POW - maxPower) + '';
+			duration = this.ALIASED_DURATIONS[duration] || duration;
+			
+			if (raw === maxTicks * 1.5) {
+				maxTicks *= 1.5;
+				duration += 'd';
+			}
+			
+			durations.push(duration);
+			raw -= maxTicks;
+		}
+		
+		return durations;
+	},
+	
+	/**
+	 * Returns the number of ticks represented by the given duration string.
+	 * 
+	 * This method is similar to Vex.Flow#durationToTicks, but it accepts a
+	 * full parseable duration string, rather than a simple notehead duration
+	 * (i.e. it allows dotted durations), and it returns a fraction object
+	 * rather than a plain integer.
+	 * 
+	 * @param {String} duration
+	 * 
+	 * @return {Vex.Flow.Fraction}
+	 */
+	durationToTicks: function(duration) {
+		return new Vex.Flow.Fraction(
+			Vex.Flow.parseNoteData(
+				Vex.Flow.parseNoteDurationString(duration)
+			).ticks,
+			1
+		);
 	}
 });

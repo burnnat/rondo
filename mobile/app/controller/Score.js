@@ -110,48 +110,63 @@ Ext.define('Rondo.controller.Score', {
 		
 		if (active) {
 			if (active.isCursor) {
+				var score = this.getScore();
 				var voice = active.getVoice();
 				var index = active.getIndex();
 				
-				var noteCount = 0;
+				var tappedPitch = this.tappedPitch;
+				var ticks = Tutti.Theory.durationToTicks(duration);
+				var underflow = voice.getTicksRemaining();
 				
-				this.modifyPitches(
-					voice,
-					this.tappedPitch,
-					function(pitches, notes) {
-						notes.insert(
-							index,
-							[
+				var subdivisions = Tutti.Theory.ticksToDurations(Tutti.Util.min(ticks, underflow));
+				var subduration;
+				var subtied;
+				
+				while (ticks.numerator > 0) {
+					subduration = subdivisions.pop();
+					ticks.subtract(Tutti.Theory.durationToTicks(subduration));
+					
+					subtied = ticks.numerator > 0 || tied;
+					
+					this.modifyPitches(
+						voice,
+						tappedPitch,
+						function(pitches, notes) {
+							notes.insert(
+								index++,
 								new Tutti.model.Note({
 									pitches: pitches,
-									ties: Ext.Array.map(pitches, function() { return tied; }),
-									duration: duration
+									ties: Ext.Array.map(pitches, function() { return subtied; }),
+									duration: subduration
 								})
-							]
-						);
-						
-						noteCount = notes.getCount();
-					}
-				);
-				
-				index += 1;
-				
-				active.setIndex(index);
-				
-				if (voice.isComplete() && index >= noteCount) {
-					var score = this.getScore();
-					
-					var nextMeasure = score.getComponent(score.indexOf(voice.getMeasure()) + 1);
-					var nextVoices = nextMeasure.getVoicesForStaff(
-						voice.getData().getStaff()
+							);
+						}
 					);
 					
-					if (nextVoices.getCount() > 0) {
-						var cursor = nextVoices.first().cursor;
-						cursor.setIndex(0);
-						score.setActiveBlock(cursor);
+					if (voice.isComplete()) {
+						voice = score
+							.getComponent(
+								score.indexOf(voice.getMeasure()) + 1
+							)
+							.getVoicesForStaff(
+								voice.getData().getStaff()
+							)
+							.first();
+						index = 0;
+						
+						if (ticks.numerator > 0) {
+							underflow = voice.getTicksRemaining();
+							subdivisions.push.apply(
+								subdivisions,
+								Tutti.Theory.ticksToDurations(Tutti.Util.min(ticks, underflow))
+							);
+						}
 					}
 				}
+				
+				active = voice.cursor;
+				active.setIndex(index);
+				score.setActiveBlock(active);
 			}
 			else if (active.isNote) {
 				this.modifyNotes(

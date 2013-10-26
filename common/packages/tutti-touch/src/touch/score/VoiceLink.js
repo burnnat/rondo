@@ -268,6 +268,14 @@ Ext.define('Tutti.touch.score.VoiceLink', {
 	},
 	
 	/**
+	 * @return {Vex.Flow.Fraction}
+	 */
+	getTicksRemaining: function() {
+		var voice = this.voice;
+		return voice.totalTicks.clone().subtract(voice.ticksUsed);
+	},
+	
+	/**
 	 * @return {Boolean}
 	 */
 	isComplete: function() {

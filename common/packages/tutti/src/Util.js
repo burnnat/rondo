@@ -74,5 +74,29 @@ Ext.define('Tutti.Util', {
 			newIndex,
 			Ext.Array.splice(array, oldIndex, 1)
 		);
+	},
+	
+	/**
+	 * Returns the lesser of two fractions. If the two fractions
+	 * are equal, the first fraction will be returned.
+	 * 
+	 * @param {Vex.Flow.Fraction} a
+	 * @param {Vex.Flow.Fraction} b
+	 * 
+	 * @return {Vex.Flow.Fraction}
+	 */
+	min: function(a, b) {
+		var quotientA = a.quotient();
+		var quotientB = b.quotient();
+		
+		if (quotientA < quotientB) {
+			return a;
+		}
+		else if (quotientB < quotientA) {
+			return b;
+		}
+		else {
+			return (b.fraction() * b.denominator < a.fraction() * a.denominator) ? b : a;
+		}
 	}
 });

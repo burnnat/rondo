@@ -1,4 +1,7 @@
-Ext.require(['Tutti.Util']);
+Ext.require([
+	'Tutti.Util',
+	'Vex.Flow.Fraction'
+]);
 
 describe("Tutti.Util", function() {
 	
@@ -196,5 +199,81 @@ describe("Tutti.Util", function() {
 				expect(function() { Tutti.Util.move(array, 10, 2) }).toThrow();
 			});
 		});
-	})
+	});
+	
+	describe("when minimizing fractions", function() {
+		beforeEach(function() {
+			this.addMatchers({
+				toBeFraction: function(expected) {
+					var actual = this.actual;
+					return actual.numerator === expected.numerator && actual.denominator === expected.denominator;
+				}
+			})
+		});
+		
+		it("should handle equal fractions", function() {
+			expect(
+				Tutti.Util.min(
+					new Vex.Flow.Fraction(1, 1),
+					new Vex.Flow.Fraction(1, 1)
+				)
+			)
+			.toBeFraction(
+				new Vex.Flow.Fraction(1, 1)
+			);
+			
+			expect(
+				Tutti.Util.min(
+					new Vex.Flow.Fraction(4, 2),
+					new Vex.Flow.Fraction(10, 5)
+				)
+			)
+			.toBeFraction(
+				new Vex.Flow.Fraction(4, 2)
+			);
+			
+			expect(
+				Tutti.Util.min(
+					new Vex.Flow.Fraction(7, -14),
+					new Vex.Flow.Fraction(-1, 2)
+				)
+			)
+			.toBeFraction(
+				new Vex.Flow.Fraction(7, -14)
+			);
+			
+			expect(
+				Tutti.Util.min(
+					new Vex.Flow.Fraction(4, 5),
+					new Vex.Flow.Fraction(-12, -15)
+				)
+			)
+			.toBeFraction(
+				new Vex.Flow.Fraction(4, 5)
+			);
+		});
+		
+		it("should handle unequal fractions", function() {
+			
+			expect(
+				Tutti.Util.min(
+					new Vex.Flow.Fraction(2, 7),
+					new Vex.Flow.Fraction(-5, 1)
+				)
+			)
+			.toBeFraction(
+				new Vex.Flow.Fraction(-5, 1)
+			);
+			
+			expect(
+				Tutti.Util.min(
+					new Vex.Flow.Fraction(-3, 1),
+					new Vex.Flow.Fraction(-5, 7)
+				)
+			)
+			.toBeFraction(
+				new Vex.Flow.Fraction(-3, 1)
+			);
+		});
+	});
 });
