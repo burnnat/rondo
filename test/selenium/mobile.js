@@ -4,7 +4,7 @@ var xpath = require('./xpath.js');
 
 module.exports = {
 	init: function(username, password) {
-		return function(browser) {
+		return function(browser, options) {
 			if (!username) {
 				return 'No username supplied';
 			}
@@ -31,11 +31,13 @@ module.exports = {
 					assert.ok(el, 'Element not found: ' + description);
 					return browser.type(el, text);
 				}
-			}
+			};
+			
+			var waitForAnimation = function() {
+				return browser.waitForCondition('Ext.AnimationQueue.isIdle', 2500);
+			};
 			
 			var sketchTitle = 'Test Sketch';
-			var pageTimeout = 60000;
-			var timeout = 2500;
 			
 			return (
 				browser
@@ -45,15 +47,15 @@ module.exports = {
 				})
 				
 				.then(log('Open login pane, click Cancel'))
-				.waitForElementByXPath(xpath.buttonText('Login'), pageTimeout)
+				.waitForElementByXPath(xpath.buttonText('Login'), options.testReadyTimeout)
 				
 				.elementByXPath(xpath.buttonText('Login'))
 				.then(clickEl('login button'))
-				.waitForCondition('Ext.AnimationQueue.isIdle', timeout)
+				.then(waitForAnimation)
 				
 				.elementByXPath(xpath.buttonText('Cancel'))
 				.then(clickEl('cancel button'))
-				.waitForCondition('Ext.AnimationQueue.isIdle', timeout)
+				.then(waitForAnimation)
 				
 				.then(log('Create sketch'))
 				
@@ -68,25 +70,26 @@ module.exports = {
 				
 				.then(log('Open sketch'))
 				
+				.waitForElementByXPath(xpath.listItem(sketchTitle))
 				.elementByXPath(xpath.listItem(sketchTitle))
 				.then(clickEl('sketch list entry'))
-				.waitForCondition('Ext.AnimationQueue.isIdle', timeout)
+				.then(waitForAnimation)
 				
 				.then(log('Close sketch'))
 				
 				.elementByXPath(xpath.buttonText('Back'))
 				.then(clickEl('back button'))
-				.waitForCondition('Ext.AnimationQueue.isIdle', timeout)
+				.then(waitForAnimation)
 				
 				.then(log('Open login pane, select Facebook'))
 				
 				.elementByXPath(xpath.buttonText('Login'))
 				.then(clickEl('login button'))
-				.waitForCondition('Ext.AnimationQueue.isIdle', timeout)
+				.then(waitForAnimation)
 				
 				.elementByCss('button.facebook')
 				.then(clickEl('Facebook sign-in button'))
-				.waitForElementByCss('#login_form', pageTimeout)
+				.waitForElementByCss('#login_form', options.testReadyTimeout)
 				
 				.then(log('Login to Facebook'))
 				
@@ -104,19 +107,19 @@ module.exports = {
 				.elementByCss('input[type=submit]')
 				.then(clickEl('submit button'))
 				
-				.waitForElementByXPath(xpath.buttonText('Logout'), pageTimeout)
+				.waitForElementByXPath(xpath.buttonText('Logout'), options.testReadyTimeout)
 				
 				.then(log('Re-open sketch'))
 				
 				.elementByXPath(xpath.listItem(sketchTitle))
 				.then(clickEl('sketch list entry'))
-				.waitForCondition('Ext.AnimationQueue.isIdle', timeout)
+				.then(waitForAnimation)
 				
 				.then(log('Logout'))
 				
 				.elementByXPath(xpath.buttonText('Logout'))
 				.then(clickEl('logout button'))
-				.waitForElementByXPath(xpath.buttonText('Login'), timeout)
+				.waitForElementByXPath(xpath.buttonText('Login'))
 			);
 		};
 	}
