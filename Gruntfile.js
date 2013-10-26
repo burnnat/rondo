@@ -175,7 +175,8 @@ module.exports = function(grunt) {
 					local: grunt.option('local'),
 					autoclose: false,
 					testname: "mobile component tests",
-					tags: ["component"]
+					tags: ["component"],
+					ignoreFailure: true
 				})
 			},
 			
