@@ -247,5 +247,30 @@ Ext.define('Tutti.Theory', {
 			).ticks,
 			1
 		);
+	},
+	
+	/**
+	 * Returns the key string for a note on the center line of the given
+	 * clef, useful for aligning rests on a staff with a particular clef.
+	 * 
+	 * @param {String} clef
+	 * 
+	 * @return {String}
+	 */
+	getMiddleLine: function(clef) {
+		var scale = this.NUM_SCALE;
+		var lineShift = Vex.Flow.clefProperties(clef).line_shift;
+		
+		return (
+			Vex.Flow.Music.roots[
+				// The number 6 here calibrates a line shift of 0 to the note "B".
+				6 - (lineShift * 2) % scale
+			]
+			+ '/'
+			+ (
+				// The number 4 here calibrates a line shift of 0 to octave 4.
+				4 - Math.floor(lineShift * 2 / scale)
+			)
+		);
 	}
 });

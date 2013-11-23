@@ -31,11 +31,15 @@ Ext.define('Tutti.touch.score.Note', {
 	 */
 	registerWithVoice: function(voice, index) {
 		var data = this.getData();
+		var clef = voice.stave.clef;
+		var rest = data.get('rest');
 		
 		this.primitive = new Vex.Flow.StaveNote({
-			keys: data.get('pitches'),
-			duration: data.get('duration'),
-			clef: voice.stave.clef
+			keys: rest
+				? [Tutti.Theory.getMiddleLine(clef)]
+				: data.get('pitches'),
+			duration: data.get('duration') + (rest ? 'r' : ''),
+			clef: clef
 		});
 		
 		voice.addTickable(this.primitive);

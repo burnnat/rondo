@@ -19,6 +19,10 @@ Ext.define('Rondo.controller.Score', {
 				keytap: 'onKeyTap'
 			},
 			
+			rest: {
+				tap: 'onRestTap'
+			},
+			
 			measure: {
 				blocktap: 'onMeasureTap',
 				blockhold: 'onMeasureHold'
@@ -26,7 +30,8 @@ Ext.define('Rondo.controller.Score', {
 		},
 		
 		refs: {
-			keyboard: 'keyboard',
+			keyboard: 'sketchviewer keyboard',
+			rest: 'sketchviewer button',
 			score: 'score',
 			measure: 'score block'
 		}
@@ -36,10 +41,11 @@ Ext.define('Rondo.controller.Score', {
 	 * @private
 	 * 
 	 * @param {Boolean} create
+	 * @param {Boolean} rests
 	 * 
 	 * @return {Tutti.touch.input.NotePanel}
 	 */
-	getNotePanel: function(create) {
+	getNotePanel: function(create, rests) {
 		var panel = this.notePanel;
 		
 		if (!panel) {
@@ -55,6 +61,7 @@ Ext.define('Rondo.controller.Score', {
 		}
 		
 		panel.setCreate(create);
+		panel.setRests(rests);
 		
 		return panel;
 	},
@@ -66,16 +73,32 @@ Ext.define('Rondo.controller.Score', {
 		if (active) {
 			if (active.isCursor) {
 				this.tappedPitch = pitch;
-				this.getNotePanel(true).showBy(key, 'bc-tc?');
+				this.getNotePanel(true, false).showBy(key, 'bc-tc?');
 			}
 			else if (active.isNote) {
 				this.modifyPitches(
 					active.getVoice(),
 					pitch,
 					function(pitches) {
-						active.getData().set('pitches', pitches);
+						active.getData().set({
+							pitches: pitches,
+							rest: false
+						});
 					}
 				);
+			}
+		}
+	},
+	
+	onRestTap: function() {
+		var active = this.getScore().getActiveBlock();
+		
+		if (active) {
+			if (active.isCursor) {
+				this.getNotePanel(true, true).showBy(this.getRest(), 'bc-tc?');
+			}
+			else if (active.isNote) {
+				active.getData().set('rest', true);
 			}
 		}
 	},
@@ -96,7 +119,7 @@ Ext.define('Rondo.controller.Score', {
 		if (item && item.isNote) {
 			this.getScore().setActiveBlock(item);
 			
-			var panel = this.getNotePanel(false);
+			var panel = this.getNotePanel(false, item.getData().get('rest'));
 			
 			panel.setDuration(item.getDuration());
 			panel.setTied(item.isTied(0));
@@ -105,8 +128,11 @@ Ext.define('Rondo.controller.Score', {
 		}
 	},
 	
-	onNoteSave: function(duration, tied) {
+	onNoteSave: function(panel) {
 		var active = this.getScore().getActiveBlock();
+		
+		var duration = panel.getDurationString();
+		var tied = panel.getTied();
 		
 		if (active) {
 			if (active.isCursor) {
@@ -137,7 +163,8 @@ Ext.define('Rondo.controller.Score', {
 								new Tutti.model.Note({
 									pitches: pitches,
 									ties: Ext.Array.map(pitches, function() { return subtied; }),
-									duration: subduration
+									duration: subduration,
+									rest: panel.getRests()
 								})
 							);
 						}
@@ -212,12 +239,14 @@ Ext.define('Rondo.controller.Score', {
 	},
 	
 	modifyPitches: function(voice, rawPitch, fn) {
-		var pitches = [
-			Tutti.Theory.getNoteFromPitch(
-				rawPitch,
-				voice.getMeasure().getData().getResolvedKey()
-			)
-		];
+		var pitches = rawPitch
+			? [
+				Tutti.Theory.getNoteFromPitch(
+					rawPitch,
+					voice.getMeasure().getData().getResolvedKey()
+				)
+			]
+			: [];
 		
 		this.modifyNotes(
 			voice,

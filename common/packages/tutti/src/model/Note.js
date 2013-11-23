@@ -23,6 +23,11 @@ Ext.define('Tutti.model.Note', {
 			{
 				name: 'duration',
 				type: 'string'
+			},
+			{
+				name: 'rest',
+				type: 'boolean',
+				defaultValue: false
 			}
 		]
 	}

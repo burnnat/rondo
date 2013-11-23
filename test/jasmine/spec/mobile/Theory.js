@@ -39,6 +39,13 @@ describe("Tutti.Theory", function() {
 		});
 	});
 	
+	it("should provide middle line pitches", function() {
+		expect(Tutti.Theory.getMiddleLine('treble')).toEqual('b/4');
+		expect(Tutti.Theory.getMiddleLine('bass')).toEqual('d/3');
+		expect(Tutti.Theory.getMiddleLine('alto')).toEqual('c/4');
+		expect(Tutti.Theory.getMiddleLine('tenor')).toEqual('a/3');
+	});
+	
 	describe("when normalizing major pitches", function() {
 		it("should give a perfect unison" , function() {
 			expect(Tutti.Theory.getCanonicalNoteName(11, 'Cb')).toEqual('cb');

@@ -23,21 +23,29 @@ Ext.define('Rondo.view.sketch.Viewer', {
 				sketch: this.getSketch()
 			},
 			{
+				xtype: 'button',
+				docked: 'bottom',
+				text: 'Rest',
+				width: '100%'
+			},
+			{
 				xtype: 'container',
 				height: 200,
 				docked: 'bottom',
 				scrollable: 'horizontal',
 				
 				layout: {
-					type: 'hbox',
+					type: 'vbox',
 					pack: 'center',
 					align: 'center'
 				},
 				
-				items: [{
-					xtype: 'keyboard',
-					octaves: 4
-				}]
+				items: [
+					{
+						xtype: 'keyboard',
+						octaves: 4
+					}
+				]
 			}
 		]);
 	}

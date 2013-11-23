@@ -14,11 +14,21 @@
 );
 
 @include icon('note-whole', '\e000', 'Bravina');
+@include icon('rest-whole', '\e010', 'Bravina');
+
 @include icon('note-half', '\e001', 'Bravina');
+@include icon('rest-half', '\e011', 'Bravina');
+
 @include icon('note-quarter', '\e002', 'Bravina');
+@include icon('rest-quarter', '\e012', 'Bravina');
+
 @include icon('note-eighth', '\e003', 'Bravina');
+@include icon('rest-eighth', '\e013', 'Bravina');
+
 @include icon('note-sixteenth', '\e004', 'Bravina');
-@include icon('tie', '\e005', 'Bravina');
+@include icon('rest-sixteenth', '\e014', 'Bravina');
+
+@include icon('tie', '\e020', 'Bravina');
 
 .x-desktop .x-layout-box > .x-layout-box-item {
 	margin-right: -1px;
