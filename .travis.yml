@@ -6,7 +6,7 @@ services:
 before_install:
 - ./setup.sh travis
 script:
-- ant -Dcmd.dir=$TRAVIS_BUILD_DIR/bundle/Sencha/Cmd/4.0.0.203 -Dvexflow.dir=$TRAVIS_BUILD_DIR/bundle/vexflow
+- ant -Dcmd.dir=$TRAVIS_BUILD_DIR/bundle/Sencha/Cmd/4.0.1.45 -Dvexflow.dir=$TRAVIS_BUILD_DIR/bundle/vexflow
 - npm test
 env:
   global:

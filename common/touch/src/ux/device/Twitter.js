@@ -12,7 +12,6 @@ Ext.define('Ext.ux.device.Twitter', {
 
     requires: [
         'Ext.device.Communicator',
-        'Ext.ux.device.twitter.Abstract',
         'Ext.ux.device.twitter.Cordova'
     ],
 

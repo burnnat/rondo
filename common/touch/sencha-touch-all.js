@@ -16,7 +16,7 @@ requirements will be met: http://www.gnu.org/copyleft/gpl.html.
 If you are unsure which license is appropriate for your use, please contact the sales department
 at http://www.sencha.com/contact.
 
-Build date: 2013-09-24 16:24:22 (5e4fc2d806d7b959eddaf31a21c4d4837b133e07)
+Build date: 2013-11-08 13:58:42 (d989f4377b0a56f9f540fd415741d1f2db1c7977)
 */
 //@tag foundation,core
 //@define Ext
@@ -184,15 +184,6 @@ Build date: 2013-09-24 16:24:22 (5e4fc2d806d7b959eddaf31a21c4d4837b133e07)
                     };
                 }
 
-                //<debug>
-                if (!superclass) {
-                    Ext.Error.raise({
-                        sourceClass: 'Ext',
-                        sourceMethod: 'extend',
-                        msg: 'Attempting to extend from a class which has not been loaded on the page.'
-                    });
-                }
-                //</debug>
 
                 // We create a new temporary class
                 var F = function() {},
@@ -321,13 +312,6 @@ Build date: 2013-09-24 16:24:22 (5e4fc2d806d7b959eddaf31a21c4d4837b133e07)
                 return 'object';
             }
 
-            //<debug error>
-            Ext.Error.raise({
-                sourceClass: 'Ext',
-                sourceMethod: 'typeOf',
-                msg: 'Failed to determine the type of the specified value "' + value + '". This is most likely a bug.'
-            });
-            //</debug>
         },
 
         /**
@@ -602,38 +586,6 @@ Build date: 2013-09-24 16:24:22 (5e4fc2d806d7b959eddaf31a21c4d4837b133e07)
             })();
         }
 
-        //<feature logger>
-        /**
-         * @private
-         * @property
-         */
-        ,Logger: {
-            log: function(message, priority) {
-                if ('console' in global) {
-                    if (!priority || !(priority in global.console)) {
-                        priority = 'log';
-                    }
-                    message = '[' + priority.toUpperCase() + '] ' + message;
-                    global.console[priority](message);
-                }
-            },
-            verbose: function(message) {
-                this.log(message, 'verbose');
-            },
-            info: function(message) {
-                this.log(message, 'info');
-            },
-            warn: function(message) {
-                this.log(message, 'warn');
-            },
-            error: function(message) {
-                throw new Error(message);
-            },
-            deprecate: function(message) {
-                this.log(message, 'warn');
-            }
-        }
-        //</feature>
     });
 
     /**
@@ -1719,11 +1671,6 @@ Ext.urlAppend = Ext.String.urlAppend;
          * @return {Boolean} `true` if no `false` value is returned by the callback function.
          */
         every: function(array, fn, scope) {
-            //<debug>
-            if (!fn) {
-                Ext.Error.raise('Ext.Array.every must have a callback function passed as second argument.');
-            }
-            //</debug>
             if (supportsEvery) {
                 return array.every(fn, scope);
             }
@@ -1750,11 +1697,6 @@ Ext.urlAppend = Ext.String.urlAppend;
          * @return {Boolean} `true` if the callback function returns a truthy value.
          */
         some: function(array, fn, scope) {
-            //<debug>
-            if (!fn) {
-                Ext.Error.raise('Ext.Array.some must have a callback function passed as second argument.');
-            }
-            //</debug>
             if (supportsSome) {
                 return array.some(fn, scope);
             }
@@ -2191,10 +2133,6 @@ Ext.urlAppend = Ext.String.urlAppend;
             return sum;
         },
 
-        //<debug>
-        _replaceSim: replaceSim, // for unit testing
-        _spliceSim: spliceSim,
-        //</debug>
 
         /**
          * Removes items from an array. This is functionally equivalent to the splice method
@@ -2699,11 +2637,6 @@ var ExtObject = Ext.Object = {
                     matchedKeys = name.match(/(\[):?([^\]]*)\]/g);
                     matchedName = name.match(/^([^\[]+)/);
 
-                    //<debug error>
-                    if (!matchedName) {
-                        throw new Error('[Ext.Object.fromQueryString] Malformed query string given, failed parsing name from "' + part + '"');
-                    }
-                    //</debug>
 
                     name = matchedName[0];
                     keys = [];
@@ -4039,18 +3972,10 @@ var noArgs = [],
          */
         addStatics: function(members) {
             var member, name;
-            //<debug>
-            var className = Ext.getClassName(this);
-            //</debug>
 
             for (name in members) {
                 if (members.hasOwnProperty(name)) {
                     member = members[name];
-                    //<debug>
-                    if (typeof member == 'function') {
-                        member.displayName = className + '.' + name;
-                    }
-                    //</debug>
                     this[name] = member;
                 }
             }
@@ -4077,18 +4002,10 @@ var noArgs = [],
                 hasInheritableStatics = prototype.$hasInheritableStatics = {};
             }
 
-            //<debug>
-            var className = Ext.getClassName(this);
-            //</debug>
 
             for (name in members) {
                 if (members.hasOwnProperty(name)) {
                     member = members[name];
-                    //<debug>
-                    if (typeof member == 'function') {
-                        member.displayName = className + '.' + name;
-                    }
-                    //</debug>
                     this[name] = member;
 
                     if (!hasInheritableStatics[name]) {
@@ -4129,9 +4046,6 @@ var noArgs = [],
                 names = [],
                 name, member;
 
-            //<debug>
-            var className = this.$className || '';
-            //</debug>
 
             for (name in members) {
                 if (members.hasOwnProperty(name)) {
@@ -4140,9 +4054,6 @@ var noArgs = [],
                     if (typeof member == 'function' && !member.$isClass && member !== Ext.emptyFn) {
                         member.$owner = this;
                         member.$name = name;
-                        //<debug>
-                        member.displayName = className + '#' + name;
-                        //</debug>
                     }
 
                     prototype[name] = member;
@@ -4161,9 +4072,6 @@ var noArgs = [],
             if (typeof member == 'function' && !member.$isClass && member !== Ext.emptyFn) {
                 member.$owner = this;
                 member.$name = name;
-                //<debug>
-                member.displayName = (this.$className || '') + '#' + name;
-                //</debug>
             }
 
             this.prototype[name] = member;
@@ -4211,9 +4119,6 @@ var noArgs = [],
         borrow: function(fromClass, members) {
             var prototype = this.prototype,
                 fromPrototype = fromClass.prototype,
-                //<debug>
-                className = Ext.getClassName(this),
-                //</debug>
                 i, ln, name, fn, toBorrow;
 
             members = Ext.Array.from(members);
@@ -4228,11 +4133,6 @@ var noArgs = [],
                         return toBorrow.apply(this, arguments);
                     };
 
-                    //<debug>
-                    if (className) {
-                        fn.displayName = className + '#' + name;
-                    }
-                    //</debug>
 
                     fn.$owner = this;
                     fn.$name = name;
@@ -4327,14 +4227,6 @@ var noArgs = [],
                     }
                     else if (name == 'config') {
                         newConfig = members[name];
-                        //<debug error>
-                        for (prop in newConfig) {
-                            if (!(prop in currentConfig)) {
-                                throw new Error("Attempting to override a non-existant config property. This is not " +
-                                    "supported, you must extend the Class.");
-                            }
-                        }
-                        //</debug>
                         me.addConfig(newConfig, true);
                     }
                     else {
@@ -4357,12 +4249,6 @@ var noArgs = [],
                                 member = cloneFunction(member);
                             }
 
-                            //<debug>
-                            var className = me.$className;
-                            if (className) {
-                                member.displayName = className + '#' + name;
-                            }
-                            //</debug>
 
                             member.$owner = me;
                             member.$name = name;
@@ -4692,28 +4578,6 @@ var noArgs = [],
                         ((method = method.$owner ? method : method.caller) &&
                                 method.$owner.superclass[method.$name]));
 
-            //<debug error>
-            if (!superMethod) {
-                method = this.callParent.caller;
-                var parentClass, methodName;
-
-                if (!method.$owner) {
-                    if (!method.caller) {
-                        throw new Error("Attempting to call a protected method from the public scope, which is not allowed");
-                    }
-
-                    method = method.caller;
-                }
-
-                parentClass = method.$owner.superclass;
-                methodName = method.$name;
-
-                if (!(methodName in parentClass)) {
-                    throw new Error("this.callParent() was called but there's no such method (" + methodName +
-                                ") found in the parent class (" + (Ext.getClassName(parentClass) || 'Object') + ")");
-                }
-            }
-            //</debug>
 
             return superMethod.apply(this, args || noArgs);
         },
@@ -4771,28 +4635,6 @@ var noArgs = [],
                 superMethod = (method = this.callSuper.caller) && ((method = method.$owner ? method : method.caller) &&
                                 method.$owner.superclass[method.$name]);
 
-            //<debug error>
-            if (!superMethod) {
-                method = this.callSuper.caller;
-                var parentClass, methodName;
-
-                if (!method.$owner) {
-                    if (!method.caller) {
-                        throw new Error("Attempting to call a protected method from the public scope, which is not allowed");
-                    }
-
-                    method = method.caller;
-                }
-
-                parentClass = method.$owner.superclass;
-                methodName = method.$name;
-
-                if (!(methodName in parentClass)) {
-                    throw new Error("this.callSuper() was called but there's no such method (" + methodName +
-                                ") found in the parent class (" + (Ext.getClassName(parentClass) || 'Object') + ")");
-                }
-            }
-            //</debug>
 
             return superMethod.apply(this, args || noArgs);
         },
@@ -4908,11 +4750,6 @@ var noArgs = [],
          * @return {Object} mixins The mixin prototypes as key - value pairs
          */
         initConfig: function(instanceConfig) {
-            //<debug>
-//            if (instanceConfig && instanceConfig.breakOnInitConfig) {
-//                debugger;
-//            }
-            //</debug>
             var configNameCache = Ext.Class.configNameCache,
                 prototype = this.self.prototype,
                 initConfigList = this.initConfigList,
@@ -5092,9 +4929,6 @@ var noArgs = [],
          */
         onConfigUpdate: function(names, callback, scope) {
             var self = this.self,
-                //<debug>
-                className = self.$className,
-                //</debug>
                 i, ln, name,
                 updaterName, updater, newUpdater;
 
@@ -5112,9 +4946,6 @@ var noArgs = [],
                 };
                 newUpdater.$name = updaterName;
                 newUpdater.$owner = self;
-                //<debug>
-                newUpdater.displayName = className + '#' + updaterName;
-                //</debug>
 
                 this[updaterName] = newUpdater;
             }
@@ -6340,11 +6171,6 @@ var noArgs = [],
             var existCache = this.existCache,
                 i, ln, part, root, parts;
 
-            //<debug error>
-            if (typeof className != 'string' || className.length < 1) {
-                throw new Error("[Ext.ClassManager] Invalid classname, must be a string and must not be empty");
-            }
-            //</debug>
 
             if (this.classes[className] || existCache[className]) {
                 return true;
@@ -6450,11 +6276,6 @@ var noArgs = [],
          * @private
          */
         parseNamespace: function(namespace) {
-            //<debug error>
-            if (typeof namespace != 'string') {
-                throw new Error("[Ext.ClassManager] Invalid namespace, must be a string");
-            }
-            //</debug>
 
             var cache = this.namespaceParseCache;
 
@@ -6640,12 +6461,6 @@ var noArgs = [],
             }
 
             if (alias && aliasToNameMap[alias] !== className) {
-                //<debug info>
-                if (aliasToNameMap[alias]) {
-                    Ext.Logger.info("[Ext.ClassManager] Overriding existing alias: '" + alias + "' " +
-                        "of: '" + aliasToNameMap[alias] + "' with: '" + className + "'. Be sure it's intentional.");
-                }
-                //</debug>
 
                 aliasToNameMap[alias] = className;
             }
@@ -6785,11 +6600,6 @@ var noArgs = [],
          * @private
          */
         create: function(className, data, createdFn) {
-            //<debug error>
-            if (typeof className != 'string') {
-                throw new Error("[Ext.define] Invalid class name '" + className + "' specified, must be a non-empty string");
-            }
-            //</debug>
 
             data.$className = className;
 
@@ -6904,16 +6714,7 @@ var noArgs = [],
             if (!className) {
                 className = this.maps.aliasToName[alias];
 
-                //<debug error>
-                if (!className) {
-                    throw new Error("[Ext.createByAlias] Cannot create an instance of unrecognized alias: " + alias);
-                }
-                //</debug>
 
-                //<debug warn>
-                Ext.Logger.warn("[Ext.Loader] Synchronously loading '" + className + "'; consider adding " +
-                     "Ext.require('" + alias + "') above Ext.onReady");
-                //</debug>
 
                 Ext.syncRequire(className);
             }
@@ -6952,11 +6753,6 @@ var noArgs = [],
                 possibleName, cls;
 
             if (typeof name != 'function') {
-                //<debug error>
-                if ((typeof name != 'string' || name.length < 1)) {
-                    throw new Error("[Ext.create] Invalid class name or alias '" + name + "' specified, must be a non-empty string");
-                }
-                //</debug>
 
                 cls = this.get(name);
             }
@@ -6988,25 +6784,12 @@ var noArgs = [],
 
             // Still not existing at this point, try to load it via synchronous mode as the last resort
             if (!cls) {
-                //<debug warn>
-                Ext.Logger.warn("[Ext.Loader] Synchronously loading '" + name + "'; consider adding '" +
-                    ((possibleName) ? alias : name) + "' explicitly as a require of the corresponding class");
-                //</debug>
 
                 Ext.syncRequire(name);
 
                 cls = this.get(name);
             }
 
-            //<debug error>
-            if (!cls) {
-                throw new Error("[Ext.create] Cannot create an instance of unrecognized class name / alias: " + alias);
-            }
-
-            if (typeof cls != 'function') {
-                throw new Error("[Ext.create] '" + name + "' is a singleton and cannot be instantiated");
-            }
-            //</debug>
 
             return this.getInstantiator(args.length)(cls, args);
         },
@@ -7042,9 +6825,6 @@ var noArgs = [],
                 }
 
                 instantiator = instantiators[length] = new Function('c', 'a', 'return new c(' + args.join(',') + ')');
-                //<debug>
-                instantiator.displayName = "Ext.ClassManager.instantiate" + length;
-                //</debug>
             }
 
             return instantiator;
@@ -7158,11 +6938,6 @@ var noArgs = [],
                 names = [],
                 name, alias, aliases, possibleName, regex, i, ln;
 
-            //<debug error>
-            if (typeof expression != 'string' || expression.length < 1) {
-                throw new Error("[Ext.ClassManager.getNamesByExpression] Expression " + expression + " is invalid, must be a non-empty string");
-            }
-            //</debug>
 
             if (expression.indexOf('*') !== -1) {
                 expression = expression.replace(/\*/g, '(.*?)');
@@ -7326,11 +7101,6 @@ var noArgs = [],
         for (i = 0, ln = alternates.length; i < ln; i++) {
             alternate = alternates[i];
 
-            //<debug error>
-            if (typeof alternate != 'string') {
-                throw new Error("[Ext.define] Invalid alternate of: '" + alternate + "' for class: '" + name + "'; must be a valid string");
-            }
-            //</debug>
 
             this.set(alternate, cls);
         }
@@ -7604,9 +7374,6 @@ var noArgs = [],
     Class.registerPreprocessor('className', function(cls, data) {
         if (data.$className) {
             cls.$className = data.$className;
-            //<debug>
-            cls.displayName = cls.$className;
-            //</debug>
         }
     }, true, 'first');
 
@@ -7623,11 +7390,6 @@ var noArgs = [],
         for (i = 0,ln = aliases.length; i < ln; i++) {
             alias = aliases[i];
 
-            //<debug error>
-            if (typeof alias != 'string' || alias.length < 1) {
-                throw new Error("[Ext.define] Invalid alias of: '" + alias + "' for class: '" + name + "'; must be a valid string");
-            }
-            //</debug>
 
             if (alias.substring(0, widgetPrefixLength) === widgetPrefix) {
                 xtype = alias.substring(widgetPrefixLength);
@@ -7677,11 +7439,6 @@ var noArgs = [],
         for (i = 0,ln = xtypes.length; i < ln; i++) {
             xtype = xtypes[i];
 
-            //<debug error>
-            if (typeof xtype != 'string' || xtype.length < 1) {
-                throw new Error("[Ext.define] Invalid xtype of: '" + xtype + "' for class: '" + name + "'; must be a valid non-empty string");
-            }
-            //</debug>
 
             Ext.Array.include(aliases, widgetPrefix + xtype);
         }
@@ -8349,9 +8106,6 @@ var noArgs = [],
 
             if (!synchronous) {
                 onScriptError = function() {
-                    //<debug error>
-                    onError.call(scope, "Failed loading '" + url + "', please verify that the file exists", synchronous);
-                    //</debug>
                 };
 
                 if (!Ext.isReady && Ext.onDocumentReady) {
@@ -8377,12 +8131,6 @@ var noArgs = [],
                     xhr.send(null);
                 }
                 catch (e) {
-                    //<debug error>
-                    onError.call(this, "Failed loading synchronously via XHR: '" + url + "'; It's likely that the file is either " +
-                                       "being loaded from a different domain or from the local file system whereby cross origin " +
-                                       "requests are not allowed due to security reasons. Use asynchronous loading with " +
-                                       "Ext.require instead.", synchronous);
-                    //</debug>
                 }
 
                 status = (xhr.status == 1223) ? 204 : xhr.status;
@@ -8395,11 +8143,6 @@ var noArgs = [],
                     onLoad.call(scope);
                 }
                 else {
-                    //<debug>
-                    onError.call(this, "Failed loading synchronously via XHR: '" + url + "'; please " +
-                                       "verify that the file exists. " +
-                                       "XHR status code: " + status, synchronous);
-                    //</debug>
                 }
 
                 // Prevent potential IE memory leak
@@ -8589,41 +8332,6 @@ var noArgs = [],
                 this.refreshQueue();
             }
 
-            //<debug>
-            if (!this.syncModeEnabled && this.numPendingFiles === 0 && this.isLoading && !this.hasFileLoadError) {
-                var queue = this.queue,
-                    missingClasses = [],
-                    missingPaths = [],
-                    requires,
-                    i, ln, j, subLn;
-
-                for (i = 0,ln = queue.length; i < ln; i++) {
-                    requires = queue[i].requires;
-
-                    for (j = 0,subLn = requires.length; j < subLn; j++) {
-                        if (this.isClassFileLoaded[requires[j]]) {
-                            missingClasses.push(requires[j]);
-                        }
-                    }
-                }
-
-                if (missingClasses.length < 1) {
-                    return;
-                }
-
-                missingClasses = Ext.Array.filter(Ext.Array.unique(missingClasses), function(item) {
-                    return !this.requiresMap.hasOwnProperty(item);
-                }, this);
-
-                for (i = 0,ln = missingClasses.length; i < ln; i++) {
-                    missingPaths.push(this.classNameToFilePathMap[missingClasses[i]]);
-                }
-
-                throw new Error("The following classes are not declared even if their files have been " +
-                            "loaded: '" + missingClasses.join("', '") + "'. Please check the source code of their " +
-                            "corresponding files for possible typos: '" + missingPaths.join("', '"));
-            }
-            //</debug>
         },
 
         /**
@@ -8633,9 +8341,6 @@ var noArgs = [],
             this.numPendingFiles--;
             this.hasFileLoadError = true;
 
-            //<debug error>
-            throw new Error("[Ext.Loader] " + errorMessage);
-            //</debug>
         },
 
         /**
@@ -8834,51 +8539,6 @@ var noArgs = [],
         }
 
         //<feature classSystem.loader>
-        //<debug error>
-        var deadlockPath = [],
-            requiresMap = Loader.requiresMap,
-            detectDeadlock;
-
-        /*
-        Automatically detect deadlocks before-hand,
-        will throw an error with detailed path for ease of debugging. Examples of deadlock cases:
-
-        - A extends B, then B extends A
-        - A requires B, B requires C, then C requires A
-
-        The detectDeadlock function will recursively transverse till the leaf, hence it can detect deadlocks
-        no matter how deep the path is.
-        */
-
-        if (className) {
-            requiresMap[className] = dependencies;
-            //<debug>
-            if (!Loader.requiredByMap) Loader.requiredByMap = {};
-            Ext.Array.each(dependencies, function(dependency){
-                if (!Loader.requiredByMap[dependency]) Loader.requiredByMap[dependency] = [];
-                Loader.requiredByMap[dependency].push(className);
-            });
-            //</debug>
-            detectDeadlock = function(cls) {
-                deadlockPath.push(cls);
-
-                if (requiresMap[cls]) {
-                    if (Ext.Array.contains(requiresMap[cls], className)) {
-                        throw new Error("Deadlock detected while loading dependencies! '" + className + "' and '" +
-                                deadlockPath[1] + "' " + "mutually require each other. Path: " +
-                                deadlockPath.join(' -> ') + " -> " + deadlockPath[0]);
-                    }
-
-                    for (i = 0,ln = requiresMap[cls].length; i < ln; i++) {
-                        detectDeadlock(requiresMap[cls][i]);
-                    }
-                }
-            };
-
-            detectDeadlock(className);
-        }
-
-        //</debug>
         //</feature>
 
         Loader.require(dependencies, function() {
@@ -8963,14 +8623,6 @@ var noArgs = [],
         path = src.substring(0, src.lastIndexOf('/') + 1),
         Loader = Ext.Loader;
 
-    //<debug>
-    // if we're running in dev mode out of the repo src tree, then this
-    // file will potentially be loaded from the touch/src/core/class folder
-    // so we'll need to adjust for that
-    if(src.indexOf("src/core/class/") != -1) {
-        path = path + "../../../";
-    }
-    //</debug>
 
 
     Loader.setConfig({
@@ -9033,7 +8685,7 @@ var noArgs = [],
  *
  * [getting_started]: #!/guide/getting_started
  */
-Ext.setVersion('touch', '2.3.0');
+Ext.setVersion('touch', '2.3.1');
 
 Ext.apply(Ext, {
     /**
@@ -9301,22 +8953,6 @@ Ext.apply(Ext, {
             //</feature>
         },
 
-        //<feature logger>
-        logger: {
-            enabled: true,
-            xclass: 'Ext.log.Logger',
-            minPriority: 'deprecate',
-            writers: {
-                console: {
-                    xclass: 'Ext.log.writer.Console',
-                    throwOnErrors: true,
-                    formatter: {
-                        xclass: 'Ext.log.formatter.Default'
-                    }
-                }
-            }
-        },
-        //</feature>
 
         animator: {
             xclass: 'Ext.fx.Runner'
@@ -10107,11 +9743,6 @@ Ext.apply(Ext, {
             return instance || manager.instantiate(classReference);
         }
 
-        //<debug error>
-        if (!Ext.isObject(config)) {
-            Ext.Logger.error("Invalid config, must be a valid config object");
-        }
-        //</debug>
 
         if ('xtype' in config) {
             newInstance = manager.instantiateByAlias('widget.' + config.xtype, config);
@@ -10175,15 +9806,9 @@ Ext.apply(Ext, {
         if (newName) {
             Ext.Object.defineProperty(object, oldName, {
                 get: function() {
-                    //<debug warn>
-                    Ext.Logger.deprecate(message, 1);
-                    //</debug>
                     return this[newName];
                 },
                 set: function(value) {
-                    //<debug warn>
-                    Ext.Logger.deprecate(message, 1);
-                    //</debug>
 
                     this[newName] = value;
                 },
@@ -10199,9 +9824,6 @@ Ext.apply(Ext, {
     deprecatePropertyValue: function(object, name, value, message) {
         Ext.Object.defineProperty(object, name, {
             get: function() {
-                //<debug warn>
-                Ext.Logger.deprecate(message, 1);
-                //</debug>
                 return value;
             },
             configurable: true
@@ -10214,9 +9836,6 @@ Ext.apply(Ext, {
      */
     deprecateMethod: function(object, name, method, message) {
         object[name] = function() {
-            //<debug warn>
-            Ext.Logger.deprecate(message, 2);
-            //</debug>
             if (method) {
                 return method.apply(this, arguments);
             }
@@ -10250,18 +9869,12 @@ Ext.apply(Ext, {
 
         if (isLateBinding) {
             member = function() {
-                //<debug warn>
-                Ext.Logger.deprecate(message, this);
-                //</debug>
 
                 return this[method].apply(this, arguments);
             };
         }
         else {
             member = function() {
-                //<debug warn>
-                Ext.Logger.deprecate(message, this);
-                //</debug>
 
                 return method.apply(this, arguments);
             };
@@ -10278,29 +9891,6 @@ Ext.apply(Ext, {
         cls.addMember(name, member);
     },
 
-    //<debug>
-    /**
-     * Useful snippet to show an exact, narrowed-down list of top-level Components that are not yet destroyed.
-     * @private
-     */
-    showLeaks: function() {
-        var map = Ext.ComponentManager.all.map,
-            leaks = [],
-            parent;
-
-        Ext.Object.each(map, function(id, component) {
-            while ((parent = component.getParent()) && map.hasOwnProperty(parent.getId())) {
-                component = parent;
-            }
-
-            if (leaks.indexOf(component) === -1) {
-                leaks.push(component);
-            }
-        });
-
-        console.log(leaks);
-    },
-    //</debug>
 
     /**
      * True when the document is fully initialized and ready for action
@@ -10408,21 +9998,6 @@ Ext.apply(Ext, {
     }
 });
 
-//<debug>
-Ext.Object.defineProperty(Ext, 'Msg', {
-    get: function() {
-        Ext.Logger.error("Using Ext.Msg without requiring Ext.MessageBox");
-        return null;
-    },
-    set: function(value) {
-        Ext.Object.defineProperty(Ext, 'Msg', {
-            value: value
-        });
-        return value;
-    },
-    configurable: true
-});
-//</debug>
 
 
 //@tag dom,core
@@ -11122,6 +10697,9 @@ Ext.define('Ext.env.Feature', {
                 name: 'Default'
             };
         }
+
+        Ext.theme.is = {};
+        Ext.theme.is[Ext.theme.name] = true;
 
         Ext.onDocumentReady(function() {
             this.registerTest({
@@ -12454,6 +12032,35 @@ Ext.define('Ext.dom.Element', {
                 }
             }
             return data.substr(0, data.length - 1);
+        },
+
+        /**
+         * Serializes a DOM element and its children recursively into a string.
+         * @param {Object} node DOM element to serialize.
+         * @returns {String}
+         */
+        serializeNode: function (node) {
+            var result = '',
+                i, n, attr, child;
+            if (node.nodeType === document.TEXT_NODE) {
+                return node.nodeValue;
+            }
+            result += '<' + node.nodeName;
+            if (node.attributes.length) {
+                for (i = 0, n = node.attributes.length; i < n; i++) {
+                    attr = node.attributes[i];
+                    result += ' ' + attr.name + '="' + attr.value + '"';
+                }
+            }
+            result += '>';
+            if (node.childNodes && node.childNodes.length) {
+                for (i = 0, n = node.childNodes.length; i < n; i++) {
+                    child = node.childNodes[i];
+                    result += this.serializeNode(child);
+                }
+            }
+            result += '</' + node.nodeName + '>';
+            return result;
         }
     },
 
@@ -12808,9 +12415,6 @@ Ext.dom.Element.addStatics({
             return size + (units || this.defaultUnit || 'px');
         }
         else if (!this.unitRe.test(size)) {
-            //<debug>
-            Ext.Logger.warn("Warning, size detected (" + size + ") not a valid property value on Element.addUnits.");
-            //</debug>
             return size || '';
         }
 
@@ -13520,18 +13124,19 @@ Ext.dom.Element.override({
      */
     getPageBox: function(getRegion) {
         var me = this,
-            el = me.dom,
-            w = el.offsetWidth,
+            el = me.dom;
+
+        if (!el) {
+            return new Ext.util.Region();
+        }
+
+        var w = el.offsetWidth,
             h = el.offsetHeight,
             xy = me.getXY(),
             t = xy[1],
             r = xy[0] + w,
             b = xy[1] + h,
             l = xy[0];
-
-        if (!el) {
-            return new Ext.util.Region();
-        }
 
         if (getRegion) {
             return new Ext.util.Region(t, r, b, l);
@@ -15034,9 +14639,6 @@ Ext.define('Ext.dom.CompositeElementLite', {
             elements = selector;
         }
         else {
-            //<debug>
-            throw new Error("[Ext.select] Invalid selector specified: " + selector);
-            //</debug>
         }
 
         return (composite === true) ? new Ext.dom.CompositeElement(elements) : new Ext.dom.CompositeElementLite(elements);
@@ -16017,11 +15619,6 @@ Ext.define('Ext.mixin.Observable', {
         if (!this.observableId) {
             var id = this.getUniqueId();
 
-            //<debug error>
-            if (!id.match(this.validIdRegex)) {
-                Ext.Logger.error("Invalid unique id of '" + id + "' for this object", this);
-            }
-            //</debug>
 
             this.observableId = this.observableIdPrefix + id;
 
@@ -17487,11 +17084,6 @@ Ext.define('Ext.AbstractManager', {
         var type        = config[this.typeName] || config.type || defaultType,
             Constructor = this.types[type];
 
-        //<debug>
-        if (Constructor == undefined) {
-            Ext.Error.raise("The '" + type + "' type has not been registered with this manager");
-        }
-        //</debug>
 
         return new Constructor(config);
     },
@@ -17661,11 +17253,6 @@ Ext.define('Ext.ComponentManager', {
     register: function(component) {
         var id = component.getId();
 
-        // <debug>
-        if (this.map[id]) {
-            Ext.Logger.warn('Registering a component with a id (`' + id + '`) which has already been used. Please ensure the existing component has been destroyed (`Ext.Component#destroy()`.');
-        }
-        // </debug>
 
         this.map[component.getId()] = component;
     },
@@ -19477,11 +19064,6 @@ Ext.define('Ext.util.Format', {
                 // Dates with the format "2012-01-20" fail, but "2012/01/20" work in some browsers. We'll try and
                 // get around that.
                 date = new Date(Date.parse(value.replace(this.dashesRe, "/")));
-                //<debug>
-                if (isNaN(date)) {
-                    Ext.Logger.error("Cannot parse the passed value " + value + " into a valid date");
-                }
-                //</debug>
             }
             value = date;
         }
@@ -20407,9 +19989,6 @@ Ext.define('Ext.XTemplateCompiler', {
                             ' try { with(values) {',
                             '  ' + action,
                             ' }} catch(e) {',
-                            //<debug>
-                            'Ext.Logger.log("XTemplate Error: " + e.message);',
-                             //</debug>
                             '}',
                       '}');
 
@@ -20437,9 +20016,6 @@ Ext.define('Ext.XTemplateCompiler', {
                             ' try { with(values) {',
                             '  return(' + body + ')',
                             ' }} catch(e) {',
-                            //<debug>
-                            'Ext.Logger.log("XTemplate Error: " + e.message);',
-                             //</debug>
                             '}',
                        '}');
         }
@@ -20831,9 +20407,6 @@ Ext.define('Ext.XTemplate', {
 
             me.fn.call(me, out, values, parent || me.emptyObj, xindex, xcount);
         } catch (e) {
-            //<debug>
-            Ext.Logger.log('Error: ' + e.message);
-            //</debug>
         }
 
         return out;
@@ -23677,13 +23250,6 @@ Ext.define('Ext.Component', {
             return null;
         }
 
-        //<debug error>
-        if (!/^(top|right|bottom|left)$/.test(docked)) {
-            Ext.Logger.error("Invalid docking position of '" + docked.position + "', must be either 'top', 'right', 'bottom', " +
-                "'left' or `null` (for no docking)", this);
-            return;
-        }
-        //</debug>
 
         this.refreshInnerState = Ext.emptyFn;
 
@@ -24266,12 +23832,6 @@ Ext.define('Ext.Component', {
     //@private
     doAddListener: function(name, fn, scope, options, order) {
         if (options && 'element' in options) {
-            //<debug error>
-            if (this.referenceList.indexOf(options.element) === -1) {
-                Ext.Logger.error("Adding event listener with an invalid element reference of '" + options.element +
-                    "' for this component. Available values are: '" + this.referenceList.join("', '") + "'", this);
-            }
-            //</debug>
 
             // The default scope is this component
             return this[options.element].doAddListener(name, fn, scope || this, options, order);
@@ -24286,12 +23846,6 @@ Ext.define('Ext.Component', {
     //@private
     doRemoveListener: function(name, fn, scope, options, order) {
         if (options && 'element' in options) {
-            //<debug error>
-            if (this.referenceList.indexOf(options.element) === -1) {
-                Ext.Logger.error("Removing event listener with an invalid element reference of '" + options.element +
-                    "' for this component. Available values are: '" + this.referenceList.join('", "') + "'", this);
-            }
-            //</debug>
 
             // The default scope is this component
             this[options.element].doRemoveListener(name, fn, scope || this, options, order);
@@ -24459,11 +24013,6 @@ Ext.define('Ext.Component', {
         }
 
         var matches = alignment.match(this.alignmentRegex);
-        //<debug error>
-        if (!matches) {
-            Ext.Logger.error("Invalid alignment value of '" + alignment + "'");
-        }
-        //</debug>
 
         var from = matches[1].split(''),
             to = matches[2].split(''),
@@ -25586,11 +25135,6 @@ Ext.define('Ext.layout.FlexBox', {
     },
 
     applyOrient: function(orient) {
-        //<debug error>
-        if (orient !== 'horizontal' && orient !== 'vertical') {
-            Ext.Logger.error("Invalid box orient of: '" + orient + "', must be either 'horizontal' or 'vertical'");
-        }
-        //</debug>
 
         return orient;
     },
@@ -26673,11 +26217,6 @@ Ext.define('Ext.fx.animation.Abstract', {
         if (stateInstance) {
             states[name] = stateInstance;
         }
-        //<debug error>
-        else if (name === this.STATE_TO) {
-            Ext.Logger.error("Setting and invalid '100%' / 'to' state of: " + state);
-        }
-        //</debug>
 
         return this;
     },
@@ -27206,11 +26745,6 @@ Ext.define('Ext.fx.Animation', {
             }
             defaultClass = Ext.ClassManager.getByAlias('animation.' + type);
 
-            //<debug error>
-            if (!defaultClass) {
-                Ext.Logger.error("Invalid animation type of: '" + type + "'");
-            }
-            //</debug>
         }
 
         return Ext.factory(config, defaultClass);
@@ -27761,11 +27295,6 @@ Ext.define('Ext.fx.layout.Card', {
 
             defaultClass = Ext.ClassManager.getByAlias('fx.layout.card.' + type);
 
-            //<debug error>
-            if (!defaultClass) {
-                Ext.Logger.error("Unknown card animation type: '" + type + "'");
-            }
-            //</debug>
         }
 
         return Ext.factory(config, defaultClass);
@@ -28059,9 +27588,6 @@ Ext.define('Ext.util.Filter', {
 
             var value = this.getValue();
             if (!this.getProperty() && !value && value !== 0) {
-                // <debug>
-                Ext.Logger.error('A Filter requires either a property and value, or a filterFn to be set');
-                // </debug>
                 return Ext.emptyFn;
             }
             else {
@@ -28969,21 +28495,6 @@ Ext.define('Ext.util.Sorter', {
         this.initConfig(config);
     },
 
-    // <debug>
-    applySorterFn: function(sorterFn) {
-        if (!sorterFn && !this.getProperty()) {
-            Ext.Logger.error("A Sorter requires either a property or a sorterFn.");
-        }
-        return sorterFn;
-    },
-
-    applyProperty: function(property) {
-        if (!property && !this.getSorterFn()) {
-            Ext.Logger.error("A Sorter requires either a property or a sorterFn.");
-        }
-        return property;
-    },
-    // </debug>
 
     applyId: function(id) {
         if (!id) {
@@ -30202,11 +29713,30 @@ Ext.define('Ext.scroll.Scroller', {
     /**
      * @private
      */
-    updateDirection: function(direction) {
-        var isAxisEnabledFlags = this.isAxisEnabledFlags;
+    updateDirection: function(direction, oldDirection) {
+        var isAxisEnabledFlags = this.isAxisEnabledFlags,
+            verticalCls = this.cls + '-vertical',
+            horizontalCls = this.cls + '-horizontal',
+            element = this.getElement();
 
-        isAxisEnabledFlags.x = (direction === 'both' || direction === 'horizontal');
-        isAxisEnabledFlags.y = (direction === 'both' || direction === 'vertical');
+        if (oldDirection === 'both' || oldDirection === 'horizontal') {
+            element.removeCls(horizontalCls);
+        }
+
+        if (oldDirection === 'both' || oldDirection === 'vertical') {
+            element.removeCls(verticalCls);
+        }
+
+        isAxisEnabledFlags.x = isAxisEnabledFlags.y = false;
+        if (direction === 'both' || direction === 'horizontal') {
+            isAxisEnabledFlags.x = true;
+            element.addCls(horizontalCls);
+        }
+
+        if (direction === 'both' || direction === 'vertical') {
+            isAxisEnabledFlags.y = true;
+            element.addCls(verticalCls);
+        }
     },
 
     /**
@@ -30417,11 +29947,6 @@ Ext.define('Ext.scroll.Scroller', {
         if (!container) {
             element = this.getElement().getParent();
             this.container = container = this.FixedHBoxStretching ? element.getParent() : element;
-            //<debug error>
-            if (!container) {
-                Ext.Logger.error("Making an element scrollable that doesn't have any container");
-            }
-            //</debug>
             container.addCls(this.containerCls);
         }
 
@@ -31053,10 +30578,6 @@ Ext.define('Ext.AnimationQueue', {
 
             this.isIdle = false;
             this.isRunning = true;
-            //<debug>
-            this.startCountTime = Ext.performance.now();
-            this.count = 0;
-            //</debug>
             this.doStart();
         }
     },
@@ -31086,27 +30607,10 @@ Ext.define('Ext.AnimationQueue', {
 
         queue.length = 0;
 
-        //<debug>
-        var now = this.frameStartTime,
-            startCountTime = this.startCountTime,
-            elapse = now - startCountTime,
-            count = ++this.count;
-
-        if (elapse >= 200) {
-            this.onFpsChanged(count * 1000 / elapse, count, elapse);
-            this.startCountTime = now;
-            this.count = 0;
-        }
-        //</debug>
 
         this.doIterate();
     },
 
-    //<debug>
-    onFpsChanged: Ext.emptyFn,
-
-    onStop: Ext.emptyFn,
-    //</debug>
 
     doStart: function() {
         this.animationFrameId = requestAnimationFrame(this.run);
@@ -31147,9 +30651,6 @@ Ext.define('Ext.AnimationQueue', {
 
         if (ln === 0) {
             this.doStop();
-            //<debug>
-            this.onStop();
-            //</debug>
             this.isRunning = false;
 
             this.idleTimer = setTimeout(this.whenIdle, 100);
@@ -31389,14 +30890,6 @@ Ext.define('Ext.AnimationQueue', {
         Global FPS indicator. Add ?showfps to use in any application. Note that this REQUIRES true requestAnimationFrame
         to be accurate.
      */
-    //<debug>
-    var paramsString = window.location.search.substr(1),
-        paramsArray = paramsString.split("&");
-
-    if (paramsArray.indexOf("showfps") !== -1) {
-        Ext.AnimationQueue.showFps();
-    }
-    //</debug>
 
 });
 
@@ -32126,36 +31619,8 @@ Ext.define('Ext.scroll.View', {
         this.setIndicatorValue('x', x);
         this.setIndicatorValue('y', y);
 
-        //<debug>
-        if (this.isBenchmarking) {
-            this.framesCount++;
-        }
-        //</debug>
     },
 
-    //<debug>
-    isBenchmarking: false,
-
-    framesCount: 0,
-
-    getCurrentFps: function() {
-        var now = Date.now(),
-            fps;
-
-        if (!this.isBenchmarking) {
-            this.isBenchmarking = true;
-            fps = 0;
-        }
-        else {
-            fps = Math.round(this.framesCount * 1000 / (now - this.framesCountStartTime));
-        }
-
-        this.framesCountStartTime = now;
-        this.framesCount = 0;
-
-        return fps;
-    },
-    //</debug>
 
     setIndicatorValue: function(axis, scrollerPosition) {
         if (!this.isAxisEnabled(axis)) {
@@ -32359,7 +31824,6 @@ Ext.define('Ext.behavior.Scrollable', {
  */
 Ext.define('Ext.util.InputBlocker', {
     singleton: true,
-    alternateClassName: "InputBlocker",
     blockInputs: function () {
         if (Ext.browser.is.ie) {
             Ext.select('.x-field-text .x-field-input:not(.x-item-disabled) .x-input-el, .x-field-textarea .x-field-input:not(.x-item-disabled) .x-input-el, .x-field-search .x-field-input:not(.x-item-disabled) .x-input-el').each(function (item) {
@@ -33054,13 +32518,6 @@ Ext.define('Ext.Container', {
         return this.onItemAdd.apply(this, arguments);
     },
 
-    //<debug error>
-    updateLayout: function(newLayout, oldLayout) {
-        if (oldLayout && oldLayout.isLayout) {
-            Ext.Logger.error('Replacing a layout after one has already been initialized is not currently supported.');
-        }
-    },
-    //</debug>
 
     getLayout: function() {
         var layout = this.layout;
@@ -33076,11 +32533,6 @@ Ext.define('Ext.Container', {
         // Cache the direct reference to the default item class here for performance
         this.defaultItemClass = Ext.ClassManager.getByAlias('widget.' + defaultType);
 
-        //<debug error>
-        if (!this.defaultItemClass) {
-            Ext.Logger.error("Invalid defaultType of: '" + defaultType + "', must be a valid component xtype");
-        }
-        //</debug>
     },
 
     applyDefaults: function(defaults) {
@@ -33091,23 +32543,11 @@ Ext.define('Ext.Container', {
     },
 
     factoryItem: function(item) {
-        //<debug error>
-        if (!item) {
-            Ext.Logger.error("Invalid item given: " + item + ", must be either the config object to factory a new item, " +
-                "or an existing component instance");
-        }
-        //</debug>
 
         return Ext.factory(item, this.defaultItemClass);
     },
 
     factoryItemWithDefaults: function(item) {
-        //<debug error>
-        if (!item) {
-            Ext.Logger.error("Invalid item given: " + item + ", must be either the config object to factory a new item, " +
-                "or an existing component instance");
-        }
-        //</debug>
 
         var me = this,
             defaults = me.getDefaults(),
@@ -33453,11 +32893,6 @@ Ext.define('Ext.Container', {
         var me = this,
             i;
 
-        //<debug error>
-        if (typeof index != 'number') {
-            Ext.Logger.error("Invalid index of '" + index + "', must be a valid number");
-        }
-        //</debug>
 
         if (Ext.isArray(item)) {
             for (i = item.length - 1; i >= 0; i--) {
@@ -33703,11 +33138,6 @@ Ext.define('Ext.Container', {
             }
             this.pendingActiveItem = item;
 
-            //<debug error>
-            if (!item.isInnerItem()) {
-                Ext.Logger.error("Setting activeItem to be a non-inner item");
-            }
-            //</debug>
 
             if (!this.has(item)) {
                 this.add(item);
@@ -33770,6 +33200,8 @@ Ext.define('Ext.Container', {
         if (modal) {
             modal.setHidden(false);
         }
+
+        return this;
     },
 
     hide:function(){
@@ -33780,6 +33212,8 @@ Ext.define('Ext.Container', {
         if (modal) {
             modal.setHidden(true);
         }
+
+        return this;
     },
 
     doSetHidden: function(hidden) {
@@ -33828,12 +33262,6 @@ Ext.define('Ext.Container', {
      */
     applyScrollable: function(config) {
         if (typeof config === 'boolean') {
-            //<debug warn>
-            if (config === false && !(this.getHeight() !== null || this.heightLayoutSized || (this.getTop() !== null && this.getBottom() !== null))) {
-                Ext.Logger.warn("This container is set to scrollable: false but has no specified height. " +
-                    "You may need to set the container to scrollable: null or provide a height.", this);
-            }
-            //</debug>
             this.getScrollableBehavior().setConfig({disabled: !config});
         } else if (config && !config.isObservable) {
             this.getScrollableBehavior().setConfig(config);
@@ -36008,11 +35436,6 @@ Ext.define('Ext.data.Connection', {
 
         url = this.setupUrl(options, url);
 
-        //<debug>
-        if (!url) {
-            Ext.Logger.error('No URL specified');
-        }
-        //</debug>
 
         // check for xml or json data, and make sure json data is encoded
         data = options.data || options.rawData || options.binaryData || options.xmlData || jsonData || null;
@@ -36022,11 +35445,6 @@ Ext.define('Ext.data.Connection', {
 
         // Check for binary data. Transform if needed
         if (options.binaryData) {
-            //<debug>
-            if (!Ext.isArray(options.binaryData) && !(options.binaryData instanceof Blob)) {
-                Ext.Logger.warn("Binary submission data must be an array of byte values or a Blob! Instead got " + typeof(options.binaryData));
-            }
-            //</debug>
             if (data instanceof Array) {
                 data = (new Uint8Array(options.binaryData));
             }
@@ -39068,12 +38486,6 @@ Ext.define('Ext.ComponentQuery', {
                             selector = selector.replace(selectorMatch[0], '');
                             break; // Break on match
                         }
-                        //<debug>
-                        // Exhausted all matches: It's an error
-                        if (i === (length - 1)) {
-                            Ext.Error.raise('Invalid ComponentQuery selector: "' + arguments[0] + '"');
-                        }
-                        //</debug>
                     }
                 }
 
@@ -39658,6 +39070,39 @@ Ext.define('Ext.LoadMask', {
 }, function() {
 });
 
+/**
+ * {@link Ext.Menu}'s are used with {@link Ext.Viewport#setMenu}. A menu can be linked with any side of the screen (top, left, bottom or right)
+ *  and will simply describe the contents of your menu. To use this menu you will call various menu related functions on the {@link Ext.Viewport}
+ * such as {@link Ext.Viewport#showMenu}, {@link Ext.Viewport#hideMenu}, {@link Ext.Viewport#toggleMenu}, {@link Ext.Viewport#hideOtherMenus},
+ * or {@link Ext.Viewport#hideAllMenus}.
+ *
+ *      @example preview
+ *      var menu = Ext.create('Ext.Menu', {
+ *          items: [
+ *              {
+ *                  text: 'Settings',
+ *                  iconCls: 'settings'
+ *              },
+ *              {
+ *                  text: 'New Item',
+ *                  iconCls: 'compose'
+ *              },
+ *              {
+ *                  text: 'Star',
+ *                  iconCls: 'star'
+ *              }
+ *          ]
+ *      });
+ *
+ *      Ext.Viewport.setMenu(menu, {
+ *          side: 'left',
+ *          reveal: true
+ *      });
+ *
+ *      Ext.Viewport.showMenu('left');
+ *
+ * The {@link #defaultType} of a Menu item is a {@link Ext.Button button}.
+ */
 Ext.define('Ext.Menu', {
     extend:  Ext.Sheet ,
     xtype: 'menu',
@@ -39762,7 +39207,7 @@ Ext.define('Ext.Menu', {
     updateUi: function(newUi, oldUi) {
         this.callParent(arguments);
 
-        if (newUi != oldUi && Ext.theme.name == 'Blackberry') {
+        if (newUi != oldUi && Ext.theme.is.Blackberry) {
             if (newUi == 'context') {
                 this.innerElement.swapCls('x-vertical', 'x-horizontal');
             }
@@ -40160,7 +39605,7 @@ Ext.define('Ext.Toolbar', {
         if (typeof title == 'string') {
             title = {
                 title: title,
-                centered: true
+                centered : Ext.theme.is.Tizen ? false : true
             };
         }
 
@@ -40670,15 +40115,6 @@ Ext.define('Ext.field.Input', {
         return this;
     },
 
-    //<debug>
-    // @private
-    applyTabIndex: function(tabIndex) {
-        if (tabIndex !== null && typeof tabIndex != 'number') {
-            throw new Error("Ext.field.Field: [applyTabIndex] trying to pass a value which is not a number");
-        }
-        return tabIndex;
-    },
-    //</debug>
 
     /**
      * Updates the tabIndex attribute with the {@link #tabIndex} configuration
@@ -40693,14 +40129,6 @@ Ext.define('Ext.field.Input', {
         return [true, 'on'].indexOf(value) !== -1;
     },
 
-    //<debug>
-    applyMaxLength: function(maxLength) {
-        if (maxLength !== null && typeof maxLength != 'number') {
-            throw new Error("Ext.field.Text: [applyMaxLength] trying to pass a value which is not a number");
-        }
-        return maxLength;
-    },
-    //</debug>
 
     /**
      * Updates the `maxlength` attribute with the {@link #maxLength} configuration.
@@ -40828,19 +40256,9 @@ Ext.define('Ext.field.Input', {
      * @private
      */
     updateReadOnly: function(readOnly) {
-        this.updateFieldAttribute('readonly', readOnly);
+        this.updateFieldAttribute('readonly', readOnly ? true : null);
     },
 
-    //<debug>
-    // @private
-    applyMaxRows: function(maxRows) {
-        if (maxRows !== null && typeof maxRows !== 'number') {
-            throw new Error("Ext.field.Input: [applyMaxRows] trying to pass a value which is not a number");
-        }
-
-        return maxRows;
-    },
-    //</debug>
 
     updateMaxRows: function(newRows) {
         this.updateFieldAttribute('rows', newRows);
@@ -41249,7 +40667,7 @@ Ext.define('Ext.field.Field', {
     },
 
     platformConfig: [{
-        theme: ['Windows', 'MountainView', 'Blackberry'],
+        theme: ['Windows', 'MountainView', 'Blackberry', 'Tizen'],
         labelAlign: 'top'
     }],
 
@@ -42247,9 +41665,6 @@ Ext.define('Ext.MessageBox', {
         config = config || {};
 
         if (config.hasOwnProperty('promptConfig')) {
-            //<debug warn>
-            Ext.Logger.deprecate("'promptConfig' config is deprecated, please use 'prompt' config instead", this);
-            //</debug>
 
             Ext.applyIf(config, {
                 prompt: config.promptConfig
@@ -42292,12 +41707,25 @@ Ext.define('Ext.MessageBox', {
             };
         }
 
+        var minHeight = '1.3em';
+        if (Ext.theme.is.Cupertino) {
+            minHeight = '1.5em'
+        } else if (Ext.filterPlatform('blackberry') || Ext.filterPlatform('ie10')) {
+            minHeight = '2.6em';
+        }
+
         Ext.applyIf(config, {
             docked: 'top',
-            minHeight: (Ext.filterPlatform('blackberry') || Ext.filterPlatform('ie10')) ? '2.6em' : '1.3em',
+            minHeight: minHeight,
             ui: Ext.filterPlatform('blackberry') ? 'light' : 'dark',
             cls   : this.getBaseCls() + '-title'
         });
+
+        if (Ext.theme.is.Tizen) {
+            Ext.applyIf(config, {
+                centered: false
+            });
+        }
 
         return Ext.factory(config, Ext.Toolbar, this.getTitle());
     },
@@ -42334,14 +41762,14 @@ Ext.define('Ext.MessageBox', {
                     pack: 'center'
                 };
 
-                var isFlexed = Ext.theme.name == "CupertinoClassic"  || Ext.theme.name == "MountainView"  || Ext.theme.name == "Blackberry";
+                var isFlexed = Ext.theme.is.CupertinoClassic  || Ext.theme.is.MountainView  || Ext.theme.is.Blackberry;
 
                 me.buttonsToolbar = Ext.create('Ext.Toolbar', {
                     docked: 'bottom',
                     defaultType: 'button',
                     defaults: {
                         flex: (isFlexed) ? 1 : undefined,
-                        ui: (Ext.theme.name == "Blackberry") ? 'action' : undefined
+                        ui: (Ext.theme.is.Blackberry) ? 'action' : undefined
                     },
                     layout: layout,
                     ui: me.getUi(),
@@ -42609,9 +42037,6 @@ Ext.define('Ext.MessageBox', {
         config.buttons = buttonBarItems;
 
         if (config.promptConfig) {
-            //<debug warn>
-            Ext.Logger.deprecate("'promptConfig' config is deprecated, please use 'prompt' config instead", this);
-            //</debug>
         }
         config.prompt = (config.promptConfig || config.prompt) || null;
 
@@ -44250,7 +43675,7 @@ Ext.define('Ext.TitleBar', {
     },
 
     platformConfig: [{
-        theme: ['Blackberry'],
+        theme: ['Blackberry', 'Tizen'],
         titleAlign: 'left'
     }, {
         theme: ['Cupertino'],
@@ -44418,18 +43843,24 @@ Ext.define('Ext.TitleBar', {
             }
         }
 
-        var spacerBox = this.spacer.renderElement.getPageBox(),
-            titleBox = titleElement.getPageBox(),
+        var spacerBox = this.spacer.renderElement.getPageBox();
+
+        if (Ext.browser.is.IE) {
+            titleElement.setWidth(spacerBox.width);
+        }
+
+        var titleBox = titleElement.getPageBox(),
             widthDiff = titleBox.width - spacerBox.width,
             titleLeft = titleBox.left,
             titleRight = titleBox.right,
             halfWidthDiff, leftDiff, rightDiff;
 
+
         if (widthDiff > 0) {
-            titleElement.setWidth(spacerBox.width);
             halfWidthDiff = widthDiff / 2;
             titleLeft += halfWidthDiff;
             titleRight -= halfWidthDiff;
+            titleElement.setWidth(spacerBox.width);
         }
 
         leftDiff = spacerBox.left - titleLeft;
@@ -44515,7 +43946,7 @@ Ext.define('Ext.Video', {
          * @cfg
          * @inheritdoc
          */
-        cls: Ext.baseCSSPrefix + 'video'
+        baseCls: Ext.baseCSSPrefix + 'video'
     },
 
     template: [{
@@ -45250,11 +44681,6 @@ Ext.define('Ext.app.Controller', {
      * @private
      */
     applyRefs: function(refs) {
-        //<debug>
-        if (Ext.isArray(refs)) {
-            Ext.Logger.deprecate("In Sencha Touch 2 the refs config accepts an object but you have passed it an array.");
-        }
-        //</debug>
 
         this.ref(refs);
 
@@ -46523,7 +45949,34 @@ Ext.define('Ext.app.Application', {
          * has been processed properly, but before anything else to ensure overrides get executed first.
          * @accessor
          */
-        requires: []
+        requires: [],
+
+        /**
+         * @cfg {String} themeVariationPrefix Used only with {@link themeVariation} this prefix will be added before the variation as a class on the HTML
+         * tag of your application.
+         */
+        themeVariationPrefix: Ext.baseCSSPrefix + 'theme-variation-',
+
+        /**
+         * @cfg {String} themeVariationTransitionCls This is only used with {@link themeVariation}. The Class provided will be added to the HTML tag
+         * then removed once the transition is complete. The duration of this delayed removal is parsed from the class itself, for example if the class
+         * has the property 'transition: color 4s, background 6s, background-color 1s' the delay will be 6s (the largest time used in that class.
+         *
+         * @accessor
+        */
+        themeVariationTransitionCls: null,
+
+        /**
+         * @cfg {String/Function} themeVariation A string to determine the variation on the current theme being used. This string will be prefixed by
+         * {@link themeVariationPrefix} and the resulting string will be added to the HTML tag of your application. If a function is provided that function
+         * must return a string.
+         *
+         *  //This will result in 'x-theme-variation-dark' being added as a class to the html tag of your application
+         *  MyApp.app.setThemeVariation("dark");
+         *
+         * @accessor
+         */
+        themeVariation: null
     },
 
     /**
@@ -46545,9 +45998,6 @@ Ext.define('Ext.app.Application', {
         }
 
 
-        //<debug>
-        Ext.Loader.setConfig({ enabled: true });
-        //</debug>
 
         Ext.require(this.getRequires(), function() {
             if (this.getEnableLoader() !== false) {
@@ -46770,15 +46220,7 @@ Ext.define('Ext.app.Application', {
         launcher.call(me);
 
         for (name in controllers) {
-            //<debug warn>
-            if (controllers[name] && !(controllers[name] instanceof Ext.app.Controller)) {
-                Ext.Logger.warn("The controller '" + name + "' doesn't have a launch method. Are you sure it extends from Ext.app.Controller?");
-            } else {
-            //</debug>
                 controllers[name].launch(this);
-            //<debug warn>
-            }
-            //</debug>
         }
 
         me.redirectTo(window.location.hash.substr(1));
@@ -46888,9 +46330,6 @@ Ext.define('Ext.app.Application', {
             oldName = name;
             name = name.replace(/ /g, "");
 
-            // <debug>
-            Ext.Logger.warn('Attempting to create an application with a name which contains whitespace ("' + oldName + '"). Renamed to "' + name + '".');
-            // </debug>
         }
 
         return name;
@@ -46932,6 +46371,54 @@ Ext.define('Ext.app.Application', {
      */
     onHistoryChange: function(url) {
         this.dispatch(this.getRouter().recognize(url), false);
+    },
+
+    updateThemeVariation: function(newVariation, oldVariation) {
+        var html = Ext.getBody().getParent(),
+            themeVariationPrefix = this.getThemeVariationPrefix() || "",
+            transitionCls = this.getThemeVariationTransitionCls();
+
+        if (Ext.isFunction(newVariation)) {
+            newVariation = newVariation.call(this);
+        }
+
+        if(!Ext.isString(newVariation)) {
+            Ext.Error.raise("Theme variation must be a String.'");
+        }
+
+        if(transitionCls) {
+            var css = "", duration = 0,
+                rules = document.styleSheets[0].cssRules,
+                i, rule, times, time;
+
+            html.addCls(transitionCls);
+            for(i in rules) {
+                rule = rules[i];
+                if(rule.selectorText && rule.selectorText.indexOf("." + transitionCls) >=1) {
+                    css += rule.cssText;
+                }
+            }
+
+            times = css.match(/[0-9]+s/g);
+            for(i in times) {
+                time = parseInt(times[i]);
+                if(time > duration) {
+                    duration = time;
+                }
+            }
+
+            if(this.$themeVariationChangeTimeout) {
+                clearTimeout(this.$themeVariationChangeTimeout);
+                this.$themeVariationChangeTimeout = null;
+            }
+
+            this.$themeVariationChangeTimeout = Ext.defer(function() {
+                html.removeCls(transitionCls);
+            }, time * 1000);
+        }
+
+        html.removeCls(themeVariationPrefix + oldVariation);
+        html.addCls(themeVariationPrefix + newVariation);
     }
 }, function() {
 });
@@ -47954,11 +47441,6 @@ Ext.define('Ext.carousel.Infinite', {
     },
 
     applyIndicator: function(indicator) {
-        //<debug error>
-        if (indicator) {
-            Ext.Logger.error("'indicator' in Infinite Carousel implementation is not currently supported", this);
-        }
-        //</debug>
         return;
     },
 
@@ -48825,7 +48307,6 @@ Ext.define("Ext.draw.gradient.Gradient", {
         var flyColor = new this();
 
 
-        // TODO(zhangbei): do we have a better way to convert color names to rgb?
         this.addStatics({
             /**
              * Returns a flyweight instance of Ext.draw.Color.
@@ -48955,6 +48436,34 @@ Ext.define("Ext.draw.gradient.Gradient", {
     });
 })();
 
+Ext.define('Ext.draw.sprite.GradientDefinition', {
+    singleton: true,
+
+    urlStringRe: /^url\(#([\w\-]+)\)$/,
+    gradients: {},
+
+    add: function (gradients) {
+        var store = this.gradients,
+            i, n, gradient;
+        for (i = 0, n = gradients.length; i < n; i++) {
+            gradient = gradients[i];
+            if (Ext.isString(gradient.id)) {
+                store[gradient.id] = gradient;
+            }
+        }
+    },
+
+    get: function (str) {
+        var store = this.gradients,
+            match = str.match(this.urlStringRe),
+            gradient;
+        if (match && match[1] && (gradient = store[match[1]])) {
+            return gradient || str;
+        }
+        return str;
+    }
+})
+
 /**
  * @private
  * @class Ext.draw.sprite.AttributeParser
@@ -48964,7 +48473,10 @@ Ext.define("Ext.draw.gradient.Gradient", {
 Ext.define("Ext.draw.sprite.AttributeParser", {
     singleton: true,
     attributeRe: /^url\(#([a-zA-Z\-]+)\)$/,
-                                 
+               
+                         
+                                            
+      
 
     "default": function (n) {
         return n;
@@ -49013,8 +48525,12 @@ Ext.define("Ext.draw.sprite.AttributeParser", {
         } else if (!n) {
             return 'none';
         } else if (Ext.isString(n)) {
-            return n;
-        } else if (n.type === 'linear') {
+            n = Ext.draw.sprite.GradientDefinition.get(n);
+            if (Ext.isString(n)) {
+                return n;
+            }
+        }
+        if (n.type === 'linear') {
             return Ext.create('Ext.draw.gradient.Linear', n);
         } else if (n.type === 'radial') {
             return Ext.create('Ext.draw.gradient.Radial', n);
@@ -50291,30 +49807,30 @@ Ext.define("Ext.draw.modifier.Animation", {
 
     /**
      * Set special easings on the given attributes.
-     * @param {Object} attrs The source attributes.
+     * @param {String/Array} attrs The source attribute(s).
      * @param {String} easing The special easings.
      */
     setEasingOn: function (attrs, easing) {
         attrs = Ext.Array.from(attrs).slice();
-        var customEasing = {},
+        var customEasings = {},
             i = 0,
             ln = attrs.length;
 
         for (; i < ln; i++) {
-            customEasing[attrs[i]] = easing;
+            customEasings[attrs[i]] = easing;
         }
-        this.setDurationEasings(customEasing);
+        this.setCustomEasings(customEasings);
     },
 
     /**
      * Remove special easings on the given attributes.
-     * @param {Object} attrs The source attributes.
+     * @param {String/Array} attrs The source attribute(s).
      */
     clearEasingOn: function (attrs) {
         attrs = Ext.Array.from(attrs, true);
         var i = 0, ln = attrs.length;
         for (; i < ln; i++) {
-            delete this._customEasing[attrs[i]];
+            delete this._customEasings[attrs[i]];
         }
     },
 
@@ -50337,8 +49853,8 @@ Ext.define("Ext.draw.modifier.Animation", {
 
     /**
      * Set special duration on the given attributes.
-     * @param {Object} attrs The source attributes.
-     * @param {String} duration The special duration.
+     * @param {String/Array} attrs The source attributes.
+     * @param {Number} duration The special duration.
      */
     setDurationOn: function (attrs, duration) {
         attrs = Ext.Array.from(attrs).slice();
@@ -50864,7 +50380,7 @@ Ext.define('Ext.draw.sprite.Sprite', {
                 strokeStyle: "color",
 
                 /**
-                 * @cfg {String} [fillStyle="none"] The color of the shadow (a CSS color value).
+                 * @cfg {String} [fillStyle="none"] The color of the shape (a CSS color value).
                  */
                 fillStyle: "color",
 
@@ -50892,6 +50408,16 @@ Ext.define('Ext.draw.sprite.Sprite', {
                  * @cfg {String} [lineJoin="miter"] The style of the line join.
                  */
                 lineJoin: "enums(round,bevel,miter)",
+
+                /**
+                 * @cfg {Array} An array of non-negative numbers specifying a dash/space sequence.
+                 */
+                lineDash: "data",
+
+                /**
+                 * @cfg {Number} A number specifying how far into the line dash sequence drawing commences.
+                 */
+                lineDashOffset: "number",
 
                 /**
                  * @cfg {Number} [miterLimit=1] Sets the distance between the inner corner and the outer corner where two lines meet.
@@ -51016,6 +50542,8 @@ Ext.define('Ext.draw.sprite.Sprite', {
                 strokeStyle: "none",
                 fillStyle: "none",
                 lineWidth: 1,
+                lineDash: [],
+                lineDashOffset: 0,
                 lineCap: "butt",
                 lineJoin: "miter",
                 miterLimit: 1,
@@ -51059,6 +50587,8 @@ Ext.define('Ext.draw.sprite.Sprite', {
                 lineWidth: "canvas",
                 lineCap: "canvas",
                 lineJoin: "canvas",
+                lineDash: "canvas",
+                lineDashOffset: "canvas",
                 miterLimit: "canvas",
 
                 shadowColor: "canvas",
@@ -51358,12 +50888,19 @@ Ext.define('Ext.draw.sprite.Sprite', {
         return this;
     },
 
+    /**
+     * Applies sprite's attributes to the given context.
+     * @param {Object} ctx Context to apply sprite's attributes to.
+     * @param {Array} region The region of the context to be affected by gradients.
+     */
     useAttributes: function (ctx, region) {
         this.applyTransformations();
         var attrs = this.attr,
             canvasAttributes = attrs.canvasAttributes,
             strokeStyle = canvasAttributes.strokeStyle,
             fillStyle = canvasAttributes.fillStyle,
+            lineDash = canvasAttributes.lineDash,
+            lineDashOffset = canvasAttributes.lineDashOffset,
             id;
 
         if (strokeStyle) {
@@ -51384,6 +50921,14 @@ Ext.define('Ext.draw.sprite.Sprite', {
             }
         }
 
+        if (lineDash && ctx.setLineDash) {
+            ctx.setLineDash(lineDash);
+        }
+
+        if (lineDashOffset && typeof ctx.lineDashOffset === 'number') {
+            ctx.lineDashOffset = lineDashOffset;
+        }
+
         for (id in canvasAttributes) {
             if (canvasAttributes[id] !== undefined && canvasAttributes[id] !== ctx[id]) {
                 ctx[id] = canvasAttributes[id];
@@ -51397,7 +50942,12 @@ Ext.define('Ext.draw.sprite.Sprite', {
         }
     },
 
-    // @private
+    /**
+     * @private
+     *
+     * Calculates forward and inverse transform matrices.
+     * @param {Boolean} force Forces recalculation of transform matrices even when sprite's transform attributes supposedly haven't changed.
+     */
     applyTransformations: function (force) {
         if (!force && !this.attr.dirtyTransform) {
             return;
@@ -51493,6 +51043,42 @@ Ext.define('Ext.draw.sprite.Sprite', {
     this.def = Ext.create("Ext.draw.sprite.AttributeDefinition", this.def);
 });
 
+
+Ext.define('Ext.draw.sprite.Line', {
+    extend:  Ext.draw.sprite.Sprite ,
+    alias: 'sprite.line',
+    type: 'line',
+
+    inheritableStatics: {
+        def: {
+            processors: {
+                fromX: 'number',
+                fromY: 'number',
+                toX: 'number',
+                toY: 'number'
+            },
+
+            defaults: {
+                fromX: 0,
+                fromY: 0,
+                toX: 1,
+                toY: 1
+            }
+        }
+    },
+
+    render: function (surface, ctx, clipRegion) {
+        var attr = this.attr,
+            matrix = this.attr.matrix;
+
+        matrix.toContext(ctx);
+
+        ctx.beginPath();
+        ctx.moveTo(attr.fromX, attr.fromY);
+        ctx.lineTo(attr.toX, attr.toY);
+        ctx.stroke();
+    }
+});
 
 (function () {
     var PI2_3 = 2.0943951023931953/* 120 Deg */,
@@ -51675,7 +51261,7 @@ Ext.define('Ext.draw.sprite.Sprite', {
  * Designed to be compatible with [CanvasPathMethods](http://www.whatwg.org/specs/web-apps/current-work/multipage/the-canvas-element.html#canvaspathmethods)
  * and will hopefully be replaced by the browsers' implementation of the Path object.
  */
-Ext.define("Ext.draw.Path", {
+Ext.define('Ext.draw.Path', {
                                                    
     statics: {
         pathRe: /,?([achlmqrstvxz]),?/gi,
@@ -52869,7 +52455,7 @@ Ext.define("Ext.draw.Path", {
  *     Ext.Viewport.setLayout('fit');
  *     Ext.Viewport.add(component);
  */
-Ext.define("Ext.draw.sprite.Path", {
+Ext.define('Ext.draw.sprite.Path', {
     extend:  Ext.draw.sprite.Sprite ,
                                                  
     alias: 'sprite.path',
@@ -52888,13 +52474,13 @@ Ext.define("Ext.draw.sprite.Path", {
                 }
             },
             aliases: {
-                "d": "path"
+                d: 'path'
             },
             dirtyTriggers: {
                 path: 'bbox'
             },
             updaters: {
-                "path": function (attr) {
+                path: function (attr) {
                     var path = attr.path;
                     if (!path || path.bindAttr !== attr) {
                         path = new Ext.draw.Path();
@@ -53489,7 +53075,7 @@ Ext.define("Ext.draw.sprite.Text", {
                                 attrs.fontFamily = part.replace(Ext.draw.sprite.Text.shortHand4Re, ' ');
                             }
                         }
-                        this.setAttributesBypassingNormalization(attrs);
+                        this.setAttributes(attrs, true);
                     };
                 })({
                     "italic": "fontStyles",
@@ -53522,9 +53108,9 @@ Ext.define("Ext.draw.sprite.Text", {
                     if (attrs.fontFamily) {
                         font += attrs.fontFamily + ' ';
                     }
-                    this.setAttributesBypassingNormalization({
+                    this.setAttributes({
                         font: font.substr(0, font.length - 1)
-                    });
+                    }, true);
                 }
             }
         }
@@ -53593,7 +53179,7 @@ Ext.define("Ext.draw.sprite.Text", {
     },
 
     setText: function (text) {
-        this.setAttributesBypassingNormalization({text: text});
+        this.setAttributes({text: text}, true);
     },
 
     setElementStyles: function (element, styles) {
@@ -53708,7 +53294,7 @@ Ext.define("Ext.draw.sprite.EllipticalArc", {
  * 
  * A sprite representing a pie slice.
  */
-Ext.define("Ext.draw.sprite.Sector", {
+Ext.define('Ext.draw.sprite.Sector', {
     extend:  Ext.draw.sprite.Path ,
     alias: 'sprite.sector',
     type: 'sector',
@@ -53718,49 +53304,49 @@ Ext.define("Ext.draw.sprite.Sector", {
                 /**
                  * @cfg {Number} [centerX=0] The center coordinate of the sprite on the x-axis.
                  */
-                centerX: "number",
+                centerX: 'number',
 
                 /**
                  * @cfg {Number} [centerY=0] The center coordinate of the sprite on the y-axis.
                  */
-                centerY: "number",
+                centerY: 'number',
 
                 /**
                  * @cfg {Number} [startAngle=0] The starting angle of the sprite.
                  */
-                startAngle: "number",
+                startAngle: 'number',
 
                 /**
                  * @cfg {Number} [endAngle=0] The ending angle of the sprite.
                  */
-                endAngle: "number",
+                endAngle: 'number',
 
                 /**
                  * @cfg {Number} [startRho=0] The starting point of the radius of the sprite.
                  */
-                startRho: "number",
+                startRho: 'number',
 
                 /**
                  * @cfg {Number} [endRho=150] The ending point of the radius of the sprite.
                  */
-                endRho: "number",
+                endRho: 'number',
 
                 /**
                  * @cfg {Number} [margin=0] The margin of the sprite from the center of pie.
                  */
-                margin: "number"
+                margin: 'number'
             },
             aliases: {
                 rho: 'endRho'
             },
             dirtyTriggers: {
-                centerX: "path,bbox",
-                centerY: "path,bbox",
-                startAngle: "path,bbox",
-                endAngle: "path,bbox",
-                startRho: "path,bbox",
-                endRho: "path,bbox",
-                margin: "path,bbox"
+                centerX: 'path,bbox',
+                centerY: 'path,bbox',
+                startAngle: 'path,bbox',
+                endAngle: 'path,bbox',
+                startRho: 'path,bbox',
+                endRho: 'path,bbox',
+                margin: 'path,bbox'
             },
             defaults: {
                 centerX: 0,
@@ -53837,6 +53423,7 @@ Ext.define("Ext.draw.sprite.Composite", {
         this.sprites.map[sprite.id] = sprite.getId();
         attr.bbox.plain.dirty = true;
         attr.bbox.transform.dirty = true;
+        return sprite;
     },
 
     /**
@@ -53975,7 +53562,7 @@ Ext.define("Ext.draw.sprite.Arc", {
  *     Ext.Viewport.setLayout('fit');
  *     Ext.Viewport.add(component);
  */
-Ext.define("Ext.draw.sprite.Rect", {
+Ext.define('Ext.draw.sprite.Rect', {
     extend:  Ext.draw.sprite.Path ,
     alias: 'sprite.rect',
     type: 'rect',
@@ -56184,7 +55771,6 @@ Ext.define('Ext.draw.Surface', {
 
             for (i = 0, ln = items.length; i < ln; i++) {
                 item = items[i];
-                item.applyTransformations();
                 if (false === me.renderSprite(item)) {
                     return;
                 }
@@ -56252,13 +55838,15 @@ Ext.define('Ext.draw.engine.SvgContext', {
      * Properties to be saved/restored in `save` and `restore` method.
      */
     toSave: ["strokeOpacity", "strokeStyle", "fillOpacity", "fillStyle", "globalAlpha", "lineWidth", "lineCap",
-             "lineJoin", "miterLimit", "shadowOffsetX", "shadowOffsetY", "shadowBlur", "shadowColor",
-             "globalCompositeOperation", "position"],
+             "lineJoin", "lineDash", "lineDashOffset", "miterLimit", "shadowOffsetX", "shadowOffsetY", "shadowBlur",
+             "shadowColor", "globalCompositeOperation", "position"],
 
     "strokeOpacity": 1,
     "strokeStyle": "none",
     "fillOpacity": 1,
     "fillStyle": "none",
+    "lineDash": [],
+    "lineDashOffset": 0,
     "globalAlpha": 1,
     "lineWidth": 1,
     "lineCap": "butt",
@@ -56573,6 +56161,12 @@ Ext.define('Ext.draw.engine.SvgContext', {
                 "stroke-opacity": this.strokeOpacity,
                 "style": "font: " + this.font
             });
+            if (this.lineDash.length) {
+                this.surface.setElementAttributes(element, {
+                    "stroke-dasharray": this.lineDash.join(','),
+                    "stroke-dashoffset": this.lineDashOffset
+                });
+            }
             if (tspan.dom.firstChild) {
                 tspan.dom.removeChild(tspan.dom.firstChild);
             }
@@ -56709,6 +56303,12 @@ Ext.define('Ext.draw.engine.SvgContext', {
                 "stroke-width": this.lineWidth,
                 "stroke-opacity": this.strokeOpacity * this.globalAlpha
             });
+            if (this.lineDash.length) {
+                this.surface.setElementAttributes(element, {
+                    "stroke-dasharray": this.lineDash.join(','),
+                    "stroke-dashoffset": this.lineDashOffset
+                });
+            }
         }
     },
 
@@ -57083,7 +56683,7 @@ Ext.define('Ext.draw.engine.Canvas', {
              * Strokes the subpaths of the current default path or the given path with the current stroke style.
              * @ignore
              */
-            stroke: function (transformFillStroke) {
+            stroke: function () {
                 var strokeStyle = this.strokeStyle,
                     strokeGradient = this.strokeGradient,
                     strokeOpacity = this.strokeOpacity,
@@ -57194,7 +56794,6 @@ Ext.define('Ext.draw.engine.Canvas', {
                         case "Z":
                             me.closePath();
                             break;
-                        default:
                     }
                 }
             }
@@ -57809,23 +57408,12 @@ Ext.define('Ext.draw.engine.Canvas', {
     clear: function () {
         var me = this,
             activeCanvases = this.activeCanvases,
-            i, canvas, ctx, width, height;
+            i, canvas, ctx;
         for (i = 0; i < activeCanvases; i++) {
             canvas = me.canvases[i].dom;
             ctx = me.contexts[i];
-            width = canvas.width;
-            height = canvas.height;
-            if (Ext.os.is.Android && !Ext.os.is.Android4) {
-                // TODO: Verify this is the proper check (Chrome)
-                // On chrome this is faster:
-                //noinspection SillyAssignmentJS
-                canvas.width = canvas.width;
-                // Fill the gap between surface defaults and canvas defaults
-                me.applyDefaults(ctx);
-            } else {
-                ctx.setTransform(1, 0, 0, 1, 0, 0);
-                ctx.clearRect(0, 0, width, height);
-            }
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
         me.setDirty(true);
     },
@@ -57902,7 +57490,8 @@ Ext.define('Ext.draw.Component', {
                
                            
                               
-                                
+                                 
+                                            
       
     engine: 'Ext.draw.engine.Canvas',
     statics: {
@@ -57942,27 +57531,100 @@ Ext.define('Ext.draw.Component', {
 
         background: null,
 
-        sprites: null
+        sprites: null,
+
+        /**
+         * @cfg {Object[]} gradients
+         * Defines a set of gradients that can be used as color properties
+         * (fillStyle and strokeStyle, but not shadowColor) in sprites.
+         * The gradients array is an array of objects with the following properties:
+         * - **id** - string - The unique name of the gradient.
+         * - **type** - string, optional - The type of the gradient. Available types are: 'linear', 'radial'. Defaults to 'linear'.
+         * - **angle** - number, optional - The angle of the gradient in degrees.
+         * - **stops** - array - An array of objects with 'color' and 'offset' properties, where 'offset' is a real number from 0 to 1.
+         *
+         * For example:
+         *
+         *     gradients: [{
+         *         id: 'gradientId1',
+         *         type: 'linear',
+         *         angle: 45,
+         *         stops: [{
+         *             offset: 0,
+         *             color: 'red'
+         *         }, {
+         *            offset: 1,
+         *            color: 'yellow'
+         *         }]
+         *     }, {
+         *        id: 'gradientId2',
+         *        type: 'radial',
+         *        stops: [{
+         *            offset: 0,
+         *            color: '#555',
+         *        }, {
+         *            offset: 1,
+         *            color: '#ddd',
+         *        }]
+         *     }]
+         *
+         * Then the sprites can use 'gradientId1' and 'gradientId2' by setting the color attributes to those ids, for example:
+         *
+         *     sprite.setAttributes({
+         *         fillStyle: 'url(#gradientId1)',
+         *         strokeStyle: 'url(#gradientId2)'
+         *     });
+         */
+        gradients: []
     },
 
     constructor: function (config) {
         config = config || {};
-        // If we used `items` config, they are actually using `sprites`
-        // TODO: Do we really need to allow for 'items' in config?
-        // TODO: Ext.draw.Component's items are actually surfaces, not sprites.
-        if (config.items) {
-            config.sprites = config.items;
-            delete config.items;
-        }
         this.callSuper(arguments);
         this.frameCallbackId = Ext.draw.Animator.addFrameCallback('renderFrame', this);
+    },
+
+    applyGradients: function (gradients) {
+        var result = [],
+            i, n, gradient;
+        if (!Ext.isArray(gradients)) {
+            return result;
+        }
+        for (i = 0, n = gradients.length; i < n; i++) {
+            gradient = gradients[i];
+            if (!Ext.isObject(gradient)) {
+                continue;
+            }
+            // ExtJS only supported linear gradients, so we didn't have to specify their type
+            if (typeof gradient.type !== 'string') {
+                gradient.type = 'linear';
+            }
+            if (gradient.angle) {
+                gradient.degrees = gradient.angle;
+                delete gradient.angle;
+            }
+            // Convert ExtJS stops object to Touch stops array
+            if (Ext.isObject(gradient.stops)) {
+                gradient.stops = (function (stops) {
+                    var result = [], stop;
+                    for (offset in stops) {
+                        stop = stops[offset];
+                        stop.offset = offset / 100;
+                        result.push(stop);
+                    }
+                    return result;
+                })(gradient.stops);
+            }
+            result.push(gradient);
+        }
+        Ext.draw.sprite.GradientDefinition.add(result);
+        return result;
     },
 
     initialize: function () {
         var me = this;
         me.callSuper();
         me.element.on('resize', 'onResize', this);
-
     },
 
     applySprites: function (sprites) {
@@ -58957,7 +58619,7 @@ Ext.define('Ext.chart.series.Series', {
             i, x;
         for (i = 0; i < length; i++) {
             x = items[i].data[field];
-            data[i] = x ? coord(x, field, i, items) : 0;
+            data[i] = !Ext.isEmpty(x) ? coord(x, field, i, items) : 0;
         }
         return data;
     },
@@ -59486,14 +59148,23 @@ Ext.define('Ext.chart.interactions.Abstract', {
 
     updateChart: function (newChart, oldChart) {
         var me = this, gestures = me.getGestures();
-        if (oldChart === newChart) {
-            return;
-        }
         if (oldChart) {
             me.removeChartListener(oldChart);
         }
         if (newChart) {
             me.addChartListener();
+        }
+    },
+
+    updateEnabled: function (enabled) {
+        var me = this,
+            chart = me.getChart();
+        if (chart) {
+            if (enabled) {
+                me.addChartListener();
+            } else {
+                me.removeChartListener(chart);
+            }
         }
     },
 
@@ -59541,8 +59212,11 @@ Ext.define('Ext.chart.interactions.Abstract', {
         var me = this,
             chart = me.getChart(),
             gestures = me.getGestures(),
-            gesture, fn;
-        me.listeners = me.listeners || {};
+            gesture;
+
+        if (!me.getEnabled()) {
+            return;
+        }
 
         function insertGesture(name, fn) {
             chart.on(
@@ -59550,7 +59224,7 @@ Ext.define('Ext.chart.interactions.Abstract', {
                 // wrap the handler so it does not fire if the event is locked by another interaction
                 me.listeners[name] = function (e) {
                     var locks = me.getLocks(), result;
-                    if (!(name in locks) || locks[name] === me) {
+                    if (me.getEnabled() && (!(name in locks) || locks[name] === me)) {
                         result = (Ext.isFunction(fn) ? fn : me[fn]).apply(this, arguments);
                         if (result === false && e && e.stopPropagation) {
                             e.stopPropagation();
@@ -59562,6 +59236,7 @@ Ext.define('Ext.chart.interactions.Abstract', {
             );
         }
 
+        me.listeners = me.listeners || {};
         for (gesture in gestures) {
             insertGesture(gesture, gestures[gesture]);
         }
@@ -59570,7 +59245,7 @@ Ext.define('Ext.chart.interactions.Abstract', {
     removeChartListener: function (chart) {
         var me = this,
             gestures = me.getGestures(),
-            gesture, fn;
+            gesture;
 
         function removeGesture(name) {
             chart.un(name, me.listeners[name]);
@@ -59628,7 +59303,7 @@ Ext.define('Ext.chart.interactions.Abstract', {
         if (this.stopAnimationBeforeSync) {
             chart.resizing = false;
         }
-        this.syncThrottle = +new Date() + this.throttleGap;
+        this.syncThrottle = Date.now() + this.throttleGap;
     },
 
     sync: function () {
@@ -60335,25 +60010,28 @@ Ext.define('Ext.chart.axis.sprite.Axis', {
     renderAxisLine: function (surface, ctx, layout, clipRegion) {
         var me = this,
             attr = me.attr,
-            halfWidth = attr.lineWidth * 0.5,
-            docked = attr.position;
+            halfLineWidth = attr.lineWidth * 0.5,
+            docked = attr.position,
+            position;
         if (attr.axisLine) {
             switch (docked) {
                 case 'left':
-                    ctx.moveTo(clipRegion[2] - halfWidth, -attr.endGap);
-                    ctx.lineTo(clipRegion[2] - halfWidth, attr.length + attr.startGap);
+                    position = surface.roundPixel(clipRegion[2]) - halfLineWidth;
+                    ctx.moveTo(position, -attr.endGap);
+                    ctx.lineTo(position, attr.length + attr.startGap);
                     break;
                 case 'right':
-                    ctx.moveTo(halfWidth, -attr.endGap);
-                    ctx.lineTo(halfWidth, attr.length + attr.startGap);
+                    ctx.moveTo(halfLineWidth, -attr.endGap);
+                    ctx.lineTo(halfLineWidth, attr.length + attr.startGap);
                     break;
                 case 'bottom':
-                    ctx.moveTo(-attr.startGap, halfWidth);
-                    ctx.lineTo(attr.length + attr.endGap, halfWidth);
+                    ctx.moveTo(-attr.startGap, halfLineWidth);
+                    ctx.lineTo(attr.length + attr.endGap, halfLineWidth);
                     break;
                 case 'top':
-                    ctx.moveTo(-attr.startGap, clipRegion[3] - halfWidth);
-                    ctx.lineTo(attr.length + attr.endGap, clipRegion[3] - halfWidth);
+                    position = surface.roundPixel(clipRegion[3]) - halfLineWidth;
+                    ctx.moveTo(-attr.startGap, position);
+                    ctx.lineTo(attr.length + attr.endGap, position);
                     break;
                 case 'angular':
                     ctx.moveTo(attr.centerX + attr.length, attr.centerY);
@@ -60475,7 +60153,7 @@ Ext.define('Ext.chart.axis.sprite.Axis', {
  * See {@link Ext.chart.axis.Axis}.
  * 
  */
-Ext.define("Ext.chart.axis.segmenter.Segmenter", {
+Ext.define('Ext.chart.axis.segmenter.Segmenter', {
 
     config: {
         /**
@@ -60520,7 +60198,7 @@ Ext.define("Ext.chart.axis.segmenter.Segmenter", {
 
     /**
      * Align value with step of units.
-     * For example, for the date segmenter, if The unit is "Month" and step is 3, the value will be aligned by
+     * For example, for the date segmenter, if the unit is "Month" and step is 3, the value will be aligned by
      * seasons.
      * 
      * @param {*} value The value to be aligned.
@@ -60593,7 +60271,7 @@ Ext.define("Ext.chart.axis.segmenter.Names", {
  * 
  * Time data type.
  */
-Ext.define("Ext.chart.axis.segmenter.Time", {
+Ext.define('Ext.chart.axis.segmenter.Time', {
     extend:  Ext.chart.axis.segmenter.Segmenter ,
     alias: 'segmenter.time',
 
@@ -60701,7 +60379,7 @@ Ext.define("Ext.chart.axis.segmenter.Time", {
  * 
  * Numeric data type.
  */
-Ext.define("Ext.chart.axis.segmenter.Numeric", {
+Ext.define('Ext.chart.axis.segmenter.Numeric', {
     extend:  Ext.chart.axis.segmenter.Segmenter ,
     alias: 'segmenter.numeric',
 
@@ -60914,7 +60592,7 @@ Ext.define("Ext.chart.axis.layout.Layout", {
  *
  * Simple processor for data that cannot be interpolated.
  */
-Ext.define("Ext.chart.axis.layout.Discrete", {
+Ext.define('Ext.chart.axis.layout.Discrete', {
     extend:  Ext.chart.axis.layout.Layout ,
     alias: 'axisLayout.discrete',
 
@@ -61042,7 +60720,7 @@ Ext.define("Ext.chart.axis.layout.Discrete", {
  * 
  * Processor for axis data that can be interpolated.
  */
-Ext.define("Ext.chart.axis.layout.Continuous", {
+Ext.define('Ext.chart.axis.layout.Continuous', {
     extend:  Ext.chart.axis.layout.Layout ,
     alias: 'axisLayout.continuous',
     config: {
@@ -61504,14 +61182,14 @@ Ext.define('Ext.chart.axis.Axis', {
         switch (this.getPosition()) {
             case 'left':
             case 'right':
-                return "vertical";
+                return 'vertical';
             case 'top':
             case 'bottom':
-                return "horizontal";
+                return 'horizontal';
             case 'radial':
-                return "radial";
+                return 'radial';
             case 'angular':
-                return "angular";
+                return 'angular';
         }
     },
 
@@ -61523,12 +61201,12 @@ Ext.define('Ext.chart.axis.Axis', {
         switch (this.getPosition()) {
             case 'left':
             case 'right':
-                return "horizontal";
+                return 'horizontal';
             case 'top':
             case 'bottom':
-                return "vertical";
+                return 'vertical';
             case 'radial':
-                return "circular";
+                return 'circular';
             case 'angular':
                 return "radial";
         }
@@ -62218,11 +61896,6 @@ Ext.define('Ext.mixin.Sortable', {
                 }
             }
             // Finally we get to the point where it has to be invalid
-            // <debug>
-            else {
-                Ext.Logger.warn('Invalid sorter specified:', sorter);
-            }
-            // </debug>
 
             // If a sorter config was created, make it an instance
             sorter = Ext.create('Ext.util.Sorter', sorterConfig);
@@ -62531,11 +62204,6 @@ Ext.define('Ext.mixin.Filterable', {
                 }
             }
             // Finally we get to the point where it has to be invalid
-            // <debug>
-            else {
-                Ext.Logger.warn('Invalid filter specified:', filter);
-            }
-            // </debug>
 
             // If a sorter config was created, make it an instance
             filter = Ext.create('Ext.util.Filter', filterConfig);
@@ -63327,9 +62995,6 @@ Ext.define('Ext.util.Collection', {
             ln, key, i, item;
 
         if (sorted && this.getAutoSort()) {
-            // <debug>
-            Ext.Logger.error('Inserting a collection of items into a sorted Collection is invalid. Please just add these items or remove the sorters.');
-            // </debug>
         }
 
         if (Ext.isObject(insertItems)) {
@@ -63489,7 +63154,7 @@ Ext.define('Ext.util.Collection', {
             this.updateIndices();
         }
 
-        var index = this.indices[this.getKey(item)];
+        var index = item ? this.indices[this.getKey(item)] : -1;
         return (index === undefined) ? -1 : index;
     },
 
@@ -63912,7 +63577,7 @@ Ext.define('Ext.data.ResultSet', {
  *                 // iterate over the OrderItems for each Order
  *                 order.orderItems().each(function(orderItem) {
  *                     // We know that the Product data is already loaded, so we can use the
- *                     // synchronous getProduct() method. Usually, we would use the 
+ *                     // synchronous getProduct() method. Usually, we would use the
  *                     // asynchronous version (see Ext.data.association.BelongsTo).
  *                     var product = orderItem.getProduct();
  *                     output.push(orderItem.get("quantity") + " orders of " + product.get("name"));
@@ -64312,11 +63977,6 @@ Ext.define('Ext.data.reader.Reader', {
             me.onMetaChange(data.metaData);
         }
 
-        // <debug>
-        if (!me.getModel()) {
-            Ext.Logger.warn('In order to read record data, a Reader needs to have a Model defined on it.');
-        }
-        // </debug>
 
         // If we pass an array as the data, we don't use getRoot on the data.
         // Instead the root equals to the data.
@@ -64789,13 +64449,6 @@ Ext.define('Ext.data.reader.Json', {
             this.fireEvent('exception', this, response, 'Unable to parse the JSON returned by the server: ' + ex.toString());
             Ext.Logger.warn('Unable to parse the JSON returned by the server: ' + ex.toString());
         }
-        //<debug>
-        if (!data) {
-            this.fireEvent('exception', this, response, 'JSON object not found');
-
-            Ext.Logger.warn('JSON object not found');
-        }
-        //</debug>
 
         return data;
     },
@@ -65186,9 +64839,6 @@ Ext.define('Ext.data.writer.Json', {
                 // sending as a param, need to encode
                 params[root] = Ext.encode(data);
             } else {
-                //<debug>
-                Ext.Logger.error('Must specify a root when using encode');
-                //</debug>
             }
         } else {
             // send as jsonData
@@ -65663,11 +65313,6 @@ Ext.define('Ext.data.Operation', {
             model = Ext.data.ModelManager.registerType(model.storeId || model.id || Ext.id(), model);
         }
 
-        // <debug>
-        if (!model) {
-            Ext.Logger.warn('Unless you define your model using metadata, an Operation needs to have a model defined.');
-        }
-        // </debug>
 
         return model;
     },
@@ -65818,11 +65463,6 @@ Ext.define('Ext.data.Operation', {
             if (currentRecord) {
                 this.updateRecord(currentRecord, updatedRecord);
             }
-            // <debug>
-            else {
-                Ext.Logger.warn('Unable to match the record that came back from the server.');
-            }
-            // </debug>
         }
 
         return true;
@@ -65841,11 +65481,6 @@ Ext.define('Ext.data.Operation', {
             if (currentRecord) {
                 this.updateRecord(currentRecord, updatedRecord);
             }
-            // <debug>
-            else {
-                Ext.Logger.warn('Unable to match the updated record that came back from the server.');
-            }
-            // </debug>
         }
 
         return true;
@@ -65864,11 +65499,6 @@ Ext.define('Ext.data.Operation', {
                 currentRecord.setIsErased(true);
                 currentRecord.notifyStores('afterErase', currentRecord);
             }
-            // <debug>
-            else {
-                Ext.Logger.warn('Unable to match the destroyed record that came back from the server.');
-            }
-            // </debug>
         }
     },
 
@@ -66173,9 +65803,6 @@ Ext.define('Ext.data.proxy.Proxy', {
                 listeners: listeners
             };
 
-            // <debug warn>
-            Ext.Logger.deprecate('Passes old-style signature to Proxy.batch (operations, listeners). Please convert to single options argument syntax.');
-            // </debug>
         }
 
         if (options.batch && options.batch.isBatch) {
@@ -66264,9 +65891,6 @@ Ext.define('Ext.data.proxy.Client', {
      * from the client side storage, as well as removing any supporting data (such as lists of record IDs)
      */
     clear: function() {
-        //<debug>
-        Ext.Logger.error("The Ext.data.proxy.Client subclass that you are using has not defined a 'clear' function. See src/data/ClientProxy.js for details.");
-        //</debug>
     }
 });
 
@@ -68506,12 +68130,6 @@ Ext.define('Ext.dataview.DataView', {
 
         me.callParent(arguments);
 
-        //<debug>
-        layout = this.getLayout();
-        if (layout && !layout.isAuto) {
-            Ext.Logger.error('The base layout for a DataView must always be an Auto Layout');
-        }
-        //</debug>
     },
 
     updateItemCls: function(newCls, oldCls) {
@@ -68835,11 +68453,6 @@ Ext.define('Ext.dataview.DataView', {
                     }
                 }
             }
-            //<debug warn>
-            else {
-                Ext.Logger.warn("The specified Store cannot be found", this);
-            }
-            //</debug>
         }
 
         return store;
@@ -69607,11 +69220,6 @@ Ext.define('Ext.data.Types', {
                         // Dates with the format "2012-01-20" fail, but "2012/01/20" work in some browsers. We'll try and
                         // get around that.
                         parsed = new Date(Date.parse(value.replace(Types.dashesRe, "/")));
-                        //<debug>
-                        if (isNaN(parsed)) {
-                            Ext.Logger.warn("Cannot parse the passed value (" + value + ") into a valid date");
-                        }
-                        //</debug>
                     }
                 }
 
@@ -70261,10 +69869,6 @@ Ext.define('Ext.data.ModelManager', {
      * @deprecated 2.0.0 Please use {@link Ext#define} instead.
      */
     Ext.regModel = function() {
-        //<debug>
-        Ext.Logger.deprecate('Ext.regModel has been deprecated. Models can now be created by ' +
-            'extending Ext.data.Model: Ext.define("MyModel", {extend: "Ext.data.Model", fields: []});.');
-        //</debug>
         return this.ModelManager.registerType.apply(this.ModelManager, arguments);
     };
 });
@@ -70545,9 +70149,6 @@ Ext.define('Ext.data.proxy.Server', {
         config = config || {};
         if (config.nocache !== undefined) {
             config.noCache = config.nocache;
-            // <debug>
-            Ext.Logger.warn('nocache configuration on Ext.data.proxy.Server has been deprecated. Please use noCache.');
-            // </debug>
         }
         this.callParent([config]);
     },
@@ -70806,11 +70407,6 @@ Ext.define('Ext.data.proxy.Server', {
         var me = this,
             url = me.getUrl(request);
 
-        //<debug>
-        if (!url) {
-            Ext.Logger.error("You are using a ServerProxy but have not supplied it with a url.");
-        }
-        //</debug>
 
         if (me.getNoCache()) {
             url = Ext.urlAppend(url, Ext.String.format("{0}={1}", me.getCacheString(), Ext.Date.now()));
@@ -70845,9 +70441,6 @@ Ext.define('Ext.data.proxy.Server', {
      * @template
      */
     doRequest: function() {
-        //<debug>
-        Ext.Logger.error("The doRequest function has not been implemented on your Ext.data.proxy.Server subclass. See src/data/ServerProxy.js for details");
-        //</debug>
     },
 
     /**
@@ -71981,9 +71574,6 @@ Ext.define('Ext.data.association.HasMany', {
         config = config || {};
 
         if (config.storeConfig) {
-            // <debug>
-            Ext.Logger.warn('storeConfig is deprecated on an association. Instead use the store configuration.');
-            // </debug>
             config.store = config.storeConfig;
             delete config.storeConfig;
         }
@@ -72097,12 +71687,13 @@ Ext.define('Ext.data.association.HasMany', {
                     filters      : [filter],
                     remoteFilter : true,
                     autoSync     : autoSync,
-                    modelDefaults: modelDefaults,
-                    listeners    : listeners
+                    modelDefaults: modelDefaults
                 });
 
                 store = record[storeName] = Ext.create('Ext.data.Store', config);
                 store.boundTo = record;
+
+                store.onAfter(listeners);
 
                 if (autoLoad) {
                     record[storeName].load();
@@ -74676,14 +74267,6 @@ Ext.define('Ext.data.Model', {
         me.callParent(arguments);
     },
 
-    //<debug>
-    markDirty : function() {
-        if (Ext.isDefined(Ext.Logger)) {
-            Ext.Logger.deprecate('Ext.data.Model: markDirty has been deprecated. Use setDirty instead.');
-        }
-        return this.setDirty.apply(this, arguments);
-    },
-    //</debug>
 
     applyProxy: function(proxy, currentProxy) {
         return Ext.factory(proxy, Ext.data.Proxy, currentProxy, 'proxy');
@@ -75565,7 +75148,7 @@ Ext.define('Ext.data.Store', {
         proxy: undefined,
 
         /**
-         * @cfg {Object[]} fields
+         * @cfg {Object[]/Ext.util.Collection} fields
          * Returns Ext.util.Collection not just an Object.
          * Use in place of specifying a {@link #model} configuration. The fields should be a
          * set of {@link Ext.data.Field} configuration objects. The store will automatically create a {@link Ext.data.Model}
@@ -75982,11 +75565,6 @@ Ext.define('Ext.data.Store', {
             model = this.getProxy().getModel();
         }
 
-        // <debug>
-        if (!model) {
-            Ext.Logger.warn('Unless you define your model through metadata, a store needs to have a model defined on either itself or on its proxy');
-        }
-        // </debug>
 
         return model;
     },
@@ -76135,9 +75713,6 @@ Ext.define('Ext.data.Store', {
     applyGetGroupString: function(getGroupStringFn) {
         var grouper = this.getGrouper();
         if (getGroupStringFn) {
-            // <debug>
-            Ext.Logger.warn('Specifying getGroupString on a store has been deprecated. Please use grouper: {groupFn: yourFunction}');
-            // </debug>
 
             if (grouper) {
                 grouper.setGroupFn(getGroupStringFn);
@@ -76953,11 +76528,6 @@ Ext.define('Ext.data.Store', {
             group,
             i;
 
-        // <debug>
-        if (!grouper) {
-            Ext.Logger.error('Trying to get groups for a store that has no grouper');
-        }
-        // </debug>
 
         for (i = 0; i < length; i++) {
             record = records[i];
@@ -77555,6 +77125,157 @@ Ext.define('Ext.data.Store', {
 });
 
 /**
+ * Exports an SVG document to an image. To do this,
+ * the SVG string must be sent to a remote server and processed.
+ *
+ * # Sending the data
+ *
+ * A post request is made to the URL. The following fields are sent:
+ *
+ * + width: The width of the image
+ * + height: The height of the image
+ * + type: The image type to save as, see {@link #supportedTypes}
+ * + svg: The svg string for the surface
+ *
+ * # The response
+ *
+ * It is expected that the user will be prompted with an image download.
+ * As such, the following options should be set on the server:
+ *
+ * + Content-Disposition: 'attachment, filename="chart.png"'
+ * + Content-Type: 'image/png'
+ *
+ * **Important**: By default, chart data is sent to a server operated
+ * by Sencha to do data processing. You may change this default by
+ * setting the {@link #defaultUrl} of this class.
+ * In addition, please note that this service only creates PNG images.
+ */
+// TODO: can't use the canvas element to convert SVG to bitmap on the client, see:
+// TODO: http://stackoverflow.com/questions/18586808/canvas-todatauri-on-chrome-security-issue
+Ext.define('Ext.draw.engine.SvgExporter', {
+    singleton: true,
+
+    /**
+     * @property {String} [defaultUrl="http://svg.sencha.io"]
+     * The default URL to submit the form request.
+     */
+    defaultUrl: 'http://svg.sencha.io',
+
+    /**
+     * @property {Array} [supportedTypes=["image/png", "image/jpeg"]]
+     * A list of export types supported by the server
+     */
+    supportedTypes: ['image/png', 'image/jpeg'],
+
+    /**
+     * @property {String} [widthParam="width"]
+     * The name of the width parameter to be sent to the server.
+     * The Sencha IO server expects it to be the default value.
+     */
+    widthParam: 'width',
+
+    /**
+     * @property {String} [heightParam="height"]
+     * The name of the height parameter to be sent to the server.
+     * The Sencha IO server expects it to be the default value.
+     */
+    heightParam: 'height',
+
+    /**
+     * @property {String} [typeParam="type"]
+     * The name of the type parameter to be sent to the server.
+     * The Sencha IO server expects it to be the default value.
+     */
+    typeParam: 'type',
+
+    /**
+     * @property {String} [svgParam="svg"]
+     * The name of the svg parameter to be sent to the server.
+     * The Sencha IO server expects it to be the default value.
+     */
+    svgParam: 'svg',
+
+    formCls: Ext.baseCSSPrefix + 'hide-display',
+
+    /**
+     * Exports the surface to an image
+     * @param {String} svg The SVG document.
+     * @param {Object} [config] The following config options are supported:
+     *
+     * @param {Number} config.width A width to send to the server to for
+     * configuring the image width (required)
+     *
+     * @param {Number} config.height A height to send to the server for
+     * configuring the image height (required)
+     *
+     * @param {String} config.url The url to post the data to. Defaults to
+     * the {@link #defaultUrl} configuration on the class.
+     *
+     * @param {String} config.type The type of image to export. See the
+     * {@link #supportedTypes}
+     *
+     * @param {String} config.widthParam The name of the width parameter to send
+     * to the server. Defaults to {@link #widthParam}
+     *
+     * @param {String} config.heightParam The name of the height parameter to send
+     * to the server. Defaults to {@link #heightParam}
+     *
+     * @param {String} config.typeParam The name of the type parameter to send
+     * to the server. Defaults to {@link #typeParam}
+     *
+     * @param {String} config.svgParam The name of the svg parameter to send
+     * to the server. Defaults to {@link #svgParam}
+     *
+     * @return {Boolean} True if the surface was successfully sent to the server.
+     */
+    generate: function(svg, config) {
+        config = config || {};
+        var me = this,
+            type = config.type,
+            form;
+
+        if (Ext.Array.indexOf(me.supportedTypes, type) === -1) {
+            return false;
+        }
+
+        form = Ext.getBody().createChild({
+            tag: 'form',
+            method: 'POST',
+            action: config.url || me.defaultUrl,
+            cls: me.formCls,
+            children: [{
+                tag: 'input',
+                type: 'hidden',
+                name: config.widthParam || me.widthParam,
+                value: config.width
+            }, {
+                tag: 'input',
+                type: 'hidden',
+                name: config.heightParam || me.heightParam,
+                value: config.height
+            }, {
+                tag: 'input',
+                type: 'hidden',
+                name: config.typeParam || me.typeParam,
+                value: type
+            }, {
+                tag: 'input',
+                type: 'hidden',
+                name: config.svgParam || me.svgParam
+            }]
+        });
+
+        // Assign the data on the value so it doesn't get messed up in the html insertion
+        form.last(null, true).value = svg;
+
+        form.dom.submit();
+        form.remove();
+        return true;
+    }
+
+});
+
+/**
  * The Ext.chart package provides the capability to visualize data.
  * Each chart binds directly to an {@link Ext.data.Store} enabling automatic updates of the chart.
  * A chart configuration object has some overall styling options as well as an array of axes
@@ -77601,7 +77322,8 @@ Ext.define('Ext.chart.AbstractChart', {
                               
                                 
                            
-                        
+                         
+                                     
       
     /**
      * @event beforerefresh
@@ -78577,11 +78299,11 @@ Ext.define('Ext.chart.AbstractChart', {
     },
 
     onAnimationStart: function () {
-        this.fireEvent("animationstart", this);
+        this.fireEvent('animationstart', this);
     },
 
     onAnimationEnd: function () {
-        this.fireEvent("animationend", this);
+        this.fireEvent('animationend', this);
     },
 
     onThicknessChanged: function () {
@@ -78773,6 +78495,96 @@ Ext.define('Ext.chart.AbstractChart', {
         }
 
         return ans;
+    },
+
+    /**
+     * Flattens the given chart surfaces into a single image.
+     * Note: Surfaces whose class name is different from chart's engine will be omitted.
+     * @param {Array} surfaces A list of chart's surfaces to flatten.
+     * @param {String} format If set to 'image', the method will return an Image object. Otherwise, the dataURL
+     *                 of the flattened image will be returned.
+     * @returns {String|Image} An Image DOM element containing the flattened image or its dataURL.
+     */
+    flatten: function (surfaces, format) {
+        var me = this,
+            size = me.element.getSize(),
+            svg, canvas, ctx,
+            i, surface, region,
+            img, dataURL;
+
+        switch (me.engine) {
+            case 'Ext.draw.engine.Canvas':
+                canvas = document.createElement('canvas');
+                canvas.width = size.width;
+                canvas.height = size.height;
+                ctx = canvas.getContext('2d');
+                for (i = 0; i < surfaces.length; i++) {
+                    surface = surfaces[i];
+                    if (Ext.getClassName(surface) !== me.engine) {
+                        continue;
+                    }
+                    region = surface.getRegion();
+                    ctx.drawImage(surface.canvases[0].dom, region[0], region[1]);
+                }
+                dataURL = canvas.toDataURL();
+                break;
+            case 'Ext.draw.engine.Svg':
+                svg = '<?xml version="1.0" standalone="yes"?>';
+                svg += '<svg version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg"' +
+                    ' width="' + size.width + '"' +
+                    ' height="' + size.height + '">';
+                for (i = 0; i < surfaces.length - 1; i++) {
+                    surface = surfaces[i];
+                    if (Ext.getClassName(surface) !== me.engine) {
+                        continue;
+                    }
+                    region = surface.getRegion();
+                    svg += '<g transform="translate(' + region[0] + ',' + region[1] + ')">';
+                    svg += Ext.dom.Element.serializeNode(surface.svgElement.dom);
+                    svg += '</g>';
+                }
+                svg += '</svg>';
+                dataURL = 'data:image/svg+xml;utf8,' + svg;
+                break;
+        }
+        if (format === 'image') {
+            img = new Image();
+            img.src = dataURL;
+            return img;
+        }
+        if (format === 'stream') {
+            return dataURL.replace(/^data:image\/[^;]+/, 'data:application/octet-stream');
+        }
+        return dataURL;
+    },
+
+    save: function (download) {
+        if (download) {
+            // TODO: no control over filename, we are at the browser's mercy
+            // TODO: unfortunatelly, a.download attribute remains a novelty on mobile: http://caniuse.com/#feat=download
+            window.open(this.flatten(this.items.items, 'stream'));
+        } else {
+            Ext.Viewport.add({
+                xtype: 'panel',
+                layout: 'fit',
+                modal: true,
+                width: '90%',
+                height: '90%',
+                hideOnMaskTap: true,
+                centered: true,
+                scrollable: false,
+                items: {
+                    xtype: 'image',
+                    mode: 'img',
+                    src: this.flatten(this.items.items)
+                },
+                listeners: {
+                    hide: function () {
+                        Ext.Viewport.remove(this);
+                    }
+                }
+            }).show();
+        }
     }
 });
 
@@ -79173,9 +78985,9 @@ Ext.define('Ext.chart.CartesianChart', {
  * @class Ext.chart.grid.CircularGrid
  * @extends Ext.draw.sprite.Circle
  * 
- * Circular Grid sprite.
+ * Circular Grid sprite. Used by Radar chart to render a series of concentric circles.
  */
-Ext.define("Ext.chart.grid.CircularGrid", {
+Ext.define('Ext.chart.grid.CircularGrid', {
     extend:  Ext.draw.sprite.Circle ,
     alias: 'grid.circular',
     
@@ -79193,10 +79005,10 @@ Ext.define("Ext.chart.grid.CircularGrid", {
  * @class Ext.chart.grid.RadialGrid
  * @extends Ext.draw.sprite.Path
  * 
- * Radial Grid sprite. Used by Radar to render a series of concentric circles.
+ * Radial Grid sprite. Used by Radar chart to render a series of radial lines.
  * Represents the scale of the radar chart on the yField.
  */
-Ext.define("Ext.chart.grid.RadialGrid", {
+Ext.define('Ext.chart.grid.RadialGrid', {
     extend:  Ext.draw.sprite.Path ,
     alias: 'grid.radial',
 
@@ -79940,7 +79752,7 @@ Ext.define('Ext.chart.interactions.CrossZoom', {
     },
 
     getSurface: function () {
-        return this.getChart() && this.getChart().getSurface("main");
+        return this.getChart() && this.getChart().getSurface('main');
     },
     
     setSeriesOpacity: function (opacity) {
@@ -80153,6 +79965,417 @@ Ext.define('Ext.chart.interactions.CrossZoom', {
 });
 
 /**
+ * The Crosshair interaction allows the user to get precise values for a specific point on the chart.
+ * The values are obtained by single-touch dragging on the chart.
+ *
+ *     @example preview
+ *     var lineChart = Ext.create('Ext.chart.CartesianChart', {
+ *         innerPadding: 20,
+ *         interactions: [{
+ *             type: 'crosshair',
+ *             axes: {
+ *                 left: {
+ *                     label: {
+ *                         fillStyle: 'white'
+ *                     },
+ *                     rect: {
+ *                         fillStyle: 'brown',
+ *                         radius: 6
+ *                     }
+ *                 },
+ *                 bottom: {
+ *                     label: {
+ *                         fontSize: '14px',
+ *                         fontWeight: 'bold'
+ *                     }
+ *                 }
+ *             },
+ *             lines: {
+ *                 horizontal: {
+ *                     strokeStyle: 'brown',
+ *                     lineWidth: 2,
+ *                     lineDash: [20, 2, 2, 2, 2, 2, 2, 2]
+ *                 }
+ *             }
+ *         }],
+ *         store: {
+ *             fields: ['name', 'data'],
+ *             data: [
+ *                 {name: 'apple', data: 300},
+ *                 {name: 'orange', data: 900},
+ *                 {name: 'banana', data: 800},
+ *                 {name: 'pear', data: 400},
+ *                 {name: 'grape', data: 500}
+ *             ]
+ *         },
+ *         axes: [{
+ *             type: 'numeric',
+ *             position: 'left',
+ *             fields: ['data'],
+ *             title: {
+ *                 text: 'Value',
+ *                 fontSize: 15
+ *             },
+ *             grid: true,
+ *             label: {
+ *                 rotationRads: -Math.PI / 4
+ *             }
+ *         }, {
+ *             type: 'category',
+ *             position: 'bottom',
+ *             fields: ['name'],
+ *             title: {
+ *                 text: 'Category',
+ *                 fontSize: 15
+ *             }
+ *         }],
+ *         series: [{
+ *             type: 'line',
+ *             style: {
+ *                 strokeStyle: 'black'
+ *             },
+ *             xField: 'name',
+ *             yField: 'data',
+ *             marker: {
+ *                 type: 'circle',
+ *                 radius: 5,
+ *                 fillStyle: 'lightblue'
+ *             }
+ *         }]
+ *     });
+ *     Ext.Viewport.setLayout('fit');
+ *     Ext.Viewport.add(lineChart);
+ */
+
+Ext.define('Ext.chart.interactions.Crosshair', {
+
+    extend:  Ext.chart.interactions.Abstract ,
+               
+                                        
+                                      
+                                   
+                                        
+      
+
+    type: 'crosshair',
+    alias: 'interaction.crosshair',
+
+    config: {
+        /**
+         * @cfg {Object} axes
+         * Specifies label text and label rect configs on per axis basis or as a single config for all axes.
+         *
+         *     {
+         *         type: 'crosshair',
+         *         axes: {
+         *             label: { fillStyle: 'white' },
+         *             rect: { fillStyle: 'maroon'}
+         *         }
+         *     }
+         *
+         * In case per axis configuration is used, an object with keys corresponding
+         * to the {@link Ext.chart.axis.Axis#position position} must be provided.
+         *
+         *     {
+         *         type: 'crosshair',
+         *         axes: {
+         *             left: {
+         *                 label: { fillStyle: 'white' },
+         *                 rect: {
+         *                     fillStyle: 'maroon',
+         *                     radius: 4
+         *                 }
+         *             },
+         *             bottom: {
+         *                 label: {
+         *                     fontSize: '14px',
+         *                     fontWeight: 'bold'
+         *                 },
+         *                 rect: { fillStyle: 'white' }
+         *             }
+         *         }
+         *
+         * If the `axes` config is not specified, the following defaults will be used:
+         * - `label` will use values from the {@link Ext.chart.axis.Axis#label label} config.
+         * - `rect` will use the 'white' fillStyle.
+         */
+        axes: {
+            top: {label: {}, rect: {}},
+            right: {label: {}, rect: {}},
+            bottom: {label: {}, rect: {}},
+            left: {label: {}, rect: {}}
+        },
+
+        /**
+         * @cfg {Object} lines
+         * Specifies attributes of horizontal and vertical lines that make up the crosshair.
+         * If this config is missing, black dashed lines will be used.
+         *
+         *     {
+         *         horizontal: {
+         *             strokeStyle: 'red',
+         *             lineDash: [] // solid line
+         *         },
+         *         vertical: {
+         *             lineWidth: 2,
+         *             lineDash: [15, 5, 5, 5]
+         *         }
+         *     }
+         */
+        lines: {
+            horizontal: {
+                strokeStyle: 'black',
+                lineDash: [5, 5]
+            },
+            vertical: {
+                strokeStyle: 'black',
+                lineDash: [5, 5]
+            }
+        },
+        gesture: 'drag'
+    },
+
+    applyAxes: function (axesConfig, oldAxesConfig) {
+        return Ext.merge(oldAxesConfig || {}, axesConfig);
+    },
+
+    applyLines: function (linesConfig, oldLinesConfig) {
+        return Ext.merge(oldLinesConfig || {}, linesConfig);
+    },
+
+    updateChart: function (chart) {
+        if (!(chart instanceof Ext.chart.CartesianChart)) {
+            throw 'Crosshair interaction can only be used on cartesian charts.';
+        }
+        this.callParent(arguments);
+    },
+
+    getGestures: function () {
+        var me = this,
+            gestures = {};
+        gestures[me.getGesture()] = 'onGesture';
+        gestures[me.getGesture() + 'start'] = 'onGestureStart';
+        gestures[me.getGesture() + 'end'] = 'onGestureEnd';
+        return gestures;
+    },
+
+    onGestureStart: function (e) {
+        var me = this,
+            chart = me.getChart(),
+            surface = chart.getSurface('overlay-surface'),
+            region = chart.getInnerRegion(),
+            chartWidth = region[2],
+            chartHeight = region[3],
+            xy = chart.element.getXY(),
+            x = e.pageX - xy[0] - region[0],
+            y = e.pageY - xy[1] - region[1],
+            axes = chart.getAxes(),
+            axesConfig = me.getAxes(),
+            linesConfig = me.getLines(),
+            axis, axisSurface, axisRegion, axisWidth, axisHeight, axisPosition,
+            axisLabel, labelPadding,
+            axisSprite, attr, axisThickness, lineWidth, halfLineWidth,
+            i;
+
+        if (x > 0 && x < chartWidth && y > 0 && y < chartHeight) {
+            me.lockEvents(me.getGesture());
+            me.horizontalLine = surface.add(Ext.apply({
+                xclass: 'Ext.chart.grid.HorizontalGrid',
+                x: 0,
+                y: y,
+                width: chartWidth
+            }, linesConfig.horizontal));
+            me.verticalLine = surface.add(Ext.apply({
+                xclass: 'Ext.chart.grid.VerticalGrid',
+                x: x,
+                y: 0,
+                height: chartHeight
+            }, linesConfig.vertical));
+            me.axesLabels = me.axesLabels || {};
+            for (i = 0; i < axes.length; i++) {
+                axis = axes[i];
+                axisSurface = axis.getSurface();
+                axisRegion = axisSurface.getRegion();
+                axisSprite = axis.getSprites()[0];
+                axisWidth = axisRegion[2];
+                axisHeight = axisRegion[3];
+                axisPosition = axis.getPosition();
+                attr = axisSprite.attr;
+                axisThickness = axisSprite.thickness;
+                lineWidth = attr.axisLine ? attr.lineWidth : 0;
+                halfLineWidth = lineWidth / 2;
+                labelPadding = Math.max(attr.majorTickSize, attr.minorTickSize) + lineWidth;
+
+                axisLabel = me.axesLabels[axisPosition] = axisSurface.add({type: 'composite'});
+                axisLabel.labelRect = axisLabel.add(Ext.apply({
+                    type: 'rect',
+                    fillStyle: 'white',
+                    x: axisPosition === 'right' ? lineWidth : axisSurface.roundPixel(axisWidth - axisThickness - labelPadding) - halfLineWidth,
+                    y: axisPosition === 'bottom' ? lineWidth : axisSurface.roundPixel(axisHeight - axisThickness - labelPadding) - lineWidth,
+                    width: axisPosition === 'left' ? axisThickness - halfLineWidth + labelPadding : axisThickness + labelPadding,
+                    height: axisPosition === 'top' ? axisThickness + labelPadding : axisThickness + labelPadding
+                }, axesConfig.rect || axesConfig[axisPosition].rect));
+                axisLabel.labelText = axisLabel.add(Ext.apply(Ext.Object.chain(axis.config.label), axesConfig.label || axesConfig[axisPosition].label, {
+                    type: 'text',
+                    x: (function () {
+                        switch (axisPosition) {
+                            case 'left':
+                                return axisWidth - labelPadding - halfLineWidth - axisThickness / 2;
+                            case 'right':
+                                return axisThickness / 2 + labelPadding - halfLineWidth;
+                            default:
+                                return 0;
+                        }
+                    })(),
+                    y: (function () {
+                        switch (axisPosition) {
+                            case 'top':
+                                return axisHeight - labelPadding - halfLineWidth - axisThickness / 2;
+                            case 'bottom':
+                                return axisThickness / 2 + labelPadding;
+                            default:
+                                return 0;
+                        }
+                    })()
+                }));
+            }
+            return false;
+        }
+
+    },
+
+    onGesture: function (e) {
+        var me = this;
+        if (me.getLocks()[me.getGesture()] !== me) {
+            return;
+        }
+        var chart = me.getChart(),
+            surface = chart.getSurface('overlay-surface'),
+            region = Ext.Array.slice(chart.getInnerRegion()),
+            padding = chart.getInnerPadding(),
+            px = padding.left,
+            py = padding.top,
+            chartWidth = region[2],
+            chartHeight = region[3],
+            xy = chart.element.getXY(),
+            x = e.pageX - xy[0] - region[0],
+            y = e.pageY - xy[1] - region[1],
+            axes = chart.getAxes(),
+            axis, axisPosition, axisAlignment, axisSurface, axisSprite, axisMatrix,
+            axisLayoutContext, axisSegmenter,
+            axisLabel, labelBBox, textPadding,
+            xx, yy, dx, dy,
+            xValue, yValue,
+            text,
+            i;
+
+        if (x < 0) {
+            x = 0;
+        } else if (x > chartWidth) {
+            x = chartWidth;
+        }
+        if (y < 0) {
+            y = 0;
+        } else if (y > chartHeight) {
+            y = chartHeight;
+        }
+        x += px;
+        y += py;
+
+        for (i = 0; i < axes.length; i++) {
+            axis = axes[i];
+            axisPosition = axis.getPosition();
+            axisAlignment = axis.getAlignment();
+            axisSurface = axis.getSurface();
+            axisSprite = axis.getSprites()[0];
+            axisMatrix = axisSprite.attr.matrix;
+            textPadding = axisSprite.attr.textPadding * 2;
+            axisLabel = me.axesLabels[axisPosition];
+            axisLayoutContext = axisSprite.getLayoutContext();
+            axisSegmenter = axis.getSegmenter();
+
+            if (axisLabel) {
+                if (axisAlignment === 'vertical') {
+                    yy = axisMatrix.getYY();
+                    dy = axisMatrix.getDY();
+                    yValue = (y - dy - py) / yy;
+                    if (axis.getLayout() instanceof Ext.chart.axis.layout.Discrete) {
+                        y = Math.round(yValue) * yy + dy + py;
+                        yValue = axisSegmenter.from(Math.round(yValue));
+                        yValue = axisSprite.attr.data[yValue];
+                    } else {
+                        yValue = axisSegmenter.from(yValue);
+                    }
+                    text = axisSegmenter.renderer(yValue, axisLayoutContext);
+
+                    axisLabel.setAttributes({translationY: y - py});
+                    axisLabel.labelText.setAttributes({text: text});
+                    labelBBox = axisLabel.labelText.getBBox();
+                    axisLabel.labelRect.setAttributes({
+                        height: labelBBox.height + textPadding,
+                        y: -(labelBBox.height + textPadding) / 2
+                    });
+                    axisSurface.renderFrame();
+                } else {
+                    xx = axisMatrix.getXX();
+                    dx = axisMatrix.getDX();
+                    xValue = (x - dx - px) / xx;
+                    if (axis.getLayout() instanceof Ext.chart.axis.layout.Discrete) {
+                        x = Math.round(xValue) * xx + dx + px;
+                        xValue = axisSegmenter.from(Math.round(xValue));
+                        xValue = axisSprite.attr.data[xValue];
+                    } else {
+                        xValue = axisSegmenter.from(xValue);
+                    }
+                    text = axisSegmenter.renderer(xValue, axisLayoutContext);
+
+                    axisLabel.setAttributes({translationX: x - px});
+                    axisLabel.labelText.setAttributes({text: text});
+                    labelBBox = axisLabel.labelText.getBBox();
+                    axisLabel.labelRect.setAttributes({
+                        width: labelBBox.width + textPadding,
+                        x: -(labelBBox.width + textPadding) / 2
+                    });
+                    axisSurface.renderFrame();
+                }
+            }
+        }
+        me.horizontalLine.setAttributes({y: y});
+        me.verticalLine.setAttributes({x: x});
+        surface.renderFrame();
+        return false;
+    },
+
+    onGestureEnd: function (e) {
+        var me = this,
+            chart = me.getChart(),
+            surface =  chart.getSurface('overlay-surface'),
+            axes = chart.getAxes(),
+            axis, axisPosition, axisSurface, axisLabel,
+            i;
+
+        surface.remove(me.verticalLine);
+        surface.remove(me.horizontalLine);
+
+        for (i = 0; i < axes.length; i++) {
+            axis = axes[i];
+            axisPosition = axis.getPosition();
+            axisSurface = axis.getSurface();
+            axisLabel = me.axesLabels[axisPosition];
+            if (axisLabel) {
+                delete me.axesLabels[axisPosition];
+                axisSurface.remove(axisLabel);
+            }
+            axisSurface.renderFrame();
+        }
+
+        surface.renderFrame();
+        me.unlockEvents(me.getGesture());
+    }
+
+})
+
+/**
  * @class Ext.chart.interactions.ItemHighlight
  * @extends Ext.chart.interactions.Abstract
  *
@@ -80335,11 +80558,6 @@ Ext.define('Ext.util.Offset', {
     },
 
     equals: function(offset) {
-        //<debug>
-        if(!(offset instanceof this.statics())) {
-            Ext.Error.raise('Offset must be an instance of Ext.util.Offset');
-        }
-        //</debug>
 
         return (this.x == offset.x && this.y == offset.y);
     },
@@ -80837,9 +81055,10 @@ Ext.define('Ext.chart.interactions.PanZoom', {
          * @cfg {Object/Array} axes
          * Specifies which axes should be made navigable. The config value can take the following formats:
          *
-         * - An Object whose keys correspond to the {@link Ext.chart.axis.Axis#position position} of each
+         * - An Object with keys corresponding to the {@link Ext.chart.axis.Axis#position position} of each
          *   axis that should be made navigable. Each key's value can either be an Object with further
          *   configuration options for each axis or simply `true` for a default set of options.
+         *
          *       {
          *           type: 'panzoom',
          *           axes: {
@@ -81341,7 +81560,6 @@ Ext.define('Ext.chart.interactions.Rotate', {
         return Math.sqrt(dx * dx + dy * dy);
     },
 
-    // todo: add return for the case if does not trigger
     onGestureStart: function(e) {
         var me = this,
             chart = me.getChart(),
@@ -81356,7 +81574,6 @@ Ext.define('Ext.chart.interactions.Rotate', {
         }
     },
 
-    // todo: add return for the case if does not trigger
     onGesture: function(e) {
         var me = this,
             chart = me.getChart(),
@@ -81417,7 +81634,6 @@ Ext.define('Ext.chart.interactions.Rotate', {
         chart.resumeAnimation();
     },
 
-    // todo: add return for the case if does not trigger
     onGestureEnd: function(e) {
         var me = this;
 
@@ -81548,7 +81764,7 @@ Ext.define('Ext.chart.series.Cartesian', {
     createSprite: function () {
         var sprite = this.callSuper(),
             xAxis = this.getXAxis();
-        sprite.setFlipXY(this.getChart().getFlipXY());
+        sprite.setAttributes({flipXY: this.getChart().getFlipXY()});
         if (sprite.setAggregator && xAxis && xAxis.getAggregator) {
             if (xAxis.getAggregator) {
                 sprite.setAggregator({strategy: xAxis.getAggregator()});
@@ -81774,7 +81990,7 @@ Ext.define('Ext.chart.series.StackedCartesian', {
  *
  * Cartesian sprite.
  */
-Ext.define("Ext.chart.series.sprite.Cartesian", {
+Ext.define('Ext.chart.series.sprite.Cartesian', {
     extend:  Ext.draw.sprite.Sprite ,
     mixins: {
         markerHolder:  Ext.chart.MarkerHolder 
@@ -81839,7 +82055,11 @@ Ext.define("Ext.chart.series.sprite.Cartesian", {
                  */
                 selectionTolerance: 'number',
 
+                /**
+                 * @cfg {Boolean} If flipXY is 'true', the series is flipped.
+                 */
                 flipXY: 'bool',
+
                 renderer: 'default',
 
                 // PanZoom information
@@ -81886,7 +82106,7 @@ Ext.define("Ext.chart.series.sprite.Cartesian", {
                 innerHeight: 'panzoom'
             },
             updaters: {
-                'dataX': function (attrs) {
+                dataX: function (attrs) {
                     this.processDataX();
                     if (!attrs.dirtyFlags.dataY) {
                         attrs.dirtyFlags.dataY = [];
@@ -81894,11 +82114,11 @@ Ext.define("Ext.chart.series.sprite.Cartesian", {
                     attrs.dirtyFlags.dataY.push('dataY');
                 },
 
-                'dataY': function () {
+                dataY: function () {
                     this.processDataY();
                 },
 
-                'panzoom': function (attrs) {
+                panzoom: function (attrs) {
                     var dx = attrs.visibleMaxX - attrs.visibleMinX,
                         dy = attrs.visibleMaxY - attrs.visibleMinY,
                         innerWidth = attrs.flipXY ? attrs.innerHeight : attrs.innerWidth,
@@ -81916,11 +82136,6 @@ Ext.define("Ext.chart.series.sprite.Cartesian", {
     },
 
     config: {
-        /**
-         * @cfg {Boolean} flipXY 'true' if the series is flipped
-         */
-        flipXY: false,
-
         /**
          * @private
          * @cfg {Object} store The store that is passed to the renderer.
@@ -81976,8 +82191,8 @@ Ext.define("Ext.chart.series.sprite.Cartesian", {
 
     render: function (surface, ctx, region) {
         var me = this,
-            flipXY = me.getFlipXY(),
             attr = me.attr,
+            flipXY = attr.flipXY,
             inverseMatrix = attr.inverseMatrix.clone();
 
         inverseMatrix.appendMatrix(surface.inverseMatrix);
@@ -82343,16 +82558,14 @@ Ext.define('Ext.chart.series.sprite.Bar', {
                 /**
                  * @cfg {Number} [inGroupGapWidth=3] The gap between grouped bars.
                  */
-                inGroupGapWidth: 'number',
-                renderer: 'default'
+                inGroupGapWidth: 'number'
             },
             defaults: {
                 minBarWidth: 2,
                 maxBarWidth: 100,
                 minGapWidth: 5,
                 inGroupGapWidth: 3,
-                radius: 0,
-                renderer: null
+                radius: 0
             }
         }
     },
@@ -83060,7 +83273,7 @@ Ext.define("Ext.draw.SegmentTree", {
 /**
  *
  */
-Ext.define("Ext.chart.series.sprite.Aggregative", {
+Ext.define('Ext.chart.series.sprite.Aggregative', {
     extend:  Ext.chart.series.sprite.Cartesian ,
                                                                 
     inheritableStatics: {
@@ -83150,7 +83363,7 @@ Ext.define("Ext.chart.series.sprite.Aggregative", {
  * 
  * CandleStick series sprite.
  */
-Ext.define("Ext.chart.series.sprite.CandleStick", {
+Ext.define('Ext.chart.series.sprite.CandleStick', {
     alias: 'sprite.candlestickSeries',
     extend:  Ext.chart.series.sprite.Aggregative ,
     inheritableStatics: {
@@ -83211,7 +83424,7 @@ Ext.define("Ext.chart.series.sprite.CandleStick", {
         }
     },
 
-    "candlestick": function (ctx, open, high, low, close, mid, halfWidth) {
+    candlestick: function (ctx, open, high, low, close, mid, halfWidth) {
         var minOC = Math.min(open, close),
             maxOC = Math.max(open, close);
         ctx.moveTo(mid, low);
@@ -83227,14 +83440,13 @@ Ext.define("Ext.chart.series.sprite.CandleStick", {
         ctx.lineTo(mid, minOC);
     },
 
-    "ohlc": function (ctx, open, high, low, close, mid, halfWidth) {
+    ohlc: function (ctx, open, high, low, close, mid, halfWidth) {
         ctx.moveTo(mid, high);
         ctx.lineTo(mid, low);
         ctx.moveTo(mid, open);
         ctx.lineTo(mid - halfWidth, open);
         ctx.moveTo(mid, close);
         ctx.lineTo(mid + halfWidth, close);
-
     },
 
     constructor: function () {
@@ -83380,7 +83592,7 @@ Ext.define("Ext.chart.series.sprite.CandleStick", {
  *     Ext.Viewport.setLayout('fit');
  *     Ext.Viewport.add(chart);
  */
-Ext.define("Ext.chart.series.CandleStick", {
+Ext.define('Ext.chart.series.CandleStick', {
     extend:  Ext.chart.series.Cartesian ,
                                                       
     alias: 'series.candlestick',
@@ -84360,7 +84572,7 @@ Ext.define('Ext.chart.series.sprite.Line', {
         plain.height = ymax - ymin;
     },
 
-    drawStroke: function (surface, ctx, list, xAxis) {
+    drawStroke: function (surface, ctx, start, end, list, xAxis) {
         var attr = this.attr,
             matrix = attr.matrix,
             xx = matrix.getXX(),
@@ -84369,15 +84581,26 @@ Ext.define('Ext.chart.series.sprite.Line', {
             dy = matrix.getDY(),
             smooth = attr.smooth,
             step = attr.step,
-            start = list[2],
+            scale = Math.pow(2, power(attr.dataX.length, end)),
             smoothX = this.smoothX,
             smoothY = this.smoothY,
             i, j, lineConfig, changes,
             cx1, cy1, cx2, cy2, x, y, x0, y0, saveOpacity;
+
+        function power(count, end) {
+            var power = 0,
+                n = count;
+            while (n < end) {
+                power++;
+                n += count >> power;
+            }
+            return power > 0 ? power - 1 : power;
+        }
+
         ctx.beginPath();
         if (smooth && smoothX && smoothY) {
             ctx.moveTo(smoothX[start * 3] * xx + dx, smoothY[start * 3] * yy + dy);
-            for (i = 0, j = start * 3 + 1; i < list.length - 3; i += 3, j += 3) {
+            for (i = 0, j = start * 3 + 1; i < list.length - 3; i += 3, j += 3 * scale) {
                 cx1 = smoothX[j] * xx + dx;
                 cy1 = smoothY[j] * yy + dy;
                 cx2 = smoothX[j + 1] * xx + dx;
@@ -84622,7 +84845,7 @@ Ext.define('Ext.chart.series.sprite.Line', {
                     me.drawLabel(labels[index], x, y, index, region);
                 }
             }
-            me.drawStroke(surface, ctx, list, region[1] - pixel);
+            me.drawStroke(surface, ctx, start, end, list, region[1] - pixel);
             if (!attr.renderer) {
                 var lastPointX = dataX[dataX.length - 1] * xx + dx + pixel,
                     lastPointY = dataY[dataY.length - 1] * yy + dy,
@@ -84646,7 +84869,7 @@ Ext.define('Ext.chart.series.sprite.Line', {
                 if (attr.transformFillStroke) {
                     attr.inverseMatrix.toContext(ctx);
                 }
-                me.drawStroke(surface, ctx, list, region[1] - pixel);
+                me.drawStroke(surface, ctx, start, end, list, region[1] - pixel);
                 if (attr.transformFillStroke) {
                     attr.matrix.toContext(ctx);
                 }
@@ -85064,7 +85287,7 @@ Ext.define('Ext.chart.series.sprite.PieSlice', {
             surfaceMatrix = me.surfaceMatrix,
             labelCfg = me.labelCfg || (me.labelCfg = {}),
             labelTpl = me.getBoundMarker('labels')[0].getTemplate(),
-            labelBox, x, y;
+            labelBox, x, y, changes;
 
         surfaceMatrix.appendMatrix(attr.matrix);
 
@@ -86163,7 +86386,7 @@ Ext.define('Ext.chart.series.Pie3D', {
  * 
  * Polar sprite.
  */
-Ext.define("Ext.chart.series.sprite.Polar", {
+Ext.define('Ext.chart.series.sprite.Polar', {
     mixins: {
         markerHolder:  Ext.chart.MarkerHolder 
     },
@@ -86678,24 +86901,6 @@ Ext.define('Ext.chart.series.Scatter', {
 });
 
 
-Ext.define("Ext.chart.series.sprite.AbstractRadial", {
-    extend:  Ext.draw.sprite.Sprite ,
-    inheritableStatics: {
-        def: {
-            processors: {
-                rotation: 'number',
-                x: 'number',
-                y: 'number'
-            },
-            defaults: {
-                rotation: 0,
-                x: 0,
-                y: 0
-            }
-        }
-    }
-});
-
 /**
  * @author Ed Spencer
  * @aside guide stores
@@ -87167,11 +87372,6 @@ Ext.define('Ext.data.proxy.Direct', {
 
         fn = api[request.getAction()] || me.getDirectFn();
 
-        //<debug>
-        if (!fn) {
-            Ext.Logger.error('No direct function specified for this proxy');
-        }
-        //</debug>
 
         request = writer.write(request);
 
@@ -87394,11 +87594,6 @@ Ext.define('Ext.data.JsonP', {
     request: function(options){
         options = Ext.apply({}, options);
 
-        //<debug>
-        if (!options.url) {
-            Ext.Logger.error('A url must be specified for a JSONP request.');
-        }
-        //</debug>
 
         var me = this,
             disableCaching = Ext.isDefined(options.disableCaching) ? options.disableCaching : me.disableCaching,
@@ -88836,12 +89031,6 @@ Ext.define('Ext.data.NodeStore', {
     },
 
     applyProxy: function(proxy) {
-        //<debug>
-        if (proxy) {
-            Ext.Logger.warn("A NodeStore cannot be bound to a proxy. Instead bind it to a record " +
-                            "decorated with the NodeInterface by setting the node config.");
-        }
-        //</debug>
     },
 
     applyNode: function(node) {
@@ -89142,6 +89331,10 @@ Ext.define('Ext.data.TreeStore', {
      * @return {Ext.data.NodeInterface}
      */
     getNodeById: function(id) {
+        return this.data.getByKey(id);
+    },
+
+    getById: function(id) {
         return this.data.getByKey(id);
     },
 
@@ -89806,12 +89999,6 @@ Ext.define('Ext.data.proxy.JsonP', {
      * @protected
      */
     doRequest: function(operation, callback, scope) {
-        // <debug>
-        var action = operation.getAction();
-        if (action !== 'read') {
-            Ext.Logger.error('JsonP proxies can only be used to read data.');
-        }
-        // </debug>
 
         //generate the unique IDs for this request
         var me      = this,
@@ -89977,18 +90164,13 @@ Ext.define('Ext.data.proxy.WebStorage', {
          */
         this.cache = {};
 
-        //<debug>
-        if (this.getStorageObject() === undefined) {
-            Ext.Logger.error("Local Storage is not supported in this browser, please use another type of data proxy");
-        }
-        //</debug>
     },
 
     updateModel: function(model) {
         if (!this.getId()) {
             this.setId(model.modelName);
         }
-        
+
         this.callParent(arguments);
     },
 
@@ -90003,12 +90185,6 @@ Ext.define('Ext.data.proxy.WebStorage', {
 
         for (i = 0; i < length; i++) {
             record = records[i];
-            // <debug>
-            if (!this.getModel().getIdentifier().isUnique) {
-                Ext.Logger.warn('Your identifier generation strategy for the model does not ensure unique id\'s. Please use the UUID strategy, or implement your own identifier strategy with the flag isUnique.');
-
-            }
-            // </debug>
             id = record.getId();
 
             this.setRecord(record);
@@ -90275,6 +90451,7 @@ Ext.define('Ext.data.proxy.WebStorage', {
             me.setIds(ids);
         }
 
+        delete this.cache[id];
         me.getStorageObject().removeItem(me.getRecordKey(id));
     },
 
@@ -90404,9 +90581,6 @@ Ext.define('Ext.data.proxy.WebStorage', {
      * @return {Object} The storage object
      */
     getStorageObject: function() {
-        //<debug>
-        Ext.Logger.error("The getStorageObject function has not been defined in your Ext.data.proxy.WebStorage subclass");
-        //</debug>
     }
 });
 
@@ -91594,19 +91768,6 @@ Ext.define('Ext.data.reader.Xml', {
 
         var xml = response.responseXML;
 
-        //<debug>
-        if (!xml) {
-            /**
-             * @event exception Fires whenever the reader is unable to parse a response.
-             * @param {Ext.data.reader.Xml} reader A reference to this reader.
-             * @param {XMLHttpRequest} response The XMLHttpRequest response object.
-             * @param {String} error The error message.
-             */
-            this.fireEvent('exception', this, response, 'XML data not found in the response');
-
-            Ext.Logger.warn('XML data not found in the response');
-        }
-        //</debug>
 
         return xml;
     },
@@ -91649,11 +91810,6 @@ Ext.define('Ext.data.reader.Xml', {
     extractData: function(root) {
         var recordName = this.getRecord();
 
-        //<debug>
-        if (!recordName) {
-            Ext.Logger.error('Record is a required parameter');
-        }
-        //</debug>
 
         if (recordName != root.nodeName && recordName !== root.localName) {
             root = Ext.DomQuery.select(recordName, root);
@@ -92312,14 +92468,6 @@ Ext.define('Ext.dataview.component.SimpleListItem', {
             var disclosureProperty = dataview.getDisclosureProperty();
             disclosure[(data.hasOwnProperty(disclosureProperty) && data[disclosureProperty] === false) ? 'hide' : 'show']();
         }
-
-        /**
-         * @event updatedata
-         * Fires whenever the data of the DataItem is updated.
-         * @param {Ext.dataview.component.DataItem} this The DataItem instance.
-         * @param {Object} newData The new data.
-         */
-        me.fireEvent('updatedata', me, data);
     },
 
     destroy: function() {
@@ -92641,7 +92789,7 @@ Ext.define('Ext.dataview.List', {
          * Whether or not to group items in the provided Store with a header for each item.
          * @accessor
          */
-        grouped: false,
+        grouped: null,
 
         /**
          * @cfg {Boolean/Function/Object} onItemDisclosure
@@ -92798,12 +92946,6 @@ Ext.define('Ext.dataview.List', {
 
         me.callParent(arguments);
 
-        //<debug>
-        layout = this.getLayout();
-        if (layout && !layout.isFit) {
-            Ext.Logger.error('The base layout for a DataView must always be a Fit Layout');
-        }
-        //</debug>
     },
 
     // We create complex instance arrays and objects in beforeInitialize so that we can use these inside of the initConfig process.
@@ -93349,8 +93491,8 @@ Ext.define('Ext.dataview.List', {
             header = useHeaders && item.getHeader(),
             scrollDockItems = me.scrollDockItems,
             updatedItems = me.updatedItems,
-            currentItemCls = item.renderElement.classList,
-            currentHeaderCls = useHeaders && header.renderElement.classList,
+            currentItemCls = item.renderElement.classList.slice(),
+            currentHeaderCls = useHeaders && header.renderElement.classList.slice(),
             infinite = me.getInfinite(),
             storeCount = info.store.getCount(),
             itemCls = [],
@@ -93444,8 +93586,8 @@ Ext.define('Ext.dataview.List', {
 
                 if (!infinite) {
                     header.renderElement.insertBefore(item.renderElement);
-                    header.show();
                 }
+                header.show();
             } else {
                 if (infinite) {
                     header.translate(0, -10000);
@@ -93457,6 +93599,10 @@ Ext.define('Ext.dataview.List', {
                 itemCls.push(info.footerCls);
                 headerCls.push(info.footerCls);
             }
+        }
+
+        if (!info.grouped && useHeaders) {
+            header.hide();
         }
 
         if (index === 0) {
@@ -93521,9 +93667,8 @@ Ext.define('Ext.dataview.List', {
 
         if (item.classCache !== classCache) {
             item.renderElement.setCls(itemCls);
+            item.classCache = classCache;
         }
-
-        item.classCache = classCache;
 
         if (useHeaders) {
             header.renderElement.setCls(headerCls);
@@ -93744,11 +93889,16 @@ Ext.define('Ext.dataview.List', {
         if (grouped) {
             me.addCls(cls);
             me.removeCls(unCls);
-        } else {
+        }
+        else {
             me.addCls(unCls);
             me.removeCls(cls);
         }
 
+        if (me.getInfinite()) {
+            me.refreshHeaderIndices();
+            me.handleItemHeights();
+        }
         me.updateAllListItems();
     },
 
@@ -93930,11 +94080,15 @@ Ext.define('Ext.dataview.List', {
             store = me.getStore(),
             storeLn = store && store.getCount(),
             groups = store.getGroups(),
+            grouped = me.getGrouped(),
             groupLn = groups.length,
             headerIndices = me.headerIndices = {},
             footerIndices = me.footerIndices = {},
             i, previousIndex, firstGroupedRecord, storeIndex;
 
+        if (!grouped) {
+            return footerIndices;
+        }
         me.groups = groups;
 
         for (i = 0; i < groupLn; i++) {
@@ -93978,6 +94132,14 @@ Ext.define('Ext.dataview.List', {
         }
     },
 
+    /**
+     *
+     * Scrolls the list so that the specified record is at the top.
+     *
+     * @param record {Ext.data.Model} Record in the lists store to scroll to
+     * @param animate {Boolean} Determines if scrolling is animated to a cut
+     * @param overscroll {Boolean} Determines if list can be overscrolled
+     */
     scrollToRecord: function(record, animate, overscroll) {
         var me = this,
             scroller = me.container.getScrollable().getScroller(),
@@ -94126,7 +94288,7 @@ Ext.define('Ext.dataview.List', {
 
         var item = me.getItemAt(me.getStore().indexOf(record));
         if (me.container && !me.isDestroyed && item && item.isComponent) {
-            item.classCache = item.renderElement.classList;
+            item.classCache = item.renderElement.classList.slice();
         }
     },
 
@@ -94135,7 +94297,7 @@ Ext.define('Ext.dataview.List', {
 
         var item = me.getItemAt(me.getStore().indexOf(record));
         if (item && item.isComponent) {
-            item.classCache = item.renderElement.classList;
+            item.classCache = item.renderElement.classList.slice();
         }
     },
 
@@ -94515,6 +94677,10 @@ Ext.define('Ext.dataview.NestedList', {
             toolbar: {
                 splitNavigation: true
             }
+        },
+        {
+            theme: ['Tizen'],
+            backText: ''
         }
     ],
 
@@ -94770,11 +94936,6 @@ Ext.define('Ext.dataview.NestedList', {
                 }
             }
 
-            // <debug>
-            if (!store) {
-                Ext.Logger.warn("The specified Store cannot be found", this);
-            }
-            //</debug>
         }
 
         return store;
@@ -94800,8 +94961,8 @@ Ext.define('Ext.dataview.NestedList', {
         }
 
         if (newStore) {
-            me.goToNode(newStore.getRoot());
             newStore.on(listeners);
+            me.goToNode(newStore.getRoot());
         }
     },
 
@@ -95839,9 +96000,6 @@ Ext.define('Ext.direct.PollingProvider', {
             }, me.getInterval());
             me.fireEvent('connect', me);
         } else if (!url) {
-            //<debug>
-            Ext.Error.raise('Error initializing PollingProvider, no url configured.');
-            //</debug>
         }
     },
 
@@ -96263,9 +96421,6 @@ Ext.define('Ext.direct.RemotingProvider', {
             me.connected = true;
             me.fireEvent('connect', me);
         } else {
-            //<debug>
-            Ext.Error.raise('Error initializing RemotingProvider, no url configured.');
-            //</debug>
         }
     },
 
@@ -97405,11 +97560,6 @@ Ext.define('Ext.event.publisher.ComponentSize', {
 
         component = Ext.ComponentManager.get(id);
 
-        //<debug error>
-        if (!component) {
-            Ext.Logger.error("Adding a listener to the 'resize' event of a non-existing component");
-        }
-        //</debug>
 
         if (!sizeMonitors[target]) {
             sizeMonitors[target] = {};
@@ -97928,34 +98078,6 @@ Ext.define('Ext.event.publisher.Dom', {
         this.publish(eventName, targets, new Ext.event.Dom(e));
     },
 
-    //<debug>
-    hasSubscriber: function(target, eventName) {
-        if (!this.handles(eventName)) {
-            return false;
-        }
-
-        var match = target.match(this.idOrClassSelectorRegex),
-            subscribers = this.getSubscribers(eventName),
-            type, value;
-
-        if (match !== null) {
-            type = match[1];
-            value = match[2];
-
-            if (type === '#') {
-                return subscribers.id.hasOwnProperty(value);
-            }
-            else {
-                return subscribers.className.hasOwnProperty(value);
-            }
-        }
-        else {
-            return (subscribers.selector.hasOwnProperty(target) && Ext.Array.indexOf(subscribers.selector, target) !== -1);
-        }
-
-        return false;
-    },
-    //</debug>
 
     getSubscribersCount: function(eventName) {
         if (!this.handles(eventName)) {
@@ -98573,6 +98695,9 @@ Ext.define('Ext.util.SizeMonitor', {
             else {
                 return new namespace.Scroll(config);
             }
+        }
+        else if (Ext.browser.is.IE11) {
+            return new namespace.Scroll(config);
         }
         else {
             return new namespace.Default(config);
@@ -100547,7 +100672,7 @@ Ext.define('Ext.field.Checkbox', {
     },
 
     platformConfig: [{
-        theme: ['Windows', 'Blackberry'],
+        theme: ['Windows', 'Blackberry', 'Tizen'],
         labelAlign: 'left'
     }],
 
@@ -100724,9 +100849,6 @@ Ext.define('Ext.field.Checkbox', {
             elements, element, i, ln;
 
         if (!component) {
-            // <debug>
-            Ext.Logger.warn('Ext.field.Radio components must always be descendants of an Ext.form.Panel or Ext.form.FieldSet.');
-            // </debug>
             component = Ext.Viewport;
         }
 
@@ -102026,6 +102148,10 @@ Ext.define('Ext.field.Select', {
         {
             theme: ['Windows'],
             pickerSlotAlign: 'left'
+        },
+        {
+            theme: ['Tizen'],
+            usePicker: false
         }
     ],
 
@@ -102047,7 +102173,7 @@ Ext.define('Ext.field.Select', {
             component.input.dom.disabled = true;
         }
 
-        if (Ext.theme.name === "Blackberry") {
+        if (Ext.theme.is.Blackberry) {
             this.label.on({
                 scope: me,
                 tap: "onFocus"
@@ -102056,7 +102182,7 @@ Ext.define('Ext.field.Select', {
     },
 
     getElementConfig: function() {
-        if (Ext.theme.name === "Blackberry") {
+        if (Ext.theme.is.Blackberry) {
                 var prefix = Ext.baseCSSPrefix;
 
                 return {
@@ -102435,7 +102561,7 @@ Ext.define('Ext.field.Select', {
 
     // @private
     updateLabelWidth: function() {
-        if (Ext.theme.name === "Blackberry") {
+        if (Ext.theme.is.Blackberry) {
             return;
         } else {
             this.callParent(arguments);
@@ -102444,7 +102570,7 @@ Ext.define('Ext.field.Select', {
 
     // @private
     updateLabelAlign: function() {
-        if (Ext.theme.name === "Blackberry") {
+        if (Ext.theme.is.Blackberry) {
             return;
         } else {
             this.callParent(arguments);
@@ -103640,7 +103766,8 @@ Ext.define('Ext.field.File', {
 
     config : {
         component: {
-            xtype : 'fileinput'
+            xtype : 'fileinput',
+            fastFocus: false
         }
     },
 
@@ -104702,10 +104829,6 @@ Ext.define('Ext.slider.Slider', {
             filteredValue = this.constrainValue(values[i]);
 
             if (filteredValue < previousFilteredValue) {
-                //<debug warn>
-                Ext.Logger.warn("Invalid values of '"+Ext.encode(values)+"', values at smaller indexes must " +
-                    "be smaller than or equal to values at greater indexes");
-                //</debug>
                 filteredValue = previousFilteredValue;
             }
 
@@ -105190,14 +105313,6 @@ Ext.define('Ext.util.TapRepeater', {
      */
     constructor: function(config) {
         var me = this;
-        //<debug warn>
-        for (var configName in config) {
-            if (me.self.prototype.config && !(configName in me.self.prototype.config)) {
-                me[configName] = config[configName];
-                Ext.Logger.warn('Applied config as instance property: "' + configName + '"', me);
-            }
-        }
-        //</debug>
         me.initConfig(config);
     },
 
@@ -106492,7 +106607,17 @@ Ext.define('Ext.form.Panel', {
          * @cfg {Boolean} multipartDetection
          * If this is enabled the form will automatically detect the need to use 'multipart/form-data' during submission.
          */
-        multipartDetection: true
+        multipartDetection: true,
+
+        /**
+         * @cfg {Boolean} enableSubmissionForm
+         * The submission form is generated but never added to the dom. It is a submittable version of your form panel, allowing for fields
+         * that are not simple textfields to be properly submitted to servers. It will also send values that are easier to parse
+         * with server side code.
+         *
+         * If this is false we will attempt to subject the raw form inside the form panel.
+         */
+        enableSubmissionForm: true
     },
 
     getElementConfig: function() {
@@ -106688,8 +106813,12 @@ Ext.define('Ext.form.Panel', {
      */
     submit: function(options, e) {
         var me = this,
-            form = me.element.dom || {},
-            formValues;
+            formValues = me.getValues(me.getStandardSubmit() || !options.submitDisabled),
+            form = me.element.dom || {};
+
+        if(this.getEnableSubmissionForm()) {
+            form = this.createSubmissionForm(form, formValues);
+        }
 
         options = Ext.apply({
             url : me.getUrl() || form.action,
@@ -106704,15 +106833,48 @@ Ext.define('Ext.form.Panel', {
             failure : null
         }, options || {});
 
-        formValues = me.getValues(me.getStandardSubmit() || !options.submitDisabled);
-
         return me.fireAction('beforesubmit', [me, formValues, options, e], 'doBeforeSubmit');
     },
 
-    doBeforeSubmit: function(me, formValues, options) {
-        var form = me.element.dom || {};
+    createSubmissionForm: function(form, values) {
+        var fields = this.getFields(),
+            name, input, field, fileinputElement, inputComponent;
 
-        var multipartDetected = false;
+        if(form.nodeType === 1) {
+            form = form.cloneNode(false);
+
+            for (name in values) {
+                input = document.createElement("input");
+                input.setAttribute("type", "text");
+                input.setAttribute("name", name);
+                input.setAttribute("value", values[name]);
+                form.appendChild(input);
+            }
+        }
+
+        for (name in fields) {
+            if (fields.hasOwnProperty(name)) {
+                field = fields[name];
+                if(field.isFile) {
+                    if(!form.$fileswap) form.$fileswap = [];
+
+                    inputComponent = field.getComponent().input;
+                    fileinputElement = inputComponent.dom;
+                    input = fileinputElement.cloneNode(true);
+                    fileinputElement.parentNode.insertBefore(input, fileinputElement.nextSibling);
+                    form.appendChild(fileinputElement);
+                    form.$fileswap.push({original: fileinputElement, placeholder: input});
+                }
+            }
+        }
+
+        return form;
+    },
+
+    doBeforeSubmit: function(me, formValues, options) {
+        var form = options.form || {},
+            multipartDetected = false;
+
         if(this.getMultipartDetection() === true) {
             this.getFieldsAsArray().forEach(function(field) {
                 if(field.isFile === true) {
@@ -106829,10 +106991,22 @@ Ext.define('Ext.form.Panel', {
                     options.headers || {}
                 );
                 request.callback = function(callbackOptions, success, response) {
-                    var me = this,
-                        responseText = response.responseText,
+                    var responseText = response.responseText,
                         responseXML = response.responseXML,
                         statusResult = Ext.Ajax.parseStatus(response.status, response);
+
+                    if(form.$fileswap) {
+                        var original, placeholder;
+                        Ext.each(form.$fileswap, function(item) {
+                            original = item.original;
+                            placeholder = item.placeholder;
+
+                            placeholder.parentNode.insertBefore(original, placeholder.nextSibling);
+                            placeholder.parentNode.removeChild(placeholder);
+                        });
+                        form.$fileswap = null;
+                        delete form.$fileswap;
+                    }
 
                     me.setMasked(false);
 
@@ -107186,7 +107360,7 @@ Ext.define('Ext.form.Panel', {
         // Function which you give a field and a name, and it will add it into the values
         // object accordingly
         addValue = function(field, name) {
-            if (!all && (!name || name === 'null')) {
+            if (!all && (!name || name === 'null') || field.isFile) {
                 return;
             }
 
@@ -107370,9 +107544,6 @@ Ext.define('Ext.form.Panel', {
      * @deprecated 2.0.0 Please use {@link #setMasked} instead.
      */
     showMask: function(cfg, target) {
-        //<debug>
-        Ext.Logger.warn('showMask is now deprecated. Please use Ext.form.Panel#setMasked instead');
-        //</debug>
 
         cfg = Ext.isObject(cfg) ? cfg.message : cfg;
 
@@ -107715,7 +107886,7 @@ Ext.define('Ext.fx.runner.Css', {
             formattedName = cache[name];
 
         if (!formattedName) {
-            if (!Ext.feature.has.CssTransformNoPrefix && this.prefixedProperties[name]) {
+            if ((Ext.os.is.Tizen || !Ext.feature.has.CssTransformNoPrefix) && this.prefixedProperties[name]) {
                 formattedName = this.vendorPrefix + name;
             }
             else {
@@ -107744,12 +107915,6 @@ Ext.define('Ext.fx.runner.Css', {
                 unit = value.match(this.lengthUnitRegex)[1];
 
                 if (unit.length > 0) {
-                    //<debug error>
-                    if (unit !== lengthUnit) {
-                        Ext.Logger.error("Length unit: '" + unit + "' in value: '" + value + "' of property: '" + name + "' is not " +
-                            "valid for animation. Only 'px' is allowed");
-                    }
-                    //</debug>
                 }
                 else {
                     return value + lengthUnit;
@@ -108910,447 +109075,16 @@ Ext.define('Ext.fx.runner.CssAnimation', {
     }
 });
 
-//<feature logger>
-Ext.define('Ext.log.Base', {
-    config: {},
 
-    constructor: function(config) {
-        this.initConfig(config);
 
-        return this;
-    }
-});
-//</feature>
 
-//<feature logger>
-/**
- * @class Ext.Logger
- * Logs messages to help with debugging.
- *
- * ## Example
- *
- *     Ext.Logger.deprecate('This method is no longer supported.');
- *
- * @singleton
- */
-(function() {
-var Logger = Ext.define('Ext.log.Logger', {
 
-    extend:  Ext.log.Base ,
 
-    statics: {
-        defaultPriority: 'info',
 
-        priorities: {
-            /**
-             * @method verbose
-             * Convenience method for {@link #log} with priority 'verbose'.
-             */
-            verbose:    0,
-            /**
-             * @method info
-             * Convenience method for {@link #log} with priority 'info'.
-             */
-            info:       1,
-            /**
-             * @method deprecate
-             * Convenience method for {@link #log} with priority 'deprecate'.
-             */
-            deprecate:  2,
-            /**
-             * @method warn
-             * Convenience method for {@link #log} with priority 'warn'.
-             */
-            warn:       3,
-            /**
-             * @method error
-             * Convenience method for {@link #log} with priority 'error'.
-             */
-            error:      4
-        }
-    },
 
-    config: {
-        enabled: true,
-        minPriority: 'deprecate',
-        writers: {}
-    },
 
-    /**
-     * Logs a message to help with debugging.
-     * @param {String} message  Message to log.
-     * @param {Number} priority Priority of the log message.
-     */
-    log: function(message, priority, callerId) {
-        if (!this.getEnabled()) {
-            return this;
-        }
 
-        var statics = Logger,
-            priorities = statics.priorities,
-            priorityValue = priorities[priority],
-            caller = this.log.caller,
-            callerDisplayName = '',
-            writers = this.getWriters(),
-            event, i, originalCaller;
 
-        if (!priority) {
-            priority = 'info';
-        }
-
-        if (priorities[this.getMinPriority()] > priorityValue) {
-            return this;
-        }
-
-        if (!callerId) {
-            callerId = 1;
-        }
-
-        if (Ext.isArray(message)) {
-            message = message.join(" ");
-        }
-        else {
-            message = String(message);
-        }
-
-        if (typeof callerId == 'number') {
-            i = callerId;
-
-            do {
-                i--;
-
-                caller = caller.caller;
-
-                if (!caller) {
-                    break;
-                }
-
-                if (!originalCaller) {
-                    originalCaller = caller.caller;
-                }
-
-                if (i <= 0 && caller.displayName) {
-                    break;
-                }
-            }
-            while (caller !== originalCaller);
-
-            callerDisplayName = Ext.getDisplayName(caller);
-        }
-        else {
-            caller = caller.caller;
-            callerDisplayName = Ext.getDisplayName(callerId) + '#' + caller.$name;
-        }
-
-        event = {
-            time: Ext.Date.now(),
-            priority: priorityValue,
-            priorityName: priority,
-            message: message,
-            caller: caller,
-            callerDisplayName: callerDisplayName
-        };
-
-        for (i in writers) {
-            if (writers.hasOwnProperty(i)) {
-                writers[i].write(Ext.merge({}, event));
-            }
-        }
-
-        return this;
-    }
-
-}, function() {
-    Ext.Object.each(this.priorities, function(priority) {
-        this.override(priority, function(message, callerId) {
-            if (!callerId) {
-                callerId = 1;
-            }
-
-            if (typeof callerId == 'number') {
-                callerId += 1;
-            }
-
-            this.log(message, priority, callerId);
-        });
-    }, this);
-});
-
-})();
-//</feature>
-
-//<feature logger>
-Ext.define('Ext.log.filter.Filter', {
-    extend:  Ext.log.Base ,
-
-    accept: function(event) {
-        return true;
-    }
-});
-//</feature>
-
-//<feature logger>
-Ext.define('Ext.log.filter.Priority', {
-    extend:  Ext.log.filter.Filter ,
-
-    config: {
-        minPriority: 1
-    },
-
-    accept: function(event) {
-        return event.priority >= this.getMinPriority();
-    }
-});
-//</feature>
-
-//<feature logger>
-Ext.define('Ext.log.formatter.Formatter', {
-    extend:  Ext.log.Base ,
-
-    config: {
-        messageFormat: "{message}"
-    },
-
-    format: function(event) {
-        return this.substitute(this.getMessageFormat(), event);
-    },
-
-    substitute: function(template, data) {
-        var name, value;
-
-        for (name in data) {
-            if (data.hasOwnProperty(name)) {
-                value = data[name];
-
-                template = template.replace(new RegExp("\\{" + name + "\\}", "g"), value);
-            }
-        }
-
-        return template;
-    }
-});
-//</feature>
-
-//<feature logger>
-Ext.define('Ext.log.formatter.Default', {
-    extend:  Ext.log.formatter.Formatter ,
-
-    config: {
-        messageFormat: "[{priorityName}][{callerDisplayName}] {message}"
-    },
-
-    format: function(event) {
-        var event = Ext.merge({}, event, {
-                priorityName: event.priorityName.toUpperCase()
-            });
-
-        return this.callParent([event]);
-    }
-});
-//</feature>
-
-//<feature logger>
-Ext.define('Ext.log.formatter.Identity', {
-    extend:  Ext.log.formatter.Default ,
-
-    config: {
-        messageFormat: "[{osIdentity}][{browserIdentity}][{timestamp}][{priorityName}][{callerDisplayName}] {message}"
-    },
-
-    format: function(event) {
-        event.timestamp = Ext.Date.toString();
-        event.browserIdentity = Ext.browser.name + ' ' + Ext.browser.version;
-        event.osIdentity = Ext.os.name + ' ' + Ext.os.version;
-
-        return this.callParent(arguments);
-    }
-});
-//</feature>
-
-//<feature logger>
-Ext.define('Ext.log.writer.Writer', {
-    extend:  Ext.log.Base ,
-
-                                              
-
-    config: {
-        formatter: null,
-        filters: {}
-    },
-
-    constructor: function() {
-        this.activeFilters = [];
-
-        return this.callParent(arguments);
-    },
-
-    updateFilters: function(filters) {
-        var activeFilters = this.activeFilters,
-            i, filter;
-
-        activeFilters.length = 0;
-
-        for (i in filters) {
-            if (filters.hasOwnProperty(i)) {
-                filter = filters[i];
-                activeFilters.push(filter);
-            }
-        }
-    },
-
-    write: function(event) {
-        var filters = this.activeFilters,
-            formatter = this.getFormatter(),
-            i, ln, filter;
-
-        for (i = 0,ln = filters.length; i < ln; i++) {
-            filter = filters[i];
-
-            if (!filters[i].accept(event)) {
-                return this;
-            }
-        }
-
-        if (formatter) {
-            event.message = formatter.format(event);
-        }
-
-        this.doWrite(event);
-
-        return this;
-    },
-
-    // @private
-    doWrite: Ext.emptyFn
-});
-//</feature>
-
-//<feature logger>
-Ext.define('Ext.log.writer.Console', {
-
-    extend:  Ext.log.writer.Writer ,
-
-    config: {
-        throwOnErrors: true,
-        throwOnWarnings: false
-    },
-
-    doWrite: function(event) {
-        var message = event.message,
-            priority = event.priorityName,
-            consoleMethod;
-
-        if (priority === 'error' && this.getThrowOnErrors()) {
-            throw new Error(message);
-        }
-
-        if (typeof console !== 'undefined') {
-            consoleMethod = priority;
-
-            if (consoleMethod === 'deprecate') {
-                consoleMethod = 'warn';
-            }
-
-            if (consoleMethod === 'warn' && this.getThrowOnWarnings()) {
-                throw new Error(message);
-            }
-
-            if (!(consoleMethod in console)) {
-                consoleMethod = 'log';
-            }
-
-            console[consoleMethod](message);
-        }
-    }
-});
-//</feature>
-
-//<feature logger>
-Ext.define('Ext.log.writer.DocumentTitle', {
-
-    extend:  Ext.log.writer.Writer ,
-
-    doWrite: function(event) {
-        var message = event.message;
-
-        document.title = message;
-    }
-});
-//</feature>
-
-//<feature logger>
-Ext.define('Ext.log.writer.Remote', {
-    extend:  Ext.log.writer.Writer ,
-
-               
-                  
-      
-
-    config: {
-        batchSendDelay: 100,
-        onFailureRetryDelay: 500,
-        url: ''
-    },
-
-    isSending: false,
-
-    sendingTimer: null,
-
-    constructor: function() {
-        this.queue = [];
-
-        this.send = Ext.Function.bind(this.send, this);
-
-        return this.callParent(arguments);
-    },
-
-    doWrite: function(event) {
-        var queue = this.queue;
-        queue.push(event.message);
-
-        if (!this.isSending && this.sendingTimer === null) {
-            this.sendingTimer = setTimeout(this.send, this.getBatchSendDelay());
-        }
-    },
-
-    send: function() {
-        var queue = this.queue,
-            messages = queue.slice();
-
-        queue.length = 0;
-
-        this.sendingTimer = null;
-
-        if (messages.length > 0) {
-            this.doSend(messages);
-        }
-    },
-
-    doSend: function(messages) {
-        var me = this;
-
-        me.isSending = true;
-
-        Ext.Ajax.request({
-            url: me.getUrl(),
-            method: 'POST',
-            params: {
-                messages: messages.join("\n")
-            },
-            success: function(){
-                me.isSending = false;
-                me.send();
-            },
-            failure: function() {
-                setTimeout(function() {
-                    me.doSend(messages);
-                }, me.getOnFailureRetryDelay());
-            },
-            scope: me
-        });
-    }
-});
-//</feature>
 
 /**
  * This component is used in {@link Ext.navigation.View} to control animations in the toolbar. You should never need to
@@ -110173,12 +109907,6 @@ Ext.define('Ext.navigation.View', {
             });
         }
 
-        //<debug>
-        var layout = me.getLayout();
-        if (layout && !layout.isCard) {
-            Ext.Logger.error('The base layout for a NavigationView must always be a Card Layout');
-        }
-        //</debug>
     },
 
     /**
@@ -110291,13 +110019,6 @@ Ext.define('Ext.navigation.View', {
 
         // Update the title container
         if (this.$titleContainer) {
-            //<debug>
-            if (!this.$titleContainer.setTitle) {
-                Ext.Logger.error('You have selected to display a title in a component that does not \
-                    support titles in NavigationView. Please remove the `title` configuration from your \
-                    NavigationView item, or change it to a component that has a `setTitle` method.');
-            }
-            //</debug>
 
             var item = innerItems[innerItems.length - 2];
             this.$titleContainer.setTitle((item.getTitle) ? item.getTitle() : item.config.title);
@@ -110348,10 +110069,6 @@ Ext.define('Ext.navigation.View', {
 
         if (config.title) {
             delete config.title;
-            //<debug>
-            Ext.Logger.warn("Ext.navigation.View: The 'navigationBar' configuration does not accept a 'title' property. You " +
-                            "set the title of the navigationBar by giving this navigation view's children a 'title' property.");
-            //</debug>
         }
 
         config.view = this;
@@ -110493,13 +110210,6 @@ Ext.define('Ext.navigation.View', {
      */
     updateTitleContainerTitle: function(title) {
         if (this.$titleContainer) {
-            //<debug>
-            if (!this.$titleContainer.setTitle) {
-                Ext.Logger.error('You have selected to display a title in a component that does not \
-                    support titles in NavigationView. Please remove the `title` configuration from your \
-                    NavigationView item, or change it to a component that has a `setTitle` method.');
-            }
-            //</debug>
 
             this.$titleContainer.setTitle(title);
         }
@@ -111619,11 +111329,6 @@ Ext.define('Ext.tab.Bar', {
         var newTabInstance = this.parseActiveTab(newActiveTab);
 
         if (!newTabInstance) {
-            // <debug warn>
-            if (oldActiveTab) {
-                Ext.Logger.warn('Trying to set a non-existent activeTab');
-            }
-            // </debug>
             return;
         }
         return newTabInstance;
@@ -111982,13 +111687,6 @@ Ext.define('Ext.tab.Panel', {
             tabConfig.badgeText = tabBadgeText;
         }
 
-        //<debug warn>
-        if (!currentTabInstance && !tabConfig.title && !tabConfig.iconCls) {
-            if (!tabConfig.title && !tabConfig.iconCls) {
-                Ext.Logger.error('Adding a card to a tab container without specifying any tab configuration');
-            }
-        }
-        //</debug>
 
         tabInstance = Ext.factory(tabConfig, Ext.tab.Tab, currentTabInstance);
 
@@ -113482,23 +113180,14 @@ Ext.define('Ext.viewport.Default', {
         }
 
         if (!menu) {
-            //<debug error>
-            Ext.Logger.error("You must specify a side to dock the menu.");
-            //</debug>
             return;
         }
 
         if (!config.side) {
-            //<debug error>
-            Ext.Logger.error("You must specify a side to dock the menu.");
-            //</debug>
             return;
         }
 
         if (['left', 'right', 'top', 'bottom'].indexOf(config.side) == -1) {
-            //<debug error>
-            Ext.Logger.error("You must specify a valid side (left, right, top or botom) to dock the menu.");
-            //</debug>
             return;
         }
 
@@ -114231,9 +113920,6 @@ Ext.define('Ext.viewport.Android', {
             this.orientationChanging = false;
 
         }, function() {
-            //<debug error>
-            Ext.Logger.error("Timeout waiting for viewport's outerHeight to change before firing orientationchange", this);
-            //</debug>
         });
 
         return this;
@@ -114482,9 +114168,6 @@ Ext.define('Ext.viewport.Ios', {
 
                 this.fireMaximizeEvent();
             }, function() {
-                //<debug error>
-                Ext.Logger.error("Timeout waiting for window.innerHeight to change", this);
-                //</debug>
                 height = stretchHeights[orientation] = this.getWindowHeight();
                 this.setHeight(height);
                 this.fireMaximizeEvent();
@@ -114624,8 +114307,15 @@ Ext.define('Ext.viewport.Ios', {
                     window.scrollTo(0, 0);
 
                     this.callOverridden(arguments);
+                },
+
+                onElementBlur: function() {
+                    this.callOverridden(arguments);
+                    if (window.scrollY !== 0) {
+                        window.scrollTo(0, 0);
+                    }
                 }
-            })
+            });
         }
     }
 });

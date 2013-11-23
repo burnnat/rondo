@@ -31,7 +31,7 @@ else
 	fi
 	
 	# Download and Install Sencha Cmd
-	curl -o bundle/sencha-cmd.run.zip http://cdn.sencha.com/cmd/4.0.0.203/SenchaCmd-4.0.0.203-linux-x64.run.zip
+	curl -o bundle/sencha-cmd.run.zip http://cdn.sencha.com/cmd/4.0.1.45/SenchaCmd-4.0.1.45-linux-x64.run.zip
 	unzip -p bundle/sencha-cmd.run.zip > bundle/sencha-cmd.run
 	rm bundle/sencha-cmd.run.zip
 	
