@@ -25,7 +25,12 @@ var Note = new Schema(
 		duration: {
 			type: String,
 			required: true,
-			match: /^([whq1248]|16|32|64)d*[nrhms]?$/
+			match: /^([whq1248]|16|32|64)d*?$/
+		},
+		rest: {
+			type: Boolean,
+			required: false,
+			'default': false
 		}
 	},
 	{

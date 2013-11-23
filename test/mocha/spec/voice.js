@@ -57,12 +57,14 @@ test.run({
 				{
 					pitches: ['C4', 'Bb3', 'f##3', 'En3'],
 					ties: [true, true, false, true],
-					duration: 'hd'
+					duration: 'hd',
+					rest: false
 				},
 				{
 					pitches: ['d3'],
 					ties: [false],
-					duration: 'qr'
+					duration: 'q',
+					rest: true
 				}
 			]
 		};
@@ -82,12 +84,13 @@ test.run({
 	updateRecord: function(record) {
 		var notes = record.notes;
 		
-		notes[1].duration = '8r'
+		notes[1].duration = '8';
 		
 		notes.push({
 			pitches: ['Bb2'],
 			ties: [false],
-			duration: '8'
+			duration: '8',
+			rest: false
 		});
 	}
 });
