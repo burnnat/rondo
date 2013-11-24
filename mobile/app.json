@@ -39,7 +39,7 @@
 	 */
 	"js": [
 		{
-			"path": "../common/touch/sencha-touch.js",
+			"path": "../common/touch/sencha-touch-debug.js",
 			"x-bootstrap": true
 		},
 		{

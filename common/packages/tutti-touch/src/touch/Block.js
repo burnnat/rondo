@@ -275,6 +275,11 @@ Ext.define('Tutti.touch.Block', {
 		+ ')';
 	},
 	
+	/**
+	 * @protected
+	 * 
+	 * @return {CanvasRenderingContext2D}
+	 */
 	getContext: function() {
 		return this.getContextFor(this.canvasEl);
 	},
@@ -289,7 +294,7 @@ Ext.define('Tutti.touch.Block', {
 	},
 	
 	/**
-	 * @private
+	 * @protected
 	 * 
 	 * @param {Ext.dom.Element} el
 	 * 

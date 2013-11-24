@@ -34,6 +34,11 @@
 		"grunt-sauce-driver": "~0.1.0",
 		"grunt-debug": "~0.0.1",
 		
+		"esprima": "~1.0.4",
+		"combined-stream": "~0.0.4",
+		"through": "~2.3.4",
+		"mkdirp": "~0.3.5",
+		
 		"mocha": "~1.14.0",
 		"supertest": "~0.8.1",
 		

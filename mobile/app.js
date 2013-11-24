@@ -67,7 +67,9 @@ Ext.application({
 	
 	launch: function() {
 		//<debug>
-		Ext.Logger.setMinPriority('info');
+		if (Ext.Logger) {
+			Ext.Logger.setMinPriority('info');
+		}
 		//</debug>
 		
 		// Destroy the #appLoadingIndicator element

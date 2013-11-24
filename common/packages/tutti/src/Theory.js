@@ -30,7 +30,7 @@ Ext.define('Tutti.Theory', {
 	 */
 	ALIASED_DURATIONS: {},
 	
-	init: function() {
+	constructor: function() {
 		var roots = Vex.Flow.Music.roots;
 		var scaleLength = roots.length;
 		

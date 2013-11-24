@@ -88,6 +88,19 @@ Ext.define('Tutti.touch.score.Measure', {
 		});
 	},
 	
+	/**
+	 * @protected
+	 * 
+	 * @param {Ext.dom.Element} el
+	 * 
+	 * @return {CanvasRenderingContext2D}
+	 */
+	getContextFor: function(el) {
+		// The VexFlow renderer enhances the context object with
+		// some methods not found on "normal" HTML5 canvas contexts.
+		return new Vex.Flow.Renderer(el.dom, Vex.Flow.Renderer.Backends.CANVAS).getContext();
+	},
+	
 	getStaff: function(staffData) {
 		var staff = null;
 		
