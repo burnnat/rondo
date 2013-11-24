@@ -173,10 +173,8 @@ module.exports = function(grunt) {
 					url: '<%= domain %>/test/siesta/mobile.html',
 					script: saucedriver.siesta,
 					local: grunt.option('local'),
-					autoclose: false,
 					testname: "mobile component tests",
-					tags: ["component"],
-					ignoreFailure: true
+					tags: ["component"]
 				})
 			},
 			
@@ -287,7 +285,7 @@ module.exports = function(grunt) {
 		"express:build",
 		"mochaTest:server",
 		"saucedriver:jasmine-mobile",
-		"saucedriver:siesta-mobile",
+//		"saucedriver:siesta-mobile",
 		"saucedriver:selenium-mobile"
 	]);
 	
