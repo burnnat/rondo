@@ -69,7 +69,7 @@ var getVexClass = function(node, strict) {
 				var name = child.name;
 				
 				// Class names are capitalized, but not entirely caps.
-				if (/[A-Z]/.test(name[0]) && !/^[A-Z]+$/.test(name)) {
+				if (/[A-Z]/.test(name[0]) && name.toUpperCase() !== name) {
 					segments.push(child.name);
 				}
 				else {
@@ -158,6 +158,10 @@ var parseClasses = function(file, content) {
 var writeWithHeader = function(file, callback) {
 	var data = fileData[file];
 	
+	if (!data) {
+		return callback();
+	}
+	
 	var combined = combine.create();
 	
 	// Setup header stream
@@ -190,15 +194,14 @@ var writeWithHeader = function(file, callback) {
 	combined.append(header);
 	
 	// Setup source content stream
-	var src = path.join(srcDir, file);
-	var input = fs.createReadStream(src);
+	combined.append(getFileStream(file));
 	
-	input.on('error', function(err) {
-		console.error('Error reading file: ' + src);
-		console.error(err);
-	});
-	
-	combined.append(input);
+	// Add any files to be merged into this
+	if (data.merge) {
+		data.merge.forEach(function(child) {
+			combined.append(getFileStream(child));
+		});
+	}
 	
 	// Setup output stream
 	var dest = path.join(destDir, file);
@@ -211,10 +214,24 @@ var writeWithHeader = function(file, callback) {
 		console.error(err);
 	});
 	
+	output.on('end', callback);
+	
 	combined.pipe(output);
 	
 	// Begin writing
 	header.resume();
+};
+
+var getFileStream = function(file) {
+	var src = path.join(srcDir, file);
+	var input = fs.createReadStream(src);
+	
+	input.on('error', function(err) {
+		console.error('Error reading file: ' + src);
+		console.error(err);
+	});
+	
+	return input;
 };
 
 glob(
@@ -260,6 +277,22 @@ glob(
 				);
 			},
 			function(callback) {
+				// Merge table properties into VexFlow namespace file
+				var parent = 'flow.js';
+				var child = 'tables.js';
+				
+				if (fileData[parent] && fileData[child]) {
+					fileData[parent].merge = [child];
+					delete fileData[child];
+				}
+				
+				// Ignore circular reference
+				var data = fileData['notehead.js'];
+				
+				if (data) {
+					delete data.refs['Vex.Flow.StaveNote'];
+				}
+				
 				console.log('Writing data...');
 				
 				async.each(

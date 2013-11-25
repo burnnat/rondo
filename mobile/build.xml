@@ -35,4 +35,20 @@
 			<target name="-after-build"/>
 	-->
 
+	<target name="-after-js">
+		<x-sencha-command>
+			compile
+				--options=${build.options}
+				union
+					--namespace=Rondo,Tutti
+					--recursive
+				and
+				exclude
+					--file=app.js
+				and
+				concat
+					--out=${build.dir}/${test.file}
+		</x-sencha-command>
+	</target>
+
 </project>
