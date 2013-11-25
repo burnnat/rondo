@@ -90,7 +90,7 @@ else if (env == 'development' || env == 'staging') {
 	
 	var dirs = isStaging
 		? {
-			'mobile': 'build/rondo-mobile/production',
+			'mobile': 'build/mobile/production',
 			'test': 'test'
 		}
 		: {

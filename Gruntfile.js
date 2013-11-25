@@ -83,7 +83,6 @@ module.exports = function(grunt) {
 		
 		clean: {
 			build: [
-				"archive",
 				"build/**",
 				"!build"
 			],
@@ -200,21 +199,16 @@ module.exports = function(grunt) {
 		copy: {
 			mobile: {
 				expand: true,
-				cwd: 'build/rondo-mobile/production/',
+				cwd: 'build/mobile/production/',
 				src: '**',
 				dest: '<%= deployTarget %>/build/mobile/'
 			},
 			
 			desktop: {
 				expand: true,
-				cwd: 'build/rondo-desktop/production/',
+				cwd: 'build/desktop/production/',
 				src: '**',
 				dest: '<%= deployTarget %>/build/desktop/'
-			},
-			
-			prepublish: {
-				src: 'node_modules/grunt-sauce-driver/reporters/siesta.js',
-				dest: 'test/siesta/reporter.js'
 			},
 			
 			deploy: {
@@ -228,12 +222,12 @@ module.exports = function(grunt) {
 				expand: true,
 				cwd: '<%= deployTarget %>',
 				src: 'archive/**',
-				dest: path.relative(local['deploy.dir'], '.')
+				dest: path.relative(local['deploy.dir'], 'build')
 			},
 			
 			postbuild: {
 				expand: true,
-				cwd: 'archive',
+				cwd: 'build/archive',
 				src: '**',
 				dest: '<%= deployTarget %>/archive'
 			}

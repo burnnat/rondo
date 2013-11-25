@@ -51,7 +51,7 @@
 	"scripts": {
 		"start": "node ./server/web.js production",
 		"test": "node ./node_modules/grunt-cli/bin/grunt test",
-		"prepublish": "node ./node_modules/grunt-cli/bin/grunt copy:prepublish"
+		"prepublish": "node prepublish.js"
 	},
 	
 	"engines": {
