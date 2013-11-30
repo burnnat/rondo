@@ -98,7 +98,9 @@ Ext.define('Rondo.controller.Score', {
 				this.getNotePanel(true, true).showBy(this.getRest(), 'bc-tc?');
 			}
 			else if (active.isNote) {
-				active.getData().set('rest', true);
+				active.getData().set({
+					rest: true
+				});
 			}
 		}
 	},
@@ -148,6 +150,8 @@ Ext.define('Rondo.controller.Score', {
 				var subduration;
 				var subtied;
 				
+				var isRest = panel.getRests();
+				
 				while (ticks.numerator > 0) {
 					subduration = subdivisions.pop();
 					ticks.subtract(Tutti.Theory.durationToTicks(subduration));
@@ -162,9 +166,14 @@ Ext.define('Rondo.controller.Score', {
 								index++,
 								new Tutti.model.Note({
 									pitches: pitches,
-									ties: Ext.Array.map(pitches, function() { return subtied; }),
+									ties: isRest
+										? []
+										: Ext.Array.map(
+											pitches,
+											function() { return subtied; }
+										),
 									duration: subduration,
-									rest: panel.getRests()
+									rest: isRest
 								})
 							);
 						}

@@ -36,7 +36,7 @@ Ext.define('Tutti.touch.score.Note', {
 		
 		this.primitive = new Vex.Flow.StaveNote({
 			keys: rest
-				? [Tutti.Theory.getMiddleLine(clef)]
+				? ['r/4']
 				: data.get('pitches'),
 			duration: data.get('duration') + (rest ? 'r' : ''),
 			clef: clef
@@ -135,6 +135,10 @@ Ext.define('Tutti.touch.score.Note', {
 	 * @param {Object} scope
 	 */
 	eachPitch: function(fn, scope) {
+		if (this.getData().get('rest')) {
+			return;
+		}
+		
 		var pitches = this.primitive.keys;
 		var length = pitches.length;
 		
