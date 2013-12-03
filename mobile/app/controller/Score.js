@@ -31,7 +31,7 @@ Ext.define('Rondo.controller.Score', {
 		
 		refs: {
 			keyboard: 'sketchviewer keyboard',
-			rest: 'sketchviewer button',
+			rest: 'sketchviewer button#rest',
 			score: 'score',
 			measure: 'score block'
 		}

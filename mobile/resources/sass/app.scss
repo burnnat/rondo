@@ -7,9 +7,9 @@
 @include icon-font(
 	'Bravina',
 	inline-font-files(
-		'bravina/bravina.woff', woff,
-		'bravina/bravina.ttf', truetype,
-		'bravina/bravina.svg', svg
+		'bravina/Bravina.woff', woff,
+		'bravina/Bravina.ttf', truetype,
+		'bravina/Bravina.svg', svg
 	)
 );
 
@@ -30,6 +30,41 @@
 
 @include icon('tie', '\e020', 'Bravina');
 
+@include icon('chevron-up', '\e100', 'Bravina');
+@include icon('chevron-down', '\e101', 'Bravina');
+
 .x-desktop .x-layout-box > .x-layout-box-item {
 	margin-right: -1px;
+}
+
+@include sencha-button-ui('neutral', #ccc);
+
+.x-toolbar .x-button.x-button-fullsize {
+	.x-button-label {
+		font-size: 1em;
+	}
+	
+	.x-button-icon:before {
+		font-size: 1.6em;
+		line-height: 1em;
+	}
+}
+
+.x-segmentedbutton.x-segmentedbutton-vertical .x-button {
+	@if $include-border-radius {
+		@include border-radius(0);
+
+		&.x-first {
+				@include border-top-radius($button-radius);
+		}
+
+		&.x-last {
+			@include border-bottom-radius($button-radius);
+		}
+	}
+
+	&:not(.x-first) {
+		border-left: 1px solid #061F31;
+		border-top: 0;
+	}
 }
