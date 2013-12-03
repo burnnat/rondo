@@ -8,21 +8,12 @@ Ext.define('Tutti.touch.BlockItem', {
 	
 	constructor: function(config) {
 		this.initConfig(config);
-		this.savedContext = [];
 	},
 	
 	/**
 	 * @param {RenderingContext} context
 	 */
 	draw: Ext.emptyFn,
-	
-	saveContext: function(context, props) {
-		this.savedContext.push(Ext.copyTo({}, context, props));
-	},
-	
-	restoreContext: function(context) {
-		Ext.apply(context, this.savedContext.pop());
-	},
 	
 	getPageBox: function() {
 		var bounds = this.getBoundingBox();

@@ -26,7 +26,7 @@ Ext.define('Tutti.touch.score.Cursor', {
 			return;
 		}
 		
-		this.saveContext(context, ['lineWidth', 'lineCap']);
+		context.save();
 		
 		var box = this.getBoundingBox();
 		var cursorX = this.getPosition();
@@ -54,7 +54,7 @@ Ext.define('Tutti.touch.score.Cursor', {
 		
 		context.stroke();
 		
-		this.restoreContext(context);
+		context.restore();
 	},
 	
 	getBoundingBox: function() {

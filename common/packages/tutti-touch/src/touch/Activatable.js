@@ -20,7 +20,7 @@ Ext.define('Tutti.touch.Activatable', {
 	},
 	
 	beforeDraw: function(context) {
-		this.saveContext(context, ['fillStyle', 'strokeStyle']);
+		context.save();
 		
 		if (this.getActive()) {
 			var color = this.getActiveColor();
@@ -30,7 +30,7 @@ Ext.define('Tutti.touch.Activatable', {
 	},
 	
 	afterDraw: function(context) {
-		this.restoreContext(context);
+		context.restore();
 	},
 	
 	updateActive: function() {

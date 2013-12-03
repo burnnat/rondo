@@ -93,7 +93,7 @@ Ext.define('Tutti.touch.Block', {
 			},
 			
 			draw: function(context) {
-				this.saveContext(context, ['font', 'fillStyle']);
+				context.save();
 				
 				var height = this.getBlockHeight();
 				
@@ -106,7 +106,7 @@ Ext.define('Tutti.touch.Block', {
 				context.fillStyle = '#CDF';
 				context.fillText('i', 5.5, height - 9);
 				
-				this.restoreContext(context);
+				context.restore();
 			},
 			
 			getBoundingBox: function() {
