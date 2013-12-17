@@ -39,7 +39,7 @@ Ext.define('Rondo.controller.Sketches', {
 			'sketches button[iconCls="trash"]': {
 				tap: 'onDelete'
 			},
-			'sketches button[iconCls="refresh"]': {
+			'menu button[iconCls="refresh"]': {
 				tap: 'onRefresh'
 			},
 			editor: {

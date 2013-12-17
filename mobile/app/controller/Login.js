@@ -28,6 +28,8 @@ Ext.define('Rondo.controller.Login', {
 			Rondo.User.logout();
 		}
 		else {
+			Ext.Viewport.hideAllMenus();
+			
 			this.returnTo = Ext.Viewport.getActiveItem();
 			var panel = this.loginPanel = new Rondo.login.Panel();
 			

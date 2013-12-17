@@ -68,3 +68,7 @@
 		border-top: 0;
 	}
 }
+
+.x-menu .x-container:not(:last-child) .x-button:last-child {
+	margin-bottom: $sheet-padding;
+}

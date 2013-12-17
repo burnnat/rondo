@@ -28,9 +28,6 @@ Ext.define('Rondo.view.Sketches', {
 						iconCls: 'trash'
 					},
 					{
-						iconCls: 'refresh'
-					},
-					{
 						xtype: 'spacer'
 					},
 					{

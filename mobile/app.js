@@ -39,11 +39,13 @@ Ext.application({
 	],
 	
 	views: [
+		'Menu',
 		'Sketches'
 	],
 	
 	controllers: [
 		'Login',
+		'Menu',
 		'Score'
 	],
 	
@@ -77,6 +79,11 @@ Ext.application({
 		
 		Rondo.User.login();
 		
+		Ext.Viewport.setMenu(
+			new Rondo.view.Menu(),
+			{ side: 'right' }
+		);
+		
 		// Initialize the main view
 		Ext.Viewport.add(
 			new Ext.NavigationView({
@@ -85,8 +92,12 @@ Ext.application({
 				],
 				navigationBar: { 
 					items: {
-						xtype: 'logintoggler',
-						align: 'right'
+						xtype: 'button',
+						iconCls: 'list',
+						align: 'right',
+						handler: function() {
+							Ext.Viewport.toggleMenu('right');
+						}
 					}
 				}
 			})
