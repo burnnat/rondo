@@ -37,6 +37,12 @@ module.exports = {
 				return browser.waitForCondition('Ext.AnimationQueue.isIdle', 2500);
 			};
 			
+			var openMenu = function() {
+				return browser.elementByXPath(xpath.buttonIcon('list'))
+					.then(clickEl('side menu'))
+					.then(waitForAnimation);
+			};
+			
 			var sketchTitle = 'Test Sketch';
 			
 			return (
@@ -47,7 +53,8 @@ module.exports = {
 				})
 				
 				.then(log('Open login pane, click Cancel'))
-				.waitForElementByXPath(xpath.buttonText('Login'), options.testReadyTimeout)
+				.waitForElementByXPath(xpath.buttonIcon('list'), options.testReadyTimeout)
+				.then(openMenu)
 				
 				.elementByXPath(xpath.buttonText('Login'))
 				.then(clickEl('login button'))
@@ -83,6 +90,7 @@ module.exports = {
 				
 				.then(log('Open login pane, select Facebook'))
 				
+				.then(openMenu)
 				.elementByXPath(xpath.buttonText('Login'))
 				.then(clickEl('login button'))
 				.then(waitForAnimation)
@@ -107,7 +115,7 @@ module.exports = {
 				.elementByCss('input[type=submit]')
 				.then(clickEl('submit button'))
 				
-				.waitForElementByXPath(xpath.buttonText('Logout'), options.testReadyTimeout)
+				.waitForElementByXPath(xpath.buttonIcon('list'), options.testReadyTimeout)
 				
 				.then(log('Re-open sketch'))
 				
@@ -117,6 +125,7 @@ module.exports = {
 				
 				.then(log('Logout'))
 				
+				.then(openMenu)
 				.elementByXPath(xpath.buttonText('Logout'))
 				.then(clickEl('logout button'))
 				.waitForElementByXPath(xpath.buttonText('Login'))
