@@ -26,6 +26,10 @@ Ext.define('Rondo.controller.Score', {
 			measure: {
 				blocktap: 'onMeasureTap',
 				blockhold: 'onMeasureHold'
+			},
+			
+			'menu button[iconCls="download"]': {
+				tap: 'onExport'
 			}
 		},
 		
@@ -263,5 +267,9 @@ Ext.define('Rondo.controller.Score', {
 				fn(pitches, notes);
 			}
 		);
+	},
+	
+	onExport: function() {
+		window.location.href = '/api/sketches/' + this.getScore().getSketch().getId() + '/export';
 	}
 });

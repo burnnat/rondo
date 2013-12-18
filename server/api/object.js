@@ -109,6 +109,10 @@ module.exports = {
 		
 		app['delete']('/api/' + name + '/:id', function(req, res) {
 			return Model.findById(req.params.id, function(err, record) {
+				if (err) {
+					return me.failure(res, err);
+				}
+				
 				winston.debug('Deleting %s for owner %s with id: %s', name, req.user._id, req.params.id);
 				
 				return record.remove(function(err) {
@@ -118,6 +122,20 @@ module.exports = {
 				});
 			});
 		});
+		
+		if (object['export']) {
+			app.get('/api/' + name + '/:id/export', function(req, res) {
+				return Model.findById(req.params.id, function(err, record) {
+					if (err) {
+						return me.failure(res, err);
+					}
+					
+					winston.debug('Exporting %s for owner %s with id: %s', name, req.user._id, req.params.id);
+					
+					return object['export'](res, record);
+				});
+			});
+		}
 		
 		object.reset = function(callback) {
 			ConfigModel.findOneAndUpdate(
