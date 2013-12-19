@@ -1,4 +1,6 @@
 var slug = require("slug");
+var async = require("async");
+var mongoose = require("mongoose");
 var builder = require("xmlbuilder");
 
 module.exports = {
@@ -36,57 +38,57 @@ module.exports = {
 			}
 		);
 		
-		var data = 
-			xml
+		xml
 			.attribute('version', '3.0')
 			.element('work')
-				.element('work-title', title)
-				.up()
-			.up()
-			.element('part-list')
-				.element('score-part', { id: 'P1' })
-					.element('part-name', 'Lonely Part')
-					.up()
-				.up()
-			.up()
-			.element('measure', { number: 1 })
-				.element('part', { id: 'P1' })
-					.element('attributes')
-						.element('divisions', 1)
-						.up()
-						.element('key')
-							.element('fifths', 0)
-							.up()
-						.up()
-						.element('time')
-							.element('beats', 4)
-							.up()
-							.element('beat-type', 4)
-							.up()
-						.up()
-						.element('clef')
-							.element('sign', 'G')
-							.up()
-							.element('line', 2)
-							.up()
-						.up()
-					.up()
-					.element('note')
-						.element('pitch')
-							.element('step', 'C')
-							.up()
-							.element('octave', 4)
-							.up()
-						.up()
-						.element('duration', 4)
-						.up()
-						.element('type', 'whole')
-						.up()
-					.up()
-				.up()
-			.up()
-			.end();
+			.element('work-title', title);
 		
-		res.send(data);
+		async.parallel(
+			[
+				function(done) {
+					mongoose.model('Part').find(
+						{
+							sketch_id: sketch.get('_id')
+						},
+						function(err, parts) {
+							if (!err) {
+								var partList = xml.element('part-list');
+								
+								parts.forEach(
+									function(part) {
+										partList
+											.element('score-part', { id: part.get('_id') })
+											.element('part-name', part.get('name'));
+									}
+								);
+							}
+							
+							done(err);
+						}
+					);
+				},
+				function(done) {
+					mongoose.model('Measure').find(
+						{
+							sketch_id: sketch.get('_id')
+						},
+						function(err, measures) {
+							if (!err) {
+								measures.forEach(
+									function(measure, index) {
+										xml.element('measure', { number: index });
+									}
+								);
+							}
+							
+							done(err);
+						}
+					);
+				}
+			],
+			function(err) {
+				res.send(xml.end());
+			}
+		);
 	}
 };
