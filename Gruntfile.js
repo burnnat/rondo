@@ -83,7 +83,6 @@ module.exports = function(grunt) {
 		
 		debug: {
 			options: {
-				fork: false,
 				inspector: true,
 				inspectorArgs: {
 					"web-port": 9222
@@ -130,7 +129,6 @@ module.exports = function(grunt) {
 		
 		express: {
 			options: {
-				background: false,
 				script: './server/web.js',
 				port: '<%= port %>'
 			},

@@ -17,6 +17,7 @@
 		"passport-facebook": "~1.0.2",
 		
 		"async": "~0.2.9",
+		"q": "~0.9.7",
 		"lodash": "~2.4.1",
 		"slug": "~0.4.0",
 		"xmlbuilder": "~1.1.2"
@@ -35,7 +36,7 @@
 		"grunt-mocha-test": "~0.8.1",
 		"grunt-sauce-driver": "~0.1.0",
 		
-		"grunt-debug": "~0.0.2",
+		"grunt-debug": "~0.0.3",
 		"node-inspector": "~0.7.0",
 		
 		"esprima": "~1.0.4",
@@ -45,6 +46,8 @@
 		
 		"mocha": "~1.17.0",
 		"supertest": "~0.8.3",
+		"q-io": "~1.10.6",
+		"node-xml": "~1.0.2",
 		
 		"glob": "~3.2.8",
 		"mustache": "~0.8.1",
