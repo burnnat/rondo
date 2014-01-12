@@ -1,6 +1,7 @@
+var Q = require('q');
 var test = require('../lib/api');
 
-var parent;
+var measure, staff;
 
 test.run({
 	name: 'Voices',
@@ -15,26 +16,37 @@ test.run({
 					}
 				)
 				.then(function(id) {
-					return test.make(
-						'parts',
-						{
-							name: 'Parent Part',
-							group: null,
-							sketch_id: id
-						}
-					);
+					return Q.all([
+						test.make(
+							'parts',
+							{
+								name: 'Parent Part',
+								group: null,
+								sketch_id: id
+							}
+						)
+						.then(function(id) {
+							return test.make(
+								'staves',
+								{
+									clef: 'bass',
+									part_id: id
+								}
+							);
+						}),
+						test.make(
+							'parts',
+							{
+								name: 'Parent Part',
+								group: null,
+								sketch_id: id
+							}
+						)
+					]);
 				})
-				.then(function(id) {
-					return test.make(
-						'staves',
-						{
-							clef: 'bass',
-							part_id: id
-						}
-					);
-				})
-				.then(function(id) {
-					parent = id;
+				.spread(function(staffId, measureId) {
+					staff = staffId;
+					measure = measureId;
 				})
 				.nodeify(done);
 		});
@@ -42,7 +54,8 @@ test.run({
 	
 	getData: function() {
 		return {
-			staff_id: parent,
+			measure_id: measure,
+			staff_id: staff,
 			notes: [
 				{
 					pitches: ['C4', 'Bb3', 'f##3', 'En3'],

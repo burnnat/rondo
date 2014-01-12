@@ -43,6 +43,10 @@ module.exports = {
 	model: 'Voice',
 	
 	fields: {
+		measure_id: {
+			type: Schema.Types.ObjectId,
+			required: true
+		},
 		staff_id: {
 			type: Schema.Types.ObjectId,
 			required: true
