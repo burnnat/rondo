@@ -1,7 +1,9 @@
-var args = process.argv.splice(2);
-
-if (args.length > 0) {
-	process.env.NODE_ENV = args[0];
+if (process.argv[1] === __filename) {
+	var args = process.argv.splice(2);
+	
+	if (args.length > 0) {
+		process.env.NODE_ENV = args[0];
+	}
 }
 
 var fs = require("fs");
