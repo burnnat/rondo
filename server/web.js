@@ -11,15 +11,35 @@ var express = require("express");
 var mongoose = require("mongoose");
 var winston = require("winston");
 
+var app = express();
+var env = app.get('env');
+
+// Set default logging levels and colors
+winston.setLevels({
+	access: 0,
+	debug: 1,
+	verbose: 2,
+	info: 3,
+	warn: 4,
+	error: 5
+});
+
+winston.addColors({
+	access: 'magenta',
+	debug: 'blue',
+	verbose: 'cyan',
+	info: 'green',
+	warn: 'yellow',
+	error: 'red'
+});
+
 // Remove default transport so we can replace it with our own.
 winston.remove(winston.transports.Console);
 winston.add(winston.transports.Console, {
-	level: 'info',
-	colorize: true
+	level: (env === 'development') ? 'verbose' : 'info',
+	colorize: true,
+	prettyPrint: true
 });
-
-var app = express();
-var env = app.get('env');
 
 winston.info('Loading server for environment: ' + env);
 
@@ -55,7 +75,7 @@ if (!options.appDomain) {
 if (env == 'production') {
 	winston.add(winston.transports.File, {
 		filename: options.logFile,
-		level: 'verbose',
+		level: 'access',
 		timestamp: true
 	});
 	
@@ -68,6 +88,8 @@ app.use(express.cookieParser());
 app.use(express.json());
 app.use(express.session({ secret: options.secret }));
 
+app.use(require("./logger"));
+
 var auth = require("./auth");
 auth.init(app, options);
 
@@ -75,7 +97,6 @@ var api = require("./api");
 api.init(app, options);
 
 if (env == 'production') {
-	app.use(express.logger());
 	app.use(express.static('build'));
 }
 else if (env == 'development' || env == 'staging') {

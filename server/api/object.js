@@ -43,7 +43,7 @@ module.exports = {
 				},
 				function(err, records) {
 					return err
-						? me.failure(res, err)
+						? me.failure(name, res, err)
 						: me.success(res, fields, { records: records });
 				}
 			);
@@ -61,14 +61,14 @@ module.exports = {
 			
 			return me.nextRevision(name, record, function(err) {
 				if (err) {
-					return me.failure(res, err);
+					return me.failure(name, res, err);
 				}
 				
-				winston.debug('Creating %s for owner %s', name, req.user._id, record);
+				winston.debug('Creating %s for owner %s', name, req.user._id, record.toObject());
 				
 				return record.save(function(err) {
 					return err
-						? me.failure(res, err)
+						? me.failure(name, res, err)
 						: me.success(res, fields, { records: record });
 				});
 			});
@@ -77,7 +77,7 @@ module.exports = {
 		app.get('/api/' + name + '/:id', function(req, res) {
 			return Model.findById(req.params.id, function(err, record) {
 				return err
-					? me.failure(res, err)
+					? me.failure(name, res, err)
 					: me.success(res, fields, { records: record });
 			});
 		});
@@ -85,21 +85,21 @@ module.exports = {
 		app.put('/api/' + name + '/:id', function(req, res) {
 			return Model.findById(req.params.id, function(err, record) {
 				if (err) {
-					return me.failure(res, err);
+					return me.failure(name, res, err);
 				}
 				else {
 					return me.nextRevision(name, record, function(err) {
 						if (err) {
-							return me.failure(res, err);
+							return me.failure(name, res, err);
 						}
 						
 						me.updateData(fields, record, req.body);
 						
-						winston.debug('Updating %s for owner %s', name, req.user._id, record);
+						winston.debug('Updating %s for owner %s', name, req.user._id, record.toObject());
 						
 						return record.save(function(err) {
 							return err
-								? me.failure(res, err)
+								? me.failure(name, res, err)
 								: me.success(res, fields, { records: record });
 						});
 					});
@@ -110,14 +110,14 @@ module.exports = {
 		app['delete']('/api/' + name + '/:id', function(req, res) {
 			return Model.findById(req.params.id, function(err, record) {
 				if (err) {
-					return me.failure(res, err);
+					return me.failure(name, res, err);
 				}
 				
 				winston.debug('Deleting %s for owner %s with id: %s', name, req.user._id, req.params.id);
 				
 				return record.remove(function(err) {
 					return err
-						? me.failure(res, err)
+						? me.failure(name, res, err)
 						: me.success(res, fields);
 				});
 			});
@@ -127,7 +127,7 @@ module.exports = {
 			app.get('/api/' + name + '/:id/export', function(req, res) {
 				return Model.findById(req.params.id, function(err, record) {
 					if (err) {
-						return me.failure(res, err);
+						return me.failure(name, res, err);
 					}
 					
 					winston.debug('Exporting %s for owner %s with id: %s', name, req.user._id, req.params.id);
@@ -234,12 +234,12 @@ module.exports = {
 		return res.send(data);
 	},
 	
-	failure: function(res, err) {
+	failure: function(name, res, err) {
 		if (err.name == 'ValidationError') {
-			winston.debug(err.message);
+			winston.verbose(err.message + ' for ' + name);
 			
 			_.each(err.errors, function(detail) {
-				winston.debug(detail.message);
+				winston.verbose(detail.message);
 			});
 		}
 		else {

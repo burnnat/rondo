@@ -1,6 +1,8 @@
+var _ = require("lodash");
 var express = require("express");
 var mongoose = require("mongoose");
 var async = require("async");
+var winston = require("winston");
 
 var info = require('../package.json');
 
@@ -61,6 +63,10 @@ module.exports = {
 				next();
 			}
 			else {
+				winston.verbose(
+					"Rejecting unauthorized API request",
+					_.pick(req, 'url', 'method')
+				);
 				res.send(403, { success: false });
 			}
 		});

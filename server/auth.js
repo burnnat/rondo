@@ -1,5 +1,6 @@
 var _ = require("lodash");
 var passport = require("passport");
+var winston = require("winston");
 
 var User = require("./auth/user");
 var provider = require("./auth/provider");
@@ -10,6 +11,8 @@ module.exports = {
 		app.use(passport.session());
 		
 		app.get('/auth/logout', function(req, res) {
+			winston.debug("User %s logged out", req.user._id, null);
+			
 			req.logout();
 			res.redirect('/auth/user');
 		});

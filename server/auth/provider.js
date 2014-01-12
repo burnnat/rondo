@@ -32,6 +32,7 @@ module.exports = {
 						function(err, user) {
 							if (!user) {
 								user = new User();
+								winston.debug("Creating new user %s", user._id, null);
 							}
 							
 							user.set(profile);
@@ -40,7 +41,25 @@ module.exports = {
 								remoteID: identifier
 							});
 							
-							user.save(done);
+							user.save(function(err) {
+								if (err) {
+									winston.error(
+										"Error saving profile for user %s",
+										user._id,
+										user.toObject()
+									);
+								}
+								else {
+									winston.debug(
+										"User %s successfully authenticated with %s provider",
+										user._id,
+										name,
+										null
+									);
+								}
+								
+								done.apply(this, arguments);
+							});
 						}
 					);
 				}
