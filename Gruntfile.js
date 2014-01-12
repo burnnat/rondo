@@ -81,6 +81,16 @@ module.exports = function(grunt) {
 		port: parseInt(local['server.port']),
 		deployTarget: local['deploy.dir'],
 		
+		debug: {
+			options: {
+				fork: false,
+				inspector: true,
+				inspectorArgs: {
+					"web-port": 9222
+				}
+			}
+		},
+		
 		clean: {
 			build: [
 				"build/**",
@@ -120,6 +130,7 @@ module.exports = function(grunt) {
 		
 		express: {
 			options: {
+				background: false,
 				script: './server/web.js',
 				port: '<%= port %>'
 			},
