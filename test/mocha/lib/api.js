@@ -1,29 +1,42 @@
 var _ = require('lodash');
 var assert = require('assert');
+var Q = require('q');
+
 var app = require('./app.js');
 
 module.exports = {
 	app: app,
 	
 	make: function(type, data, done) {
+		var deferred = Q.defer();
+		
 		app.post('/api/' + type)
 			.send(data)
 			.set('Accept', 'application/json')
 			.expect('Content-Type', /json/)
 			.expect(
 				200,
-				function(err, res) {
-					done(err, res.body.records.id);
-				}
+				deferred.makeNodeResolver()
 			);
+		
+		return deferred.promise.then(
+			function(res) {
+				return res.body.records.id;
+			}
+		);
 	},
 	
 	run: function(setup) {
 		var path = setup.path;
 		
 		describe(setup.name + ' API', function() {
-			before(app.reset);
-			before(app.login);
+			before(function(done) {
+				app.reset()
+					.then(function() {
+						return app.login();
+					})
+					.nodeify(done);
+			});
 			
 			if (setup.prep) {
 				setup.prep();

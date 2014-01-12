@@ -9,15 +9,15 @@ test.run({
 	prep: function() {
 		before(function(done) {
 			test.make(
-				'sketches',
-				{
-					title: 'Root Sketch'
-				},
-				function(err, id) {
+					'sketches',
+					{
+						title: 'Root Sketch'
+					}
+				)
+				.then(function(id) {
 					parent = id;
-					done(err);
-				}
-			);
+				})
+				.nodeify(done);
 		});
 	},
 	

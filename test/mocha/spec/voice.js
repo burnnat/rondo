@@ -9,44 +9,34 @@ test.run({
 	prep: function() {
 		before(function(done) {
 			test.make(
-				'sketches',
-				{
-					title: 'Root Sketch'
-				},
-				function(err, id) {
-					if (err) {
-						done(err);
+					'sketches',
+					{
+						title: 'Root Sketch'
 					}
-					else {
-						test.make(
-							'parts',
-							{
-								name: 'Parent Part',
-								group: null,
-								sketch_id: id
-							},
-							function(err, id) {
-								if (err) {
-									done(err);
-								}
-								else {
-									test.make(
-										'staves',
-										{
-											clef: 'bass',
-											part_id: id
-										},
-										function(err, id) {
-											parent = id;
-											done(err);
-										}
-									);
-								}
-							}
-						);
-					}
-				}
-			);
+				)
+				.then(function(id) {
+					return test.make(
+						'parts',
+						{
+							name: 'Parent Part',
+							group: null,
+							sketch_id: id
+						}
+					);
+				})
+				.then(function(id) {
+					return test.make(
+						'staves',
+						{
+							clef: 'bass',
+							part_id: id
+						}
+					);
+				})
+				.then(function(id) {
+					parent = id;
+				})
+				.nodeify(done);
 		});
 	},
 	

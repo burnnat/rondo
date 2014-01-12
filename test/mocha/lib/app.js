@@ -1,9 +1,25 @@
+var Q = require('q');
 var request = require('supertest');
-var info = require('../../../package.json');
 
+var info = require('../../../package.json');
 var app = request.agent('http://localhost:' + (process.env.PORT || 8080));
 
-app.reset = function(done) {
+var dualPromise = function(fn) {
+	return function(done) {
+		if (done) {
+			fn.call(this, done);
+		}
+		else {
+			var deferred = Q.defer();
+			
+			fn.call(this, deferred.makeNodeResolver());
+			
+			return deferred.promise;
+		}
+	};
+};
+
+app.reset = dualPromise(function(callback) {
 	app.post('/api')
 		.send({ reset: true })
 		.expect(
@@ -12,14 +28,14 @@ app.reset = function(done) {
 				success: true,
 				version: info.version
 			},
-			done
+			callback
 		);
-};
+});
 
-app.login = function(done) {
+app.login = dualPromise(function(callback) {
 	app.get('/auth/dummy')
-		.end(done);
-};
+		.end(callback);
+});
 
 before(function(done) {
 	this.timeout(0);
