@@ -149,7 +149,7 @@ var buildPart = function(parent, key, time, part, voices) {
 							.up()
 						.up();
 					
-					buildStaff(partXml, index + 1, voicesByStaff[staff.id]);
+					buildStaff(partXml, index + 1, voicesByStaff[staff.id] || []);
 				});
 			})
 	);

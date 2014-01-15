@@ -48,6 +48,7 @@
 		"supertest": "~0.8.3",
 		"q-io": "~1.10.6",
 		"node-xml": "burnnat/node-xml",
+		"pretty-data": "~0.40.0",
 		
 		"glob": "~3.2.8",
 		"mustache": "~0.8.1",

@@ -1,0 +1,33 @@
+{
+	"data": {
+		"title": "Single Part, Single Measure"
+	},
+	
+	"parts": [
+		{
+			"name": "Solo"
+		}
+	],
+	
+	"staves": [
+		{
+			"clef": "treble",
+			"part_id": 0
+		}
+	],
+	
+	"measures": [
+		{
+			"key": "C",
+			"time": "4/4"
+		}
+	],
+	
+	"voices": [
+		{
+			"measure_id": 0,
+			"staff_id": 0,
+			"notes": []
+		}
+	]
+}

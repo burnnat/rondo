@@ -1,12 +1,14 @@
 var app = require('../lib/app.js');
 var assert = require('assert');
+var mustache = require('mustache');
 var path = require('path');
+var pretty = require('pretty-data').pd;
 var q = require('q');
-var fs = require('q-io/fs');
+var qfs = require('q-io/fs');
 var xml = require('node-xml');
 
-var parser = function(handler) {
-	return new xml.SaxParser(function(cb) {
+var parser = function(handler, error) {
+	var p = new xml.SaxParser(function(cb) {
 		cb.onDTD(function(root, pubId, sysId) {
 			handler({
 				type: 'dtd',
@@ -63,6 +65,25 @@ var parser = function(handler) {
 			});
 		});
 	});
+	
+	p.parse = function(data) {
+		var deferred = q.defer();
+		
+		this.setErrorHandler({
+			onError: function(message) {
+				deferred.reject(new Error(message));
+			}
+		});
+		
+		this.parseString(data);
+		
+		// If already rejected, this does nothing (as we want).
+		deferred.resolve();
+		
+		return deferred.promise;
+	};
+	
+	return p;
 };
 
 var make = function(type, data) {
@@ -89,31 +110,66 @@ var make = function(type, data) {
 
 var testExport = function(name) {
 	describe('for ' + name + ' data', function() {
-		var sketch;
+		var items = {};
 		
 		before(function(done) {
-			fs.read(path.resolve(__dirname, '../res/' + name + '.json'))
+			qfs.read(path.resolve(__dirname, '../res/' + name + '.json'))
 				.then(JSON.parse)
 				.then(function(json) {
+					var inject = function(type, fn) {
+						var data = json[type];
+						
+						if (data) {
+							return (
+								q.all(
+									data.map(function(item) {
+										fn(item);
+										return make(type, item);
+									})
+								)
+								.then(function(ids) {
+									items[type] = ids;
+								})
+							);
+						}
+					};
+					
 					return (
 						make('sketches', json.data)
 							.then(function(id) {
-								sketch = id;
+								items.sketch = id;
 							})
 							.then(function() {
-								return q.all(
-									json.parts.map(function(part) {
-										part.sketch_id = sketch;
-										return make('parts', part);
-									})
+								return inject(
+									'parts',
+									function(part) {
+										part.sketch_id = items.sketch;
+									}
 								);
 							})
 							.then(function() {
-								return q.all(
-									json.measures.map(function(measure) {
-										measure.sketch_id = sketch;
-										return make('measures', measure);
-									})
+								return inject(
+									'staves',
+									function(staff) {
+										staff.part_id = items.parts[staff.part_id];
+									}
+								);
+							})
+							.then(function() {
+								return inject(
+									'measures',
+									function(measure) {
+										measure.sketch_id = items.sketch;
+									}
+								);
+							})
+							.then(function() {
+								return inject(
+									'voices',
+									function(voice) {
+										voice.measure_id = items.measures[voice.measure_id];
+										voice.staff_id = items.measures[voice.staff_id];
+									}
 								);
 							})
 					);
@@ -122,11 +178,14 @@ var testExport = function(name) {
 		});
 		
 		it('responds with correct XML', function(done) {
-			app.get('/api/sketches/' + sketch + '/export')
+			app.get('/api/sketches/' + items.sketch + '/export')
 				.set('Accept', 'application/xml')
 				.expect('Content-Type', /xml/)
 				.expect(200)
 				.end(function(err, res) {
+					var actualRaw = res.text;
+					var expectedRaw;
+					
 					var expected = [];
 					
 					var expectedParser = parser(function(event) {
@@ -137,16 +196,35 @@ var testExport = function(name) {
 						assert.deepEqual(event, expected.shift());
 					});
 					
-					fs.read(path.resolve(__dirname, '../res/' + name + '.xml'))
-						.then(function(data) {
-							expectedParser.parseString(data);
+					qfs.read(path.resolve(__dirname, '../res/' + name + '.xml'))
+						.then(function(template) {
+							expectedRaw = mustache.render(template, items);
+							return expectedParser.parse(expectedRaw);
 						})
 						.then(function() {
-							actualParser.parseString(res.text);
+							return actualParser.parse(actualRaw);
+						})
+						.then(function() {
+							assert.equal(expected.length, 0);
+						})
+						.fail(function(err) {
+							var text = err.message;
+							
+							text += '\n\n';
+							
+							text += 'Expected:\n';
+							text += pretty.xml(expectedRaw);
+							
+							text += '\n\n';
+							
+							text += 'Actual:\n';
+							text += pretty.xml(actualRaw);
+							
+							throw new Error(text);
 						})
 						.nodeify(done);
 				});
-		})
+		});
 	});
 };
 
@@ -162,4 +240,5 @@ describe('Sketch exports', function() {
 	});
 	
 	testExport('empty');
+	testExport('single');
 })
