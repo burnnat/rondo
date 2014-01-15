@@ -1,7 +1,213 @@
+var _ = require('lodash');
 var slug = require("slug");
 var Q = require("q");
 var mongoose = require("mongoose");
 var builder = require("xmlbuilder");
+var winston = require("winston");
+
+var ticks = 32; // ticks per beat
+
+var durations = {
+	'w': 1,
+	'h': 2,
+	'q': 4
+};
+
+var noteTypes = {
+	'1': 'whole',
+	'2': 'half',
+	'4': 'quarter',
+	'8': 'eighth',
+	'16': '16th',
+	'32': '32nd',
+	'64': '64th'
+};
+
+var clefs = {
+	treble: {
+		sign: 'G',
+		line: 2
+	},
+	bass: {
+		sign: 'F',
+		line: 4
+	},
+	tenor: {
+		sign: 'C',
+		line: 4
+	},
+	alto: {
+		sign: 'C',
+		line: 3
+	}
+};
+
+var buildPartList = function(parent, qparts) {
+	var partList = parent.element('part-list');
+	
+	return (
+		qparts
+			.then(function(parts) {
+				parts.forEach(
+					function(part) {
+						partList
+							.element('score-part', { id: part.id })
+							.element('part-name', part.name);
+					}
+				);
+			})
+	);
+};
+
+var buildMeasures = function(parent, sketch, qparts) {
+	return (
+		mongoose.model('Measure')
+			.find({ sketch_id: sketch.id })
+			.exec()
+			.then(function(measures) {
+				return Q.all(
+					measures.map(function(measure, index) {
+						return buildMeasure(parent, measure, index + 1, qparts);
+					})
+				);
+			})
+	);
+};
+
+var buildMeasure = function(parent, measure, number, qparts) {
+//	var key = measure.key;
+//	var time = measure.time;
+	
+	var key = {
+		fifths: 0,
+		mode: 'major'
+	};
+	
+	var time = {
+		beats: 4,
+		beatType: 4
+	};
+	
+	var measureXml = parent.element('measure', { number: number })
+	
+	return (
+		Q.all([
+			qparts,
+			mongoose.model('Voice')
+				.find({ measure_id: measure.id })
+				.exec()
+		])
+		.spread(function(parts, voices) {
+			return Q.all(
+				parts.map(function(part) {
+					return buildPart(measureXml, key, time, part, voices);
+				})
+			);
+		})
+	);
+};
+
+var buildPart = function(parent, key, time, part, voices) {
+	var partXml = parent.element('part', { id: part.id });
+	var attrXml = partXml.element('attributes');
+	
+	attrXml
+		.element('divisions', ticks * time.beats)
+		.up()
+		.element('key')
+			.element('fifths', key.fifths)
+			.up()
+			.element('mode', key.mode)
+			.up()
+		.up()
+		.element('time')
+			.element('beats', time.beats)
+			.up()
+			.element('beat-type', time.beatType)
+			.up()
+		.up();
+	
+	var voicesByStaff = _.groupBy(voices, 'staff_id');
+	
+	return (
+		mongoose.model('Staff')
+			.find({ part_id: part.id })
+			.exec()
+			.then(function(staves) {
+				attrXml.element('staves', staves.length);
+				
+				var backup = null;
+				
+				staves.forEach(function(staff, index) {
+					var clef = clefs[staff.clef];
+					
+					attrXml
+						.element('clef')
+							.element('sign', clef.sign)
+							.up()
+							.element('line', clef.line)
+							.up()
+						.up();
+					
+					buildStaff(partXml, index + 1, voicesByStaff[staff.id]);
+				});
+			})
+	);
+};
+
+var buildStaff = function(parent, staffNumber, voices) {
+	voices.forEach(function(voice) {
+		var total = 0;
+		var notes = voice.notes || [];
+		
+		notes.forEach(function(note) {
+			total += buildNote(parent, staffNumber, note);
+		});
+		
+		partXml.element('backup').element('duration', backup);
+	});
+};
+
+var buildNote = function(parent, staffNumber, note) {
+	var duration = note.duration;
+	
+	if (durations[duration]) {
+		duration = durations[duration];
+	}
+	else {
+		duration = parseInt(duration);
+	}
+	
+	var type = noteTypes[duration];
+	
+	duration = ticks * 4 / duration;
+	
+	note.pitches.forEach(function(pitch, index) {
+		var noteXml = parent.element('note');
+		
+		if (index > 0) {
+			noteXml.element('chord');
+		}
+		
+		var pitchParts = pitch.split('/');
+		
+		noteXml
+			.element('pitch')
+				.element('step', pitchParts[0])
+				.up()
+				.element('octave', pitchParts[1])
+				.up()
+			.up()
+			.element('duration', duration)
+			.up()
+			.element('type', type)
+			.up()
+			.element('staff', staffNumber)
+			.up();
+	});
+	
+	return duration;
+};
 
 module.exports = {
 	name: 'sketches',
@@ -25,8 +231,8 @@ module.exports = {
 				standalone: false
 			},
 			{
-				pubID: '-//Recordare//DTD MusicXML 3.0 Partwise//EN',
-				sysID: 'http://www.musicxml.org/dtds/partwise.dtd'
+				pubID: '-//Recordare//DTD MusicXML 3.0 Timewise//EN',
+				sysID: 'http://www.musicxml.org/dtds/timewise.dtd'
 			}
 		);
 		
@@ -35,194 +241,23 @@ module.exports = {
 			.element('work')
 			.element('work-title', title);
 		
-		var parts = 
+		var parts = Q(
 			mongoose.model('Part')
 				.find({ sketch_id: sketch.id })
-				.exec();
+				.exec()
+		);
 		
 		Q.all([
-			parts
-				.then(function(parts) {
-					var partList = xml.element('part-list');
-					
-					parts.forEach(
-						function(part) {
-							partList
-								.element('score-part', { id: part.id })
-								.element('part-name', part.name);
-						}
-					);
-				}),
-			parts
-				.then(function(parts) {
-					var data = {};
-					
-					return (
-						Q.all(
-							parts.map(function(part) {
-								var id = part.id;
-								
-								return (
-									mongoose.model('Staff')
-										.find({ part_id: id })
-										.exec()
-										.then(function(staves) {
-											data[id] = staves.map(function(staff) {
-												return staff;
-											});
-										})
-								);
-							})
-						)
-						.then(
-							function() {
-								return data;
-							}
-						)
-					);
-				})
-				.then(function(staffList) {
-					return (
-						mongoose.model('Measure')
-							.find({ sketch_id: sketch.id })
-							.exec()
-							.then(function(measures) {
-								return Q.all(
-									measures.map(function(measure, index) {
-										var measureXml = xml.element('measure', { number: index + 1 });
-										
-										var ticks = 32; // ticks per quarter note
-										
-										return (
-											mongoose.model('Voice')
-												.find({ measure_id: measure.id })
-												.exec()
-												.then(function(voices) {
-													var voiceList = {};
-													
-													voices.forEach(function(voice) {
-														var staffId = voice.get('staff_id', String);
-														var array = voiceList[staffId];
-														
-														if (!array) {
-															array = voiceList[staffId] = [];
-														}
-														
-														array.push(voice);
-													});
-													
-													var partId;
-													var partXml;
-													var attrXml;
-													var staves;
-													
-													for (partId in staffList) {
-														partXml = measureXml.element('part', { id: partId });
-														attrXml = partXml.element('attributes');
-														
-														staves = staffList[partId];
-														
-														attrXml
-															.element('staves', staves.length)
-															.up()
-															.element('divisions', ticks * 4)
-															.up();
-															
-														var backup = null;
-														
-														staves.forEach(function(staff) {
-															if (index === 0) {
-																// this is invalid MusicXML, we need to convert to sign and line here
-																attrXml.element('clef', staff.clef);
-															}
-															
-															voiceList[staff.id()].forEach(function(voice) {
-																if (backup !== null) {
-																	partXml.element('backup').element('duration', backup);
-																}
-																
-																voice.notes.forEach(function(note) {
-																	var duration = note.duration;
-																	var type;
-																	
-																	if (duration === 'w') {
-																		duration = 1;
-																	}
-																	else if (duration === 'h') {
-																		duration = 2;
-																	}
-																	else if (duration === 'q') {
-																		duration = 4;
-																	}
-																	else {
-																		duration = parseInt(duration);
-																	}
-																	
-																	if (duration === 1) {
-																		type = 'whole';
-																	}
-																	else if (duration === 2) {
-																		type = 'half';
-																	}
-																	else if (duration === 4) {
-																		type = 'quarter';
-																	}
-																	else if (duration === 8) {
-																		type = 'eighth';
-																	}
-																	else if (duration === 16) {
-																		type = '16th';
-																	}
-																	else if (duration === 32) {
-																		type = '32nd';
-																	}
-																	else if (duration === 64) {
-																		type = '64th';
-																	}
-																	
-																	duration = ticks * 4 / duration;
-																	backup += duration;
-																	
-																	note.pitches.forEach(function(pitch, pitchIndex) {
-																		var noteXml = partXml.element('note');
-																		
-																		if (pitchIndex > 0) {
-																			noteXml.element('chord');
-																		}
-																		
-																		var pitchParts = pitch.split('/');
-																		
-																		noteXml
-																			.element('pitch')
-																				.element('step', pitchParts[0])
-																				.up()
-																				.element('octave', pitchParts[1])
-																				.up()
-																			.up()
-																			.element('duration', duration)
-																			.up()
-																			.element('type', type)
-																			.up();
-																	})
-																});
-															});
-														});
-													}
-												})
-										);
-									})
-								);
-							})
-					);
-				})
+			buildPartList(xml, parts),
+			buildMeasures(xml, sketch, parts)
 		]).done(
 			function() {
 				res.attachment(slug(title) + '.xml');
 				res.send(xml.end());
 			},
 			function(err) {
-				console.error(err);
-				res.send(400, { success: false });
+				winston.error(err instanceof Error ? err.stack : err);
+				res.send(400);
 			}
 		);
 	}
