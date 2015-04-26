@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project name="tutti" default=".help">
+	<!--
+	The build-impl.xml file imported here contains the guts of the build process. It is
+	a great idea to read that file to understand how the process works, but it is best to
+	limit your changes to this file.
+	-->
+	<import file="${basedir}/.sencha/package/build-impl.xml"/>
+
+	<!--
+	Builds a specialized version of VexFlow that includes Sencha Cmd object symbols.
+	-->
+	<target name="vexflow" depends="init">
+		<property name="vexflow.dir" location="${workspace.dir}/../vexflow"/>
+		
+		<local name="vexflow.src" />
+		<property name="vexflow.src" location="${vexflow.dir}/src" />
+		
+		<local name="vexflow.build" />
+		<property name="vexflow.build" location="${package.dir}/vexflow/build" />
+		
+		<delete dir="${vexflow.build}" />
+		
+		<local name="vexflow.target" />
+		<property name="vexflow.target" location="${vexflow.build}/symbols" />
+		
+		<x-shell dir="${package.dir}/vexflow">node build.js "${vexflow.src}" "${vexflow.target}"</x-shell>
+		
+		<local name="vexflow.compiled" />
+		<property name="vexflow.compiled" location="${vexflow.build}/vexflow-all.js" />
+		
+		<x-sencha-command>
+			compile
+				# Ignore the main package files, since building without an
+				# explicit framework results in missing dependencies.
+				--ignore
+					src,overrides
+				concat
+					${vexflow.compiled}
+		</x-sencha-command>
+	</target>
+	
+	<target name="-before-build" depends="vexflow" />
+	
+</project>
