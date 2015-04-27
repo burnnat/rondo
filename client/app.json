@@ -3,11 +3,11 @@
      * The application's namespace.
      */
     "name": "Rondo",
-    
+
     /**
      * The version of the application.
      */
-    "version": "1.0.0.0",
+    "version": "1.0.0",
 
     /**
      * The relative path to the application's markup file (html, jsp, asp, etc.).
@@ -35,18 +35,18 @@
      * The Sencha Framework for this application: "ext" or "touch".
      */
     "framework": "ext",
-    
+
     /**
      * The toolkit to use. Select either "classic" or "modern".
      */
-    
-    
+
+
     /**
      * The name of the theme for this application.
      */
-    
+
     "theme": "theme-neptune",
-    
+
     /**
      * The list of required packages (with optional versions; default is "latest").
      *
@@ -57,6 +57,7 @@
      *      ]
      */
     "requires": [
+        "tutti-touch"
     ],
 
     /**
@@ -175,8 +176,13 @@
      */
     "js": [
         {
+            "path": "../packages/local/tutti/vexflow/build/vexflow-all.js",
+            "bootstrap": true
+        },
+        {
             "path": "app.js",
-            "bundle": true
+            "bundle": true,
+			"update": "delta"
         }
     ],
 
@@ -231,11 +237,12 @@
      */
     "css": [
         {
-            // this entry uses an ant variable that is the calculated
-            // value of the generated output css file for the app,
-            // defined in .sencha/app/defaults.properties
+            "path": "resources/zocial/zocial.css"
+        },
+        {
             "path": "${build.out.css.path}",
-            "bundle": true
+            "bundle": true,
+            "update": "delta"
         }
     ],
 
@@ -265,12 +272,10 @@
      */
     "production": {
         "output": {
-            
             "appCache": {
                 "enable": true,
                 "path": "../cache.appcache"
             }
-            
         },
         "loader": {
             "cache": "${build.timestamp}"
@@ -279,7 +284,7 @@
             "enable": true
         }
     },
-    
+
     /**
      * Settings specific to testing builds.
      */
@@ -293,7 +298,7 @@
             "enable": false
         }
     },
-    
+
     /**
      * Settings specific to development builds.
      */
@@ -329,9 +334,9 @@
      */
     "bootstrap": {
         "base": "${app.dir}",
-        
+
         "manifest": "${build.id}.json",
-        
+
         "microloader": "bootstrap.js",
         "css": "bootstrap.css"
     },
@@ -376,7 +381,7 @@
      *      }
      *
      */
-    
+
     "output": {
         "base": "${workspace.build.dir}/${build.environment}/${app.name}/${build.id}",
         "page": "../index.html",
@@ -385,8 +390,8 @@
             "enable": false
         }
     },
-    
-    
+
+
     /**
     * Controls for localStorage caching
     *   "cache": {
@@ -434,6 +439,8 @@
      * Extra resources to be copied along when build
      */
     "resources": [
+        "resources/icons",
+        "resources/zocial"
     ],
 
     /**
@@ -472,28 +479,6 @@
     },
 
     /**
-     * The space config object is used by the "sencha app publish" command to publish
-     * a version of this application to Sencha Space:
-     *
-     *      "space": {
-     *          // the space id for this application
-     *          "id": 12345,
-     *
-     *          // space host
-     *          "host": "https://api.space.sencha.com/json.rpc",
-     *
-     *          // Either a zip file path or a folder to be zipped
-     *          // this example shows how to publish the root folder for all build profiles
-     *          "file": "${app.output.base}/../",
-     *
-     *          // These may be specified here, but are best specified in your user
-     *          // ~/.sencha/cmd/sencha.cfg file
-     *          "apiKey": "",
-     *          "secret": ""
-     *      }
-     */
-
-    /**
      * Build Profiles. This object's properties are each a "build profile". You can
      * add as many as you need to produce optimized builds for devices, themes, locales
      * or other criteria. Your "Ext.beforeLoad" hook (see index.html) is responsible for
@@ -513,19 +498,21 @@
      *     }
      *
      */
-    
+
     "builds": {
+        /*
         "classic": {
             "toolkit": "classic",
             "theme": "theme-neptune"
         },
+        */
 
         "modern": {
             "toolkit": "modern",
             "theme": "theme-neptune"
         }
     },
-    
+
 
     /**
      * Uniquely generated id for this application, used as prefix for localStorage keys.
